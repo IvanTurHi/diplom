@@ -57,4 +57,4 @@ class osm_parser():
 osm = osm_parser()
 osm.get_data()
 #osm.read_data()
-osm.try_pyrosm()
+#osm.try_pyrosm()
