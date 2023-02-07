@@ -24,7 +24,7 @@ class osm_parser():
         #    self.geo = f.read()
 
         # для парсинга через pyrosm файлов osm.pbf
-        # Вставить файл RU-MOW.osm.pbf с рабочего стола в папку data!
+        # Вставить файл RU-MOW.osm.pbf с рабочего стола в папку data!!
         self.dir_with_data = split_symbol.join(current_dir.split(split_symbol)[:-1]) + \
                         split_symbol + 'data' + split_symbol + self.geo_test_data_name
         print(self.dir_with_data)
