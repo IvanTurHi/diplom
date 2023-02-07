@@ -1,0 +1,8 @@
+Полезные ссылки: 
+парсинг яндекс карт -- https://habr.com/ru/post/701478/
+наш диплом -- https://habr.com/ru/post/579838/
+Теория по анализу популярности торговых точек -- https://www.cfin.ru/press/practical/2007-10/01.shtml
+Статья с описанием геомаркетинга и шагов по созданию -- https://habr.com/ru/post/527020/
+Geopandas -- https://geopandas.org/en/stable/community/ecosystem.html#osmnx
+OSMnx -- https://osmnx.readthedocs.io/en/stable/index.html
+Про пандас, обратоку геоданных и их визуализацию -- https://habr.com/ru/post/662912/
