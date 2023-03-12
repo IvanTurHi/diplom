@@ -1,0 +1,71 @@
+Что собираем с OSM:
+amenity -- kindergarten -- школы
+amenity -- school -- детсады
+amenity -- clinic, doctors, hospital -- больнички
+building -- apartments, detached, dormitory -- жилые здания
+
+
+-------------------------Школы------------------------------
+
+area[name="Москва"];
+nwr[amenity=school](area);
+out geom;
+
+-------------------------Детсады---------------------------
+
+area[name="Москва"];
+nwr[amenity=kindergarten](area);
+out geom;
+
+-------------------------Медицина---------------------------
+
+area[name="Москва"];
+nwr[amenity=clinic](area) -> .clinics;
+nwr[amenity=doctors](area) -> .doctorss;
+nwr[amenity=hospital](area) -> .hospitals;
+(
+  .clinics;
+  .doctorss;
+  .hospitals;
+) -> .medicine;
+.medicine out geom;
+
+-------------------------Жилые дома---------------------------
+
+area[name="Москва"];
+nwr[building=apartments](area) -> .apartmentss;
+nwr[building=detached](area) -> .detacheds;
+nwr[building=dormitory](area) -> .dormitorys;
+(
+  .apartmentss;
+  .detacheds;
+  .dormitorys;
+) -> .buildings;
+.buildings out geom;
+
+==============================================================
+
+Поля для сохранения:
+"id"
+"geometry"
+"addr:city" (дефолт Moscow)
+"addr:full" (удалить на втором этапе)
+"addr:housenumber"
+"addr:postcode" (дефолт 000000)
+"addr:street"
+"addr:place" (удалить на втором этапе)
+"amenity" (дефолт school)
+"building" (Дефолт school)
+"building:levels"
+"name"
+"type" (дефолт multipolygon)
+"short_name" (удалить на втором этапе)
+"website" 
+"contact:website" (удалить на втором этапе)
+"official_name" (удалить на втором этапе)
+"old_name" (удалить на втором этапе)
+"capacity"
+"url" (удалить на втором этапе)
+
+Добавить поле 
+students_number 

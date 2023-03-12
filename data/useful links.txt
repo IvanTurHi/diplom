@@ -6,3 +6,11 @@
 Geopandas -- https://geopandas.org/en/stable/community/ecosystem.html#osmnx
 OSMnx -- https://osmnx.readthedocs.io/en/stable/index.html
 Про пандас, обратоку геоданных и их визуализацию -- https://habr.com/ru/post/662912/
+Описание источников данных и их применние к городской инфраструктуре -- https://habr.com/ru/post/584598/
+Наш диплом(только написанный не нами) -- https://schools.yourmaps.io/#/
+Про "Наш диплом(только написанный не нами)" -- https://actcognitive.org/platformy/servis-dlya-otsenki-obespechennosti-zhilykh-domov-infrastrukturoy
+Их статья на elibrary -- https://elibrary.ru/item.asp?id=44444871
+Данные с OSM по слоям и объектам(это если не сможем сами, можно купить, 1000 рублей за диплом не жалко) -- https://data.nextgis.com/ru/catalog/subdivisions/?country=RU
+данные по типам объектов osm(что есть что) -- https://wiki.openstreetmap.org/wiki/RU:%D0%9E%D0%B1%D1%8A%D0%B5%D0%BA%D1%82%D1%8B_%D0%BA%D0%B0%D1%80%D1%82%D1%8B
+Глава книги про типы социальных карт -- https://bookonlime.ru/lecture/glava-7-karty-socialnoy-infrastruktury
+Метода расчета обеспеченности инфраструктурой от Яндекса -- https://yandex.ru/support/realty/search/indicators.html#infrastructure
