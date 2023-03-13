@@ -111,13 +111,90 @@ class osm_parser():
         #Запись в файл
         self.geo_write_data(df_school, self.school_data_name_transform)
 
+    # Функция по преобразованию raw geojson с данными по детским садам. Ноутбук с детальным преобразованием
+    # в папке additional_code -- data_filtering_kindergarten_diploma
+    def transform_kindergarten(self):
 
+        df_kindergarten = self.read_data(self.kindergarten_data_name_raw)
 
+        full_list_of_columns = df_kindergarten.columns.values.tolist()
+        target_list_of_columns = ['id', 'addr:city', 'addr:full', 'addr:housenumber', 'addr:postcode', 'addr:street',
+                                  'addr:place',
+                                  'amenity', 'building', 'building:levels', 'name', 'type', 'short_name', 'old_name',
+                                  'website',
+                                  'contact:website', 'official_name', 'capacity', 'geometry']
+
+        #Определяем столбцы, которые надо удалить
+        drop_list_of_columns = []
+        for i in full_list_of_columns:
+            if i not in target_list_of_columns:
+                drop_list_of_columns.append(i)
+
+        df_kindergarten.drop(drop_list_of_columns, axis=1, inplace=True)
+        updated_list_of_columns = df_kindergarten.columns.values.tolist()
+
+        # Заполняем пустые значение города Москвой
+        df_kindergarten['addr:city'] = df_kindergarten['addr:city'].fillna('Москва')
+
+        # Заполняем пустые значение посткода нулями
+        df_kindergarten['addr:postcode'] = df_kindergarten['addr:postcode'].fillna('000000')
+
+        # Заполняем поле amenity на kindergarten
+        df_kindergarten['amenity'] = df_kindergarten['amenity'].fillna('kindergarten')
+
+        # Заменяем поле building на kindergarten
+        df_kindergarten['building'] = df_kindergarten['building'].fillna('kindergarten')
+        df_kindergarten['building'].replace('yes', 'kindergarten', inplace=True)
+
+        # Заполнение addr:street из addr:place
+        df_kindergarten['addr:street'] = df_kindergarten['addr:street'].fillna('empty')
+        df_kindergarten['addr:place'] = df_kindergarten['addr:place'].fillna('empty')
+        for i in range(df_kindergarten.shape[0]):
+            if df_kindergarten.iloc[i]['addr:street'] == 'empty' and df_kindergarten.iloc[i]['addr:place'] != 'empty':
+                df_kindergarten.iloc[i]['addr:street'] = df_kindergarten.iloc[i]['addr:place']
+
+        # Заполнение name из official_name	old_name	short_name
+        df_kindergarten['name'] = df_kindergarten['name'].fillna('empty')
+        df_kindergarten['official_name'] = df_kindergarten['official_name'].fillna('empty')
+        df_kindergarten['old_name'] = df_kindergarten['old_name'].fillna('empty')
+        df_kindergarten['short_name'] = df_kindergarten['short_name'].fillna('empty')
+        for i in range(df_kindergarten.shape[0]):
+            if df_kindergarten.iloc[i]['name'] == 'empty' and df_kindergarten.iloc[i]['official_name'] != 'empty':
+                df_kindergarten.iloc[i]['name'] = df_kindergarten.iloc[i]['official_name']
+            elif df_kindergarten.iloc[i]['name'] == 'empty' and df_kindergarten.iloc[i]['short_name'] != 'empty':
+                df_kindergarten.iloc[i]['name'] = df_kindergarten.iloc[i]['short_name']
+            elif df_kindergarten.iloc[i]['name'] == 'empty' and df_kindergarten.iloc[i]['old_name'] != 'empty':
+                df_kindergarten.iloc[i]['name'] = df_kindergarten.iloc[i]['old_name']
+
+        # Заполнение website из url contact:website
+        df_kindergarten['website'] = df_kindergarten['website'].fillna('empty')
+        df_kindergarten['contact:website'] = df_kindergarten['contact:website'].fillna('empty')
+        for i in range(df_kindergarten.shape[0]):
+            if df_kindergarten.iloc[i]['website'] == 'empty' and df_kindergarten.iloc[i]['contact:website'] != 'empty':
+                df_kindergarten.iloc[i]['website'] = df_kindergarten.iloc[i]['contact:website']
+
+        # Удаление колонок, которые больше не пригодятся
+        addititonal_dropping_columns = ['addr:full', 'addr:place', 'short_name', 'contact:website', 'old_name',
+                                        'official_name']
+        df_kindergarten.drop(addititonal_dropping_columns, axis=1, inplace=True)
+
+        # Заполнение оставшихся пустых данных нулевыми значениями
+        df_kindergarten['building:levels'] = df_kindergarten['building:levels'].fillna('0')
+        df_kindergarten['capacity'] = df_kindergarten['capacity'].fillna('0')
+
+        # Добавление данных о количестве студентов
+        df_kindergarten['students_number'] = ""
+        df_kindergarten['students_number'] = df_kindergarten['students_number'].replace('', '0')
+
+        # Запись в файл
+        self.geo_write_data(df_kindergarten, self.kindergarten_data_name_transform)
 
 
     data_name = 'map_test.osm'
     school_data_name_raw = 'schools_raw.geojson'
     school_data_name_transform = 'schools_transform.geojson'
+    kindergarten_data_name_raw = 'kindergartens_raw.geojson'
+    kindergarten_data_name_transform = 'kindergartens_transform.geojson'
     geo_test_data_name = 'RU-MOW.osm.pbf'
     data_path = ''
     geo = ''
@@ -126,7 +203,8 @@ class osm_parser():
 
 osm = osm_parser()
 osm.get_path()
-osm.transform_school()
+#osm.transform_school()
+osm.transform_kindergarten()
 
 
 
