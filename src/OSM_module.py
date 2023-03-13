@@ -32,6 +32,51 @@ class osm_parser():
     def geo_write_data(self, df, file_path):
         df.to_file(self.data_path + file_path, driver="GeoJSON")
 
+    #Функция для вычисления центроида для объектов
+    def calculate_centroid(self, df):
+        centroid_list_longitude = []
+        centroid_list_latitude = []
+        for i in range(df.shape[0]):
+            centroid_x = 0
+            centroid_y = 0
+            counter = 0
+            if str(type(df.iloc[i]['geometry'])).split("'")[1] == 'shapely.geometry.polygon.Polygon':
+                longitude, latitude = df.iloc[i]['geometry'].exterior.coords.xy
+                for j in range(len(longitude)):
+                    counter += 1
+                    centroid_x += longitude[j]
+                    centroid_y += latitude[j]
+                centroid_x = centroid_x / counter
+                centroid_y = centroid_y / counter
+
+            elif str(type(df.iloc[i]['geometry'])).split("'")[1] == 'shapely.geometry.point.Point':
+                centroid_x = list(df.iloc[-1]['geometry'].coords)[0][0]
+                centroid_y = list(df.iloc[-1]['geometry'].coords)[0][1]
+
+            elif str(type(df.iloc[i]['geometry'])).split("'")[1] == 'shapely.geometry.multipolygon.MultiPolygon':
+                mycoordslist = [list(x.exterior.coords) for x in df.iloc[i]['geometry'].geoms]
+                for j in mycoordslist:
+                    for k in range(len(j)):
+                        counter += 1
+                        centroid_x += j[k][0]
+                        centroid_y += j[k][1]
+                centroid_x = centroid_x / counter
+                centroid_y = centroid_y / counter
+
+            elif str(type(df.iloc[i]['geometry'])).split("'")[1] == 'shapely.geometry.linestring.LineString':
+                longitude, latitude = df.iloc[i]['geometry'].coords.xy
+                for j in range(len(longitude)):
+                    counter += 1
+                    centroid_x += longitude[j]
+                    centroid_y += latitude[j]
+                centroid_x = centroid_x / counter
+                centroid_y = centroid_y / counter
+
+            centroid_list_longitude.append(centroid_x)
+            centroid_list_latitude.append(centroid_y)
+
+        return centroid_list_longitude, centroid_list_latitude
+
     #Функция по преобразованию raw geojson с данными по школам. Ноутбук с детальным преобразованием
     #в папке additional_code -- data_filtering_schools_diploma
     def transform_school(self):
@@ -107,6 +152,9 @@ class osm_parser():
         # Добавление данных о количестве студентов
         df_school['students_number'] = ""
         df_school['students_number'] = df_school['students_number'].replace('', '0')
+
+        #Добавление центроидов
+        df_school['centroid longitude'], df_school['centroid latitude'] = self.calculate_centroid(df_school)
 
         #Запись в файл
         self.geo_write_data(df_school, self.school_data_name_transform)
@@ -186,6 +234,9 @@ class osm_parser():
         df_kindergarten['students_number'] = ""
         df_kindergarten['students_number'] = df_kindergarten['students_number'].replace('', '0')
 
+        # Добавление центроидов
+        df_kindergarten['centroid longitude'], df_kindergarten['centroid latitude'] = self.calculate_centroid(df_kindergarten)
+
         # Запись в файл
         self.geo_write_data(df_kindergarten, self.kindergarten_data_name_transform)
 
@@ -203,7 +254,7 @@ class osm_parser():
 
 osm = osm_parser()
 osm.get_path()
-#osm.transform_school()
+osm.transform_school()
 osm.transform_kindergarten()
 
 
