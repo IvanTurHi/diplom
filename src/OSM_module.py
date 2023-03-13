@@ -25,7 +25,7 @@ class osm_parser():
 
     def read_data(self, file_name):
 
-        print(self.data_path + file_name)
+        #print(self.data_path + file_name)
         df = gpd.read_file(self.data_path + file_name)
         return df
 
@@ -103,6 +103,10 @@ class osm_parser():
         # Заполнение оставшихся пустых данных нулевыми значениями
         df_school['building:levels'] = df_school['building:levels'].fillna('0')
         df_school['capacity'] = df_school['capacity'].fillna('0')
+
+        # Добавление данных о количестве студентов
+        df_school['students_number'] = ""
+        df_school['students_number'] = df_school['students_number'].replace('', '0')
 
         #Запись в файл
         self.geo_write_data(df_school, self.school_data_name_transform)
