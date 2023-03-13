@@ -6,6 +6,7 @@ import requests
 import h3
 import geopandas as gpd
 import geojson
+import json
 
 class osm_parser():
 
@@ -317,6 +318,91 @@ class osm_parser():
         # Запись в файл
         self.geo_write_data(df_medicine, self.medicine_data_name_transform)
 
+    def fill_flats_and_levels_on_design(self, design_list, levels_list, flats_list):
+        #Заполнение данных о количестве квартира на основе данных об архитектуре
+        design_to_flat = {}
+        for i in range(len(design_list)):
+            if design_list[i] != 'empty' and design_list[i] not in design_to_flat and flats_list[i] != '0':
+                design_to_flat[design_list[i]] = int(flats_list[i])
+
+        for i in range(len(flats_list)):
+            if flats_list[i] == '0' and design_list[i] in design_to_flat:
+                flats_list[i] = str(design_to_flat[design_list[i]])
+
+        #Заполнение данных о количестве этажей на основе данных об архитектуре
+        design_to_level = {}
+        for i in range(len(design_list)):
+            if design_list[i] != 'empty' and design_list[i] not in design_to_level and levels_list[i] != '0':
+                design_to_level[design_list[i]] = int(levels_list[i])
+
+        for i in range(len(flats_list)):
+            if levels_list[i] == '0' and design_list[i] in design_to_level:
+                levels_list[i] = str(design_to_level[design_list[i]])
+
+        # Сохраняем данные по архитектуре и квартирам/этажам
+        with open(self.data_path + "design_to_level.json", "w", encoding="utf-8") as file:
+            json.dump(design_to_level, file)
+
+        with open(self.data_path + "design_to_flat.json", "w", encoding="utf-8") as file:
+            json.dump(design_to_flat, file)
+
+        return levels_list, flats_list
+
+
+    # Функция по преобразованию raw geojson с данными по жилым зданиям. Ноутбук с детальным преобразованием
+    # в папке additional_code -- data_filtering_building_diploma
+    def transform_building(self):
+
+        df_building = self.read_data(self.building_data_name_raw)
+        full_list_of_columns = df_building.columns.values.tolist()
+        target_list_of_columns = ['id', 'addr:city', 'addr:full', 'addr:housenumber', 'addr:postcode', 'addr:street',
+                                  'addr:place', 'building', 'building:levels', 'building:flats', 'design:ref',
+                                  'start_date ', 'geometry']
+        drop_list_of_columns = []
+        for i in full_list_of_columns:
+            if i not in target_list_of_columns:
+                drop_list_of_columns.append(i)
+
+        df_building.drop(drop_list_of_columns, axis=1, inplace=True)
+        updated_list_of_columns = df_building.columns.values.tolist()
+
+        # Заполняем пустые значение города Москвой
+        df_building['addr:city'] = df_building['addr:city'].fillna('Москва')
+
+        # Заполняем пустые значение посткода нулями
+        df_building['addr:postcode'] = df_building['addr:postcode'].fillna('000000')
+
+        #Заполняем поле building на apartments
+        df_building['building'] = df_building['building'].fillna('apartments')
+
+        # Заполнение addr:street из addr:place
+        df_building['addr:street'] = df_building['addr:street'].fillna('empty')
+        df_building['addr:place'] = df_building['addr:place'].fillna('empty')
+        for i in range(df_building.shape[0]):
+            if df_building.iloc[i]['addr:street'] == 'empty' and df_building.iloc[i]['addr:place'] != 'empty':
+                df_building.iloc[i]['addr:street'] = df_building.iloc[i]['addr:place']
+
+        # Удаление колонок, которые больше не пригодятся
+        addititonal_dropping_columns = ['addr:full', 'addr:place']
+        df_building.drop(addititonal_dropping_columns, axis=1, inplace=True)
+
+        # Заполнение оставшихся пустых данных нулевыми значениями
+        df_building['building:levels'] = df_building['building:levels'].fillna('0')
+        df_building['building:flats'] = df_building['building:flats'].fillna('0')
+        df_building['design:ref'] = df_building['design:ref'].fillna('empty')
+
+        #Заполняем пропуски по этажам и квартирам
+        df_building['building:levels'], df_building['building:flats'] = self.fill_flats_and_levels_on_design(
+            list(df_building['design:ref']), list(df_building['building:levels']), list(df_building['building:flats'])
+        )
+
+        # Добавление центроидов
+        df_building['centroid longitude'], df_building['centroid latitude'] = self.calculate_centroid(df_building)
+
+        # Запись в файл
+        self.geo_write_data(df_building, self.building_data_name_transform)
+
+
 
 
 
@@ -327,6 +413,8 @@ class osm_parser():
     kindergarten_data_name_transform = 'kindergartens_transform.geojson'
     medicine_data_name_raw = 'medicine_raw.geojson'
     medicine_data_name_transform = 'medicine_transform.geojson'
+    building_data_name_raw = 'buildings_raw.geojson'
+    building_data_name_transform = 'buildings_transform.geojson'
     geo_test_data_name = 'RU-MOW.osm.pbf'
     data_path = ''
     geo = ''
@@ -335,9 +423,10 @@ class osm_parser():
 
 osm = osm_parser()
 osm.get_path()
-#osm.transform_school()
-#osm.transform_kindergarten()
+osm.transform_school()
+osm.transform_kindergarten()
 osm.deftransform_medicine()
+osm.transform_building()
 
 
 
