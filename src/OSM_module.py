@@ -7,6 +7,9 @@ import h3
 import geopandas as gpd
 import geojson
 import json
+from pyproj import Geod
+from shapely import wkt
+
 
 class osm_parser():
 
@@ -77,6 +80,22 @@ class osm_parser():
             centroid_list_latitude.append(centroid_y)
 
         return centroid_list_longitude, centroid_list_latitude
+
+    def calculate_area(self, border_value, median_value, df):
+        area_list = []
+        geod = Geod(ellps="WGS84")
+        for i in range(df.shape[0]):
+            if str(type(df.iloc[i]['geometry'])).split("'")[1] == 'shapely.geometry.point.Point':
+                area = median_value
+
+            else:
+                poly = wkt.loads(str(df.iloc[i]['geometry']))
+                area = abs(geod.geometry_area_perimeter(poly)[0])
+
+            if area > border_value:
+                area = median_value
+            area_list.append(area)
+        return area_list
 
     #Функция по преобразованию raw geojson с данными по школам. Ноутбук с детальным преобразованием
     #в папке additional_code -- data_filtering_schools_diploma
@@ -156,6 +175,14 @@ class osm_parser():
 
         #Добавление центроидов
         df_school['centroid longitude'], df_school['centroid latitude'] = self.calculate_centroid(df_school)
+
+        #Добавление площади
+        border_value = 4000 #Все площади что больше этой заменяются на median_value, подобрано имперически
+        # необходимо в двух случаях: когда полигон является точкой и не получается узнать площадь
+        # и когда школа выкачивается вместе с окружающей ее территорией, что делает ее площадь во много раз больше.
+        # Значение является медианой для площадей школ, площади которых указаны верно
+        median_value = 1307
+        df_school['area'] = self.calculate_area(border_value, median_value, df_school)
 
         #Запись в файл
         self.geo_write_data(df_school, self.school_data_name_transform)
@@ -424,9 +451,9 @@ class osm_parser():
 osm = osm_parser()
 osm.get_path()
 osm.transform_school()
-osm.transform_kindergarten()
-osm.deftransform_medicine()
-osm.transform_building()
+#osm.transform_kindergarten()
+#osm.deftransform_medicine()
+#osm.transform_building()
 
 
 
