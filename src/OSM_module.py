@@ -265,6 +265,14 @@ class osm_parser():
         # Добавление центроидов
         df_kindergarten['centroid longitude'], df_kindergarten['centroid latitude'] = self.calculate_centroid(df_kindergarten)
 
+        #Добавление площади
+        border_value = 2000 #Все площади что больше этой заменяются на median_value, подобрано имперически
+        # необходимо в двух случаях: когда полигон является точкой и не получается узнать площадь
+        # и когда школа выкачивается вместе с окружающей ее территорией, что делает ее площадь во много раз больше.
+        # Значение является медианой для площадей школ, площади которых указаны верно
+        median_value = 910
+        df_kindergarten['area'] = self.calculate_area(border_value, median_value, df_kindergarten)
+
         # Запись в файл
         self.geo_write_data(df_kindergarten, self.kindergarten_data_name_transform)
 
@@ -342,6 +350,14 @@ class osm_parser():
         # Добавление центроидов
         df_medicine['centroid longitude'], df_medicine['centroid latitude'] = self.calculate_centroid(df_medicine)
 
+        #Добавление площади
+        border_value = 4000 #Все площади что больше этой заменяются на median_value, подобрано имперически
+        # необходимо в двух случаях: когда полигон является точкой и не получается узнать площадь
+        # и когда школа выкачивается вместе с окружающей ее территорией, что делает ее площадь во много раз больше.
+        # Значение является медианой для площадей школ, площади которых указаны верно
+        median_value = 902
+        df_medicine['area'] = self.calculate_area(border_value, median_value, df_medicine)
+
         # Запись в файл
         self.geo_write_data(df_medicine, self.medicine_data_name_transform)
 
@@ -365,6 +381,7 @@ class osm_parser():
         for i in range(len(flats_list)):
             if levels_list[i] == '0' and design_list[i] in design_to_level:
                 levels_list[i] = str(design_to_level[design_list[i]])
+
 
         # Сохраняем данные по архитектуре и квартирам/этажам
         with open(self.data_path + "design_to_level.json", "w", encoding="utf-8") as file:
@@ -426,6 +443,14 @@ class osm_parser():
         # Добавление центроидов
         df_building['centroid longitude'], df_building['centroid latitude'] = self.calculate_centroid(df_building)
 
+        #Добавление площади
+        border_value = 15000 #Все площади что больше этой заменяются на median_value, подобрано имперически
+        # необходимо в двух случаях: когда полигон является точкой и не получается узнать площадь
+        # и когда школа выкачивается вместе с окружающей ее территорией, что делает ее площадь во много раз больше.
+        # Значение является медианой для площадей школ, площади которых указаны верно
+        median_value = 911
+        df_building['area'] = self.calculate_area(border_value, median_value, df_building)
+
         # Запись в файл
         self.geo_write_data(df_building, self.building_data_name_transform)
 
@@ -451,9 +476,9 @@ class osm_parser():
 osm = osm_parser()
 osm.get_path()
 osm.transform_school()
-#osm.transform_kindergarten()
-#osm.deftransform_medicine()
-#osm.transform_building()
+osm.transform_kindergarten()
+osm.deftransform_medicine()
+osm.transform_building()
 
 
 
