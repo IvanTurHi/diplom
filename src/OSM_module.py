@@ -79,7 +79,7 @@ class osm_parser():
             centroid_list_longitude.append(centroid_x)
             centroid_list_latitude.append(centroid_y)
 
-        return centroid_list_longitude, centroid_list_latitude
+        return centroid_list_latitude, centroid_list_longitude
 
     def calculate_area(self, border_value, median_value, df):
         area_list = []
@@ -174,7 +174,7 @@ class osm_parser():
         df_school['students_number'] = df_school['students_number'].replace('', '0')
 
         #Добавление центроидов
-        df_school['centroid longitude'], df_school['centroid latitude'] = self.calculate_centroid(df_school)
+        df_school['centroid latitude'], df_school['centroid longitude'] = self.calculate_centroid(df_school)
 
         #Добавление площади
         border_value = 4000 #Все площади что больше этой заменяются на median_value, подобрано имперически
@@ -263,7 +263,7 @@ class osm_parser():
         df_kindergarten['students_number'] = df_kindergarten['students_number'].replace('', '0')
 
         # Добавление центроидов
-        df_kindergarten['centroid longitude'], df_kindergarten['centroid latitude'] = self.calculate_centroid(df_kindergarten)
+        df_kindergarten['centroid latitude'], df_kindergarten['centroid longitude'] = self.calculate_centroid(df_kindergarten)
 
         #Добавление площади
         border_value = 2000 #Все площади что больше этой заменяются на median_value, подобрано имперически
@@ -348,7 +348,7 @@ class osm_parser():
         df_medicine['building:levels'] = df_medicine['building:levels'].fillna('0')
 
         # Добавление центроидов
-        df_medicine['centroid longitude'], df_medicine['centroid latitude'] = self.calculate_centroid(df_medicine)
+        df_medicine['centroid latitude'], df_medicine['centroid longitude'] = self.calculate_centroid(df_medicine)
 
         #Добавление площади
         border_value = 4000 #Все площади что больше этой заменяются на median_value, подобрано имперически
@@ -441,7 +441,7 @@ class osm_parser():
         )
 
         # Добавление центроидов
-        df_building['centroid longitude'], df_building['centroid latitude'] = self.calculate_centroid(df_building)
+        df_building['centroid latitude'], df_building['centroid longitude'] = self.calculate_centroid(df_building)
 
         #Добавление площади
         border_value = 15000 #Все площади что больше этой заменяются на median_value, подобрано имперически
