@@ -542,15 +542,15 @@ class osm_parser():
     geo = ''
 
 
-
-osm = osm_parser()
-osm.get_path()
-osm.transform_school()
-osm.transform_kindergarten()
-osm.deftransform_medicine()
-osm.transform_building()
-osm.transform_borders()
-osm.split_objects_by_districts()
+if __name__ == '__main__':
+    osm = osm_parser()
+    osm.get_path()
+    osm.transform_school()
+    osm.transform_kindergarten()
+    osm.deftransform_medicine()
+    osm.transform_building()
+    osm.transform_borders()
+    osm.split_objects_by_districts()
 
 
 
