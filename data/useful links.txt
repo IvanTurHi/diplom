@@ -14,3 +14,5 @@ OSMnx -- https://osmnx.readthedocs.io/en/stable/index.html
 данные по типам объектов osm(что есть что) -- https://wiki.openstreetmap.org/wiki/RU:%D0%9E%D0%B1%D1%8A%D0%B5%D0%BA%D1%82%D1%8B_%D0%BA%D0%B0%D1%80%D1%82%D1%8B
 Глава книги про типы социальных карт -- https://bookonlime.ru/lecture/glava-7-karty-socialnoy-infrastruktury
 Метода расчета обеспеченности инфраструктурой от Яндекса -- https://yandex.ru/support/realty/search/indicators.html#infrastructure
+Открытые данные на mosru -- https://data.mos.ru/opendata?categoryId=7&IsActual=true
+Реформа жкх с данными по домам -- https://www.reformagkh.ru/myhouse?tid=2281095&page=4&limit=60&sort=name&order=asc&view=card

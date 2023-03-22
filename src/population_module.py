@@ -2,7 +2,6 @@ import requests
 from OSM_module import osm_parser
 from random import choice
 import time
-import openpyxl
 import re
 import pandas as pd
 
@@ -22,7 +21,7 @@ class population_module():
         url += 'info_add/classes'
         print(url)
         try:
-            resp = self.session.get(url, headers=self.headers, timeout=5)
+            resp = self.session.get(url, headers=self.headers, timeout=3)
             #resp = self.session.get(url, headers=self.random_headers())
             text = resp.text
             position_start = text.find('data-eo-id')
@@ -69,11 +68,11 @@ class population_module():
                     eoId = df_school.loc[i]['eoId']
                 if eoId != -1:
                 #print(eoId)
-                    df_school.loc[i]['students_number'] = self.get_students_number(eoId)
+                    df_school.loc[i, 'students_number'] = self.get_students_number(eoId)
                 time.sleep(1)
 
         print(self.list_of_bad_urls)
-        with open('bad_urls.txt', 'w') as f:
+        with open(osm.data_path + 'bad_urls.txt', 'w') as f:
             for i in self.list_of_bad_urls:
                 f.write(i + '\n')
 
@@ -82,6 +81,7 @@ class population_module():
 
     #Ищем пересечения с нашим датасетом школ и датасетом с мос ру, где представлены данные по школам
     #и обогощаем наши данные информациео сайте и eoId
+    #Подробно в папке additional_code ноутбук parse_students
     def get_website(self):
         #Загрузка данных
         osm = osm_parser()
@@ -135,9 +135,14 @@ class population_module():
 
     def try_to_parse_data_mos(self):
 
-        #url = 'https://apidata.mos.ru/v1/datasets/2263/features?api_key=0d41eef2b32bf578f1dd43148c5ffed1'
-        url = 'https://apidata.mos.ru/v1/datasets/2263?api_key=0d41eef2b32bf578f1dd43148c5ffed1'
+        url = 'https://apidata.mos.ru/v1/datasets/2263/features?api_key=0d41eef2b32bf578f1dd43148c5ffed1'
+        #url = 'https://apidata.mos.ru/v1/datasets/2263?api_key=0d41eef2b32bf578f1dd43148c5ffed1'
         response = requests.get(url)
+        js_obj = response.json()
+        osm = osm_parser()
+        osm.get_path()
+        osm.geo_write_data()
+
 
 
     api_key = '0d41eef2b32bf578f1dd43148c5ffed1'
@@ -163,12 +168,14 @@ class population_module():
     session = requests.Session()
     list_of_bad_urls = []
     xlsx_book = 'data-54518-2023-03-14.xlsx'
+    schools_mos_raw = 'schools_mos_row.geojson'
 
 
 if __name__ == '__main__':
     pm = population_module()
-    #pm.parse_students()
     #pm.get_website()
+    pm.parse_students()
+
 
 
 
