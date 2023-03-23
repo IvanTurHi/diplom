@@ -1,7 +1,6 @@
 import platform
 import os
 from bs4 import BeautifulSoup
-import pyrosm
 import requests
 import h3
 import geopandas as gpd
