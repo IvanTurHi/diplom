@@ -1,5 +1,6 @@
 attrs==22.2.0
 beautifulsoup4==4.11.2
+branca==0.6.0
 bs4==0.0.1
 certifi==2022.12.7
 charset-normalizer==3.0.1
@@ -9,8 +10,10 @@ cligj==0.7.2
 colorama==0.4.6
 cykhash==2.0.1
 Cython==0.29.33
+et-xmlfile==1.1.0
 Fiona==1.9.0
 Flask==2.2.2
+folium==0.14.0
 geojson==3.0.1
 geopandas==0.12.2
 h3==3.7.6
@@ -22,6 +25,7 @@ lxml==4.9.2
 MarkupSafe==2.1.2
 munch==2.5.0
 numpy==1.24.2
+openpyxl==3.1.2
 osmium==3.6.0
 packaging==23.0
 pandas==1.5.3

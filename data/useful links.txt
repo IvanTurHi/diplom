@@ -16,3 +16,5 @@ OSMnx -- https://osmnx.readthedocs.io/en/stable/index.html
 Метода расчета обеспеченности инфраструктурой от Яндекса -- https://yandex.ru/support/realty/search/indicators.html#infrastructure
 Открытые данные на mosru -- https://data.mos.ru/opendata?categoryId=7&IsActual=true
 Реформа жкх с данными по домам -- https://www.reformagkh.ru/myhouse?tid=2281095&page=4&limit=60&sort=name&order=asc&view=card
+Интерактивная карта на python -- https://habr.com/ru/company/skillfactory/blog/654239/
+Видео по добавлению карт через folium на веб сайт при помощи flask -- https://www.youtube.com/watch?v=bPgICpCQ4Qo
