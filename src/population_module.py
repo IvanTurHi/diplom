@@ -1,9 +1,88 @@
 import requests
 from OSM_module import osm_parser
-from random import choice
+from random import choice, randint
 import time
 import re
 import pandas as pd
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+import json
+
+
+class parser():
+
+    #Функция для создаения ссылок на сатй реформы жкх
+    #Ссылка выглядит так: https://www.reformagkh.ru/myhouse?tid=2281095&page=1&limit=60&view=list&sort=name&order=asc
+    #В файле представлены данные в формате tid=xxxxxxx-y, y-количество странц
+    #В самих ссылках все одинаковое, кроме tid и количества страниц
+    def get_links(self, path):
+        f = open(path, 'r')
+        link_list = []
+        for i in f:
+            s = i[:-1]
+            url_suf = s.split('-')[0]
+            pages_number = int(s.split('-')[1])
+            for j in range(pages_number):
+                link = self.base_url + url_suf + self.url_page + str(j+1) + self.appendix_url
+                link_list.append(link)
+
+        return link_list
+
+    def save_file(self, path, data):
+        with open(path, 'a') as outfile:
+            json.dump(data, outfile)
+
+    #Функция для парсинга данных о жилплощади с сайта реформы жкх.
+    def tyr_to_parse(self):
+        osm = osm_parser()
+        osm.get_path()
+        #тут нюанс, если нужно будет докачать остатки данных, то вместо GKH_reforma_links используем GKH_reforma_links_short
+        link_list = self.get_links(osm.data_path + self.likns_file)
+        #print(link_list)
+
+        #sur_id = 1
+        #Вообще с 1 начинаем, тут просто костыль тк меня забанили и надо продолжить, а не заново,
+        #забанили на tid=2281064, page=4
+        sur_id = 25906
+        big_map = {}
+
+        for i in link_list:
+
+            print(i)
+            self.browser.get(i)
+            time.sleep(0.2)
+            all_elements = self.browser.find_elements(By.XPATH, value='/html/body/section[5]/div/table/tbody/tr[*]')
+
+            for j in range(len(all_elements)):
+                try:
+                    mini_map = {}
+                    address = self.browser.find_element(By.XPATH, '//*[@id="myHouseList"]/tbody/tr[' + str(j+1)+ ']/td[2]/a').text
+                    year = self.browser.find_element(By.XPATH, '/html/body/section[5]/div/table/tbody/tr[' + str(j+1) + ']/td[3]').text
+                    area = self.browser.find_element(By.XPATH, '/html/body/section[5]/div/table/tbody/tr[' + str(j+1) + ']/td[4]').text
+                    mini_map['address'] = address
+                    mini_map['year'] = year
+                    mini_map['area'] = area
+
+                    big_map[sur_id] = mini_map
+                    sur_id += 1
+                except BaseException:
+                    print('ERRRRROR', i)
+
+                time.sleep(0.2)
+
+            print(sur_id)
+
+        self.browser.close()
+        self.browser.quit()
+
+        self.save_file(osm.data_path+self.buidings_area_file, big_map)
+
+    likns_file = 'GKH_reforma_links.txt'
+    buidings_area_file = 'buidings_area.json'
+    base_url = 'https://www.reformagkh.ru/myhouse?'
+    url_page = '&page='
+    appendix_url = '&limit=60&view=list&sort=name&order=asc'
+    browser = webdriver.Chrome()
 
 class population_module():
 
@@ -172,9 +251,11 @@ class population_module():
 
 
 if __name__ == '__main__':
-    pm = population_module()
+    #pm = population_module()
     #pm.get_website()
-    pm.parse_students()
+    #pm.parse_students()
+    pp = parser()
+    pp.tyr_to_parse()
 
 
 

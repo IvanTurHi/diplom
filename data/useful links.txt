@@ -18,3 +18,5 @@ OSMnx -- https://osmnx.readthedocs.io/en/stable/index.html
 Реформа жкх с данными по домам -- https://www.reformagkh.ru/myhouse?tid=2281095&page=4&limit=60&sort=name&order=asc&view=card
 Интерактивная карта на python -- https://habr.com/ru/company/skillfactory/blog/654239/
 Видео по добавлению карт через folium на веб сайт при помощи flask -- https://www.youtube.com/watch?v=bPgICpCQ4Qo
+folium и heatmap -- https://habr.com/ru/post/709092/
+Туториал по folium -- https://youtu.be/t9Ed5QyO7qY
