@@ -38,12 +38,14 @@ class parser():
         osm.get_path()
         #тут нюанс, если нужно будет докачать остатки данных, то вместо GKH_reforma_links используем GKH_reforma_links_short
         link_list = self.get_links(osm.data_path + self.likns_file)
+        #link_list = self.get_links(osm.data_path + 'GKH_reforma_links_short.txt')
+        print(len(link_list))
         #print(link_list)
 
-        #sur_id = 1
+        sur_id = 1
         #Вообще с 1 начинаем, тут просто костыль тк меня забанили и надо продолжить, а не заново,
         #забанили на tid=2281064, page=4
-        sur_id = 25906
+        #sur_id = 25906
         big_map = {}
 
         for i in link_list:
@@ -78,7 +80,7 @@ class parser():
         self.save_file(osm.data_path+self.buidings_area_file, big_map)
 
     likns_file = 'GKH_reforma_links.txt'
-    buidings_area_file = 'buidings_area.json'
+    buidings_area_file = 'buildings_area.json'
     base_url = 'https://www.reformagkh.ru/myhouse?'
     url_page = '&page='
     appendix_url = '&limit=60&view=list&sort=name&order=asc'
