@@ -7,6 +7,79 @@ import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 import json
+import geopandas as gpd
+
+
+class population():
+
+    def read_data_from_js(self, path):
+        with open('buildings_area.json', 'r') as f:
+            buildings_area_js = json.load(f)
+
+        return buildings_area_js
+
+    #Фунция для получения номера дома в нужном виде
+    def get_house_number(self, address_line, str_addr):
+        # Извлекаем адрес дома, делаем поиск по д.(он стоит перед номером дома) и выделяем номер дома
+        house_addr = address_line.split(str_addr)[-1]
+        house_addr = house_addr.split('д.')[1]
+        # Если дом без корпуса (нет к), то просто берем номер
+        if 'к' not in house_addr:
+            house_addr = house_addr.split(' ')[-1]
+        else:
+            # Иначе же делим по букве к и отбираем с помощью регулярного выражения
+            house_number = ''.join(re.findall(r'\d', house_addr.split('к')[0]))
+            house_corpus = ''.join(re.findall(r'\d', house_addr.split('к')[1]))
+            # Приводим номер дома к виду, который аналогичен виду в датаесте buildings_transform
+            house_addr = house_number + ' к' + house_corpus
+
+        return house_addr
+
+    #Функция для преобразования сданий на цлице
+    def street_transformation(self, buildings_area_js, street):
+        buildings_area_js_df = gpd.GeoDataFrame(columns=['street', 'house', 'year', 'area'])
+        for i in range(len(buildings_area_js)):
+            if street in buildings_area_js[str(i + 1)]['address']:
+                # buildings_area_js[str(i+1)]['address'].split(' ')[3]
+                year = buildings_area_js[str(i + 1)]['year']
+                area = buildings_area_js[str(i + 1)]['area']
+                # Все разделено на проблеы, извлекаем улицу, отбрасываем последнюю запятую
+                str_addr = buildings_area_js[str(i + 1)]['address'].split(' ')[3][:-1]
+                house_addr = self.get_house_number(buildings_area_js[str(i + 1)]['address'], str_addr)
+                buildings_area_js_df.loc[len(buildings_area_js_df.index)] = [str_addr, house_addr, year, area]
+                #print(str_addr, house_addr, year, area)
+
+        return buildings_area_js_df
+
+    # Функция для добавления данных по площади и году к зданию
+    # Поменять захардкоженные названия улиц на динамические и придумать как трансформировать улицы
+    # Подробно в ноутбуке add_area_and_year_to_buildings в папке additional_code
+    def add_data_to_buildings(self):
+
+        osm = osm_parser()
+        osm.get_path()
+        df_buildings = osm.read_data(osm.building_data_name_transform)
+        buildings_area_js = self.read_data_from_js(osm.data_path + self.buildings_area_data)
+
+        #Выделение датасета с зданиями по одной улице
+        sub_df = df_buildings[df_buildings['addr:street'].str.contains('1-я Владимирская улица')]
+        sub_df['year'] = ''
+        sub_df['area'] = ''
+
+        #Датасет трансформированных адресов из вспомогательного датасета buildings_area
+        buildings_area_js_df = self.street_transformation(buildings_area_js, '1-я Владимирская')
+
+        # Добавляем данные по году и площади к зданиям
+        for i in range(buildings_area_js_df.shape[0]):
+            year = buildings_area_js_df.loc[i]['year']
+            area = buildings_area_js_df.loc[i]['area']
+            house = buildings_area_js_df.loc[i]['house']
+            sub_df.loc[sub_df['addr:housenumber'] == house, 'year'] = year
+            sub_df.loc[sub_df['addr:housenumber'] == house, 'area'] = area
+
+        #Добавить запись основной датасет и сохранение в файл
+
+    buildings_area_data = 'buildings_area.json'
 
 
 class parser():
