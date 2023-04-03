@@ -18,6 +18,186 @@ class population():
 
         return buildings_area_js
 
+
+    # Убираем то, тчо не относится к названию улицы
+    def filter_osm_street_name(self, street_set_osm):
+        street_osm_list = list(street_set_osm)
+        list_of_full_prefixes = ['улица', 'проезд', 'переулок', 'шоссе', 'площадь', 'бульвар', 'набережная', 'аллея',
+                                 'проспект', 'тупик']
+        for i in range(len(street_osm_list)):
+            for j in list_of_full_prefixes:
+                street_osm_list[i] = street_osm_list[i].replace(j, '').strip().replace('  ', ' ')
+
+        return street_osm_list
+
+    def transform_gkh(self, buildings_area_js):
+        street_set = set()
+        street_map = {}
+        # Извлекаем только улицы из всего адреса
+        # Лист того что может идти перед названием улицы
+        prefix_list = ['б-р.', 'пл.', 'кв-л.', 'х.', 'рп.', 'мкр.', 'проезд.', 'аллея.', 'наб.', 'снт.', 'пр-кт.',
+                       'км.', 'туп.', 'ул.', 'пгт.', 'линия.', 'ш.', 'просек.', 'пер.', 'дп.']
+        for i in range(len(buildings_area_js)):
+            for j in prefix_list:
+                if j in buildings_area_js[str(i + 1)]['address']:
+                    s = buildings_area_js[str(i + 1)]['address'].split(j)[1]
+                    s = s.split(', ')[0][1:]
+                    # Костыль тк в некоторых названия указано в скобках название поселка, надо убрать)
+                    if '(п' in s:
+                        s = s.split('(п')[0]
+                        if s[-1] == ' ':
+                            s = s[:-1]
+                    street_set.add(s)
+                    street_map[s] = buildings_area_js[str(i + 1)]['address']
+            # print(buildings_area_js[str(i+1)]['address'])
+
+        return street_set, street_map
+
+    #Перенос всяких числовых значений и сокращений из конца в начало, тк нам нужен такой формат
+    def transfrom_address(self, address):
+        space_list = address.split(' ')
+        new_s = ''
+        new_s += space_list[-1] + ' '
+        for j in range(len(space_list) - 1):
+            new_s += space_list[j] + ' '
+        new_s = new_s[:-1]
+
+        return new_s
+
+    #Замена сокращений на полные названия
+    def replace_M_and_B_na_full_name(self, s, s_for_rep, s_to_rep):
+        return s.replace(s_for_rep, s_to_rep)
+
+    #Следующие три функици меняют сокращения на полные названия с учетом возможных окончаний
+    def check_for_M_and_B(self, address):
+        new_s = self.transfrom_address(address)
+        ending = new_s[-2:]
+        if 'М.' in new_s:
+            s_for_rep = 'М.'
+            if ending == 'ий':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Малый')
+            elif ending == 'ая':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Малая')
+            elif ending == 'ка':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Малая')
+            elif ending == 'ый':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Малый')
+            elif ending == 'ой':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Малый')
+            elif ending == 'ки':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Малые')
+            elif ending == 'ин':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Малый')
+        if 'Б.' in new_s:
+            s_for_rep = 'Б.'
+            if ending == 'ий':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Большой')
+            elif ending == 'ая':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Большая')
+            elif ending == 'ка':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Большая')
+            elif ending == 'ый':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Большой')
+            elif ending == 'ой':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Большой')
+            elif ending == 'ки':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Большие')
+            elif ending == 'ин':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Большой')
+        return new_s
+
+    def check_for_Sr_Verh_Nig(self, address):
+        new_s = self.transfrom_address(address)
+        ending = new_s[-2:]
+        if 'Ср.' in new_s:
+            s_for_rep = 'Ср.'
+            if ending == 'ая':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Средняя')
+            elif ending == 'ка':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Средняя')
+            elif ending == 'ий':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Средний')
+            elif ending == 'ый':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Средний')
+        if 'Верхн.' in new_s:
+            s_for_rep = 'Верхн.'
+            if ending == 'ая':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Верхняя')
+            elif ending == 'ка':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Верхняя')
+            elif ending == 'ий':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Верхний')
+            elif ending == 'ый':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Верхний')
+        if 'Ниж.' in new_s:
+            s_for_rep = 'Ниж.'
+            if ending == 'ая':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Нижняя')
+            elif ending == 'ка':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Нижняя')
+            elif ending == 'ий':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Нижний')
+            elif ending == 'ый':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Нижний')
+        return new_s
+
+    def check_for_Star_and_Nov(self, address):
+        new_s = self.transfrom_address(address)
+        ending = new_s[-2:]
+        if 'Стар.' in new_s:
+            s_for_rep = 'Стар.'
+            if ending == 'ий':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Старый')
+            if ending == 'ка':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Старая')
+            if ending == 'ая':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Старая')
+        if 'Нов.' in new_s:
+            s_for_rep = 'Нов.'
+            if ending == 'ий':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Новый')
+            if ending == 'ка':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Новая')
+            if ending == 'ая':
+                new_s = self.replace_M_and_B_na_full_name(new_s, s_for_rep, 'Новая')
+        return new_s
+
+    #Функция пробегается по всем различным улицам и приводит их к нужному формату, подробнее в других функциях
+    def transfrom_gkh_address(self, street_set, street_map):
+        new_street_set = set()
+        # Ищем в sete конструкцию вида *цифра*-я или *цифра*-й
+        # Если нашли, и при этом она стоит в конеце(на это второе re тут заточено), то переставляем эту конструкцию в начало
+        # Если нет конструкции или она и так в начале, то ничего не трогаем
+        for i in street_set:
+            new_s = ''
+            list_streets_with_tire = re.findall(r'\d-[я|й]', i)
+            if len(list_streets_with_tire) > 0 and ' ' in i:
+                if len(re.findall(r'\d-[я|й] ', i)) > 0:
+                    new_s = i
+                else:
+                    new_s = self.transfrom_address(i)
+            else:
+                new_s = i
+            # Поиск и замена Б. и М. на Большой и Малый и перенос их из конца адреса в начало
+            if len(re.findall(r'[Б|М]\.', i)) > 0:
+                new_s = self.check_for_M_and_B(i)
+            # Поиск и замена Ср., Верхн. и Ниж. на Серднюю, Вержнюю и Нижнюю и перенос их из конца адреса в начало
+            if len(re.findall(r'Ср\.|Верхн\.|Ниж\.', i)) > 0:
+                if 'Нижн.' in i:
+                    new_s = self.check_for_Sr_Verh_Nig(i.replace('Нижн.', 'Ниж.'))
+                else:
+                    new_s = self.check_for_Sr_Verh_Nig(i)
+            # Поиск и замена Стар. и Нов. на Старую и Новую и перенос их из конца адреса в начало
+            if len(re.findall(r'Стар\.|Нов\.', i)) > 0:
+                if 'Ст.' in i:
+                    new_s = self.check_for_Star_and_Nov(i.replace('Ст.', 'Стар.'))
+                else:
+                    new_s = self.check_for_Star_and_Nov(i)
+            new_street_set.add(new_s)
+            street_map[i] = new_s
+
+        return street_map
+
     #Фунция для получения номера дома в нужном виде
     def get_house_number(self, address_line, str_addr):
         # Извлекаем адрес дома, делаем поиск по д.(он стоит перед номером дома) и выделяем номер дома
@@ -35,22 +215,7 @@ class population():
 
         return house_addr
 
-    #Функция для преобразования сданий на цлице
-    def street_transformation(self, buildings_area_js, street):
-        buildings_area_js_df = gpd.GeoDataFrame(columns=['street', 'house', 'year', 'area'])
-        for i in range(len(buildings_area_js)):
-            if street in buildings_area_js[str(i + 1)]['address']:
-                # buildings_area_js[str(i+1)]['address'].split(' ')[3]
-                year = buildings_area_js[str(i + 1)]['year']
-                area = buildings_area_js[str(i + 1)]['area']
-                # Все разделено на проблеы, извлекаем улицу, отбрасываем последнюю запятую
-                str_addr = buildings_area_js[str(i + 1)]['address'].split(' ')[3][:-1]
-                house_addr = self.get_house_number(buildings_area_js[str(i + 1)]['address'], str_addr)
-                buildings_area_js_df.loc[len(buildings_area_js_df.index)] = [str_addr, house_addr, year, area]
-                #print(str_addr, house_addr, year, area)
-
-        return buildings_area_js_df
-
+    #Голованя функция модуля. Не запускалась. данные менялись через ноутбук
     # Функция для добавления данных по площади и году к зданию
     # Поменять захардкоженные названия улиц на динамические и придумать как трансформировать улицы
     # Подробно в ноутбуке add_area_and_year_to_buildings в папке additional_code
@@ -61,23 +226,60 @@ class population():
         df_buildings = osm.read_data(osm.building_data_name_transform)
         buildings_area_js = self.read_data_from_js(osm.data_path + self.buildings_area_data)
 
-        #Выделение датасета с зданиями по одной улице
-        sub_df = df_buildings[df_buildings['addr:street'].str.contains('1-я Владимирская улица')]
-        sub_df['year'] = ''
-        sub_df['area'] = ''
+        #Данные c OSM
+        street_set_osm = set(df_buildings['addr:street'])
+        street_osm_list = self.filter_osm_street_name(street_set_osm)
 
-        #Датасет трансформированных адресов из вспомогательного датасета buildings_area
-        buildings_area_js_df = self.street_transformation(buildings_area_js, '1-я Владимирская')
+        #Данные с ЖКХ
+        street_set, street_map = self.transform_gkh(buildings_area_js)
+        street_map = self.transfrom_gkh_address(street_set, street_map)
+        transform_to_original_street_map = {v: k for k, v in street_map.items()}
 
-        # Добавляем данные по году и площади к зданиям
-        for i in range(buildings_area_js_df.shape[0]):
-            year = buildings_area_js_df.loc[i]['year']
-            area = buildings_area_js_df.loc[i]['area']
-            house = buildings_area_js_df.loc[i]['house']
-            sub_df.loc[sub_df['addr:housenumber'] == house, 'year'] = year
-            sub_df.loc[sub_df['addr:housenumber'] == house, 'area'] = area
+        #Совмещение данных происходит в два этапа
+        #На первом создается словарь вида улица---дом: [год и площадь]
+        counter_house = 0
+        counter_street = 0
+        miss_match = 0
+        map_street_house_to_area_and_year = {}
+        for j in street_osm_list:
+            # Вычленяем нужный адрес
+            buildings_area_js_df = gpd.GeoDataFrame(columns=['street', 'house', 'year', 'area'])
+            for i in range(len(buildings_area_js)):
+                try:
+                    if transform_to_original_street_map[j] in buildings_area_js[str(i + 1)]['address']:
+                        counter_street += 1
+                        # buildings_area_js[str(i+1)]['address'].split(' ')[3]
+                        year = buildings_area_js[str(i + 1)]['year']
+                        area = buildings_area_js[str(i + 1)]['area']
+                        # Все разделено на проблеы, извлекаем улицу, отбрасываем последнюю запятую
+                        str_addr = buildings_area_js[str(i + 1)]['address'].split(' ')[3][:-1]
+                        house_addr = self.get_house_number(buildings_area_js[str(i + 1)]['address'], str_addr)
+                        buildings_area_js_df.loc[len(buildings_area_js_df.index)] = [str_addr, house_addr, year, area]
+                        # print(str_addr, house_addr, year, area)
+                        for k in range(buildings_area_js_df.shape[0]):
+                            year = buildings_area_js_df.loc[k]['year']
+                            area = buildings_area_js_df.loc[k]['area']
+                            house = buildings_area_js_df.loc[k]['house']
+                            # df_buildings.loc[(df_buildings['addr:housenumber'] == house) & (df_buildings['addr:street'].str.contains(j)), 'year'] = year
+                            # df_buildings.loc[(df_buildings['addr:housenumber'] == house) & (df_buildings['addr:street'].str.contains(j)), 'area'] = area
+                            key = j + '---' + house
+                            map_street_house_to_area_and_year[key] = [year, area]
+                            counter_house += 1
+                except BaseException:
+                    miss_match += 1
 
-        #Добавить запись основной датасет и сохранение в файл
+        #На втором этапе данные их словаря мэтчатся в датафрейм
+        for i in map_street_house_to_area_and_year:
+            street = i.split('---')[0]
+            house = i.split('---')[-1]
+            year = map_street_house_to_area_and_year[i][0]
+            area = map_street_house_to_area_and_year[i][-1]
+            df_buildings.loc[(df_buildings['addr:housenumber'] == house) & (
+                df_buildings['addr:street'].str.contains(street)), 'year'] = year
+            df_buildings.loc[(df_buildings['addr:housenumber'] == house) & (
+                df_buildings['addr:street'].str.contains(street)), 'area'] = area
+
+        osm.geo_write_data(df_buildings, osm.building_data_name_transform)
 
     buildings_area_data = 'buildings_area.json'
 
