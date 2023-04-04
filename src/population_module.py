@@ -13,7 +13,7 @@ import geopandas as gpd
 class population():
 
     def read_data_from_js(self, path):
-        with open('buildings_area.json', 'r') as f:
+        with open(path, 'r') as f:
             buildings_area_js = json.load(f)
 
         return buildings_area_js
