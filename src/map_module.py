@@ -54,9 +54,11 @@ class Map_master():
         borders_map = self.get_borders_in_right_oreder(df_target_borders)
 
         color = 'red'
+        #fill_color отвечает за заливку внутри полигона
+        #fill_opacity отвечает за прозрачность заливки
         for i in borders_map:
             for j in borders_map[i]:
-                folium.PolyLine(locations=j, color=color).add_to(map)
+                folium.PolyLine(locations=j, color=color, fill_color="blue", fill_opacity=0.3).add_to(map)
 
         return map
 
