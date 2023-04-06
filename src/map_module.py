@@ -68,8 +68,8 @@ class Map_master():
 
         return maps
 
-    #Функция по отрисовке гексагонов внутри полигона
-    def create_hexagons(self, maps, geom, hexagone_size):
+    #Функция извлечения координат для полигоново и мультиполигонов в нужном формате
+    def extract_borders(self, geom):
         geoJson = json.loads(gpd.GeoSeries(geom).to_json())
         geoJson = geoJson['features'][0]['geometry']
         if geoJson['type'] == 'Polygon':
@@ -84,6 +84,11 @@ class Map_master():
 
             geoJson = {'type': 'Polygon', 'coordinates': gjs}
 
+        return geoJson
+
+    #Функция по отрисовке гексагонов внутри полигона, на вход карта, геометрия района и размер гексагона с его цветом
+    def create_hexagons(self, maps, geom, hexagone_size, color):
+        geoJson = self.extract_borders(geom)
         hexagons = list(h3.polyfill(geoJson, hexagone_size))
         polylines = []
         lat = []
@@ -97,7 +102,7 @@ class Map_master():
             lng.extend(map(lambda v: v[1], polyline))
             polylines.append(polyline)
         for polyline in polylines:
-            my_PolyLine = folium.PolyLine(locations=polyline, weight=3, color='red')
+            my_PolyLine = folium.PolyLine(locations=polyline, weight=3, color=color)
             maps.add_child(my_PolyLine)
 
         polylines_x = []
@@ -118,7 +123,7 @@ class Map_master():
         #maps, polygons_hex, polylines = self.create_hexagons(maps, df_target_borders.iloc[0]['geometry'])
         for i in range(df_target_borders.shape[0]):
             maps, polygons_hex, polylines = self.create_hexagons(maps, df_target_borders.iloc[i]['geometry'],
-                                                                 hexagone_size=9)
+                                                                 hexagone_size=9, color='green')
             polygons_hex_list.append(polygons_hex)
             polylines_list.append(polylines)
 
