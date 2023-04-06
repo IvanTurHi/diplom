@@ -1,5 +1,11 @@
 import folium
 from OSM_module import osm_parser
+import h3
+import pandas as pd
+import numpy as np
+from shapely.geometry import Polygon
+import geopandas as gpd
+import json
 
 class Map_master():
 
@@ -49,7 +55,7 @@ class Map_master():
         return borders_map
 
     #Функция по выводу границ районов. На вход получает список id районов
-    def print_district_borders(self, map, districts_list):
+    def print_district_borders(self, maps, districts_list):
         df_target_borders = self.get_districts(districts_list)
         borders_map = self.get_borders_in_right_oreder(df_target_borders)
 
@@ -58,11 +64,65 @@ class Map_master():
         #fill_opacity отвечает за прозрачность заливки
         for i in borders_map:
             for j in borders_map[i]:
-                folium.PolyLine(locations=j, color=color, fill_color="blue", fill_opacity=0.3).add_to(map)
+                folium.PolyLine(locations=j, color=color, fill_color="blue", fill_opacity=0.3).add_to(maps)
 
-        return map
+        return maps
+
+    #Функция по отрисовке гексагонов внутри полигона
+    def create_hexagons(self, maps, geom, hexagone_size):
+        geoJson = json.loads(gpd.GeoSeries(geom).to_json())
+        geoJson = geoJson['features'][0]['geometry']
+        if geoJson['type'] == 'Polygon':
+            geoJson = {'type': 'Polygon', 'coordinates': [np.column_stack((np.array(geoJson['coordinates'][0])[:, 1],
+                                                                           np.array(geoJson['coordinates'][0])[:,
+                                                                           0])).tolist()]}
+        elif geoJson['type'] == 'MultiPolygon':
+            gjs = [[]]
+            for i in range(len(geoJson['coordinates'])):
+                gjs[0] += np.column_stack((np.array(geoJson['coordinates'][i][0])[:, 1],
+                                           np.array(geoJson['coordinates'][i][0])[:, 0])).tolist()
+
+            geoJson = {'type': 'Polygon', 'coordinates': gjs}
+
+        hexagons = list(h3.polyfill(geoJson, hexagone_size))
+        polylines = []
+        lat = []
+        lng = []
+        for hex in hexagons:
+            polygons = h3.h3_set_to_multi_polygon([hex], geo_json=False)
+            # flatten polygons into loops.
+            outlines = [loop for polygon in polygons for loop in polygon]
+            polyline = [outline + [outline[0]] for outline in outlines][0]
+            lat.extend(map(lambda v: v[0], polyline))
+            lng.extend(map(lambda v: v[1], polyline))
+            polylines.append(polyline)
+        for polyline in polylines:
+            my_PolyLine = folium.PolyLine(locations=polyline, weight=3, color='red')
+            maps.add_child(my_PolyLine)
+
+        polylines_x = []
+        for j in range(len(polylines)):
+            a = np.column_stack((np.array(polylines[j])[:, 1], np.array(polylines[j])[:, 0])).tolist()
+            polylines_x.append([(a[i][0], a[i][1]) for i in range(len(a))])
+
+        polygons_hex = pd.Series(polylines_x).apply(lambda x: Polygon(x))
+
+        return maps, polygons_hex, polylines
 
 
+    def print_hexagones(self, maps, districts_list):
+        df_target_borders = self.get_districts(districts_list)
+
+        polygons_hex_list = []
+        polylines_list = []
+        #maps, polygons_hex, polylines = self.create_hexagons(maps, df_target_borders.iloc[0]['geometry'])
+        for i in range(df_target_borders.shape[0]):
+            maps, polygons_hex, polylines = self.create_hexagons(maps, df_target_borders.iloc[i]['geometry'],
+                                                                 hexagone_size=9)
+            polygons_hex_list.append(polygons_hex)
+            polylines_list.append(polylines)
+
+        return maps
 
 
     osm = osm_parser()

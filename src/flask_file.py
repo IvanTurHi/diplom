@@ -23,9 +23,10 @@ def run_flask(osm):
     #Фигня с картой
     @app.route('/')
     def basic_map():
-        map = folium.Map()
+        maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
         districts_list = ['relation/181288', 'relation/364551', 'relation/2092928']
-        map = map_slave.print_district_borders(map, districts_list)
+        maps = map_slave.print_district_borders(maps, districts_list)
+        maps = map_slave.print_hexagones(maps, districts_list)
 
         #df_school_test_with_444, df_borders_izm = start()
         #print(df_borders_izm)
@@ -59,7 +60,7 @@ def run_flask(osm):
         #folium.Marker(location=[location_latitude, location_longitude],
         #              popup='<i>Marker</i>', tooltip='Click here').add_to(map)
 
-        return map._repr_html_()
+        return maps._repr_html_()
 
 
     #Адрес сервера, раскомментить на сервере
