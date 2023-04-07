@@ -456,8 +456,8 @@ class osm_parser():
 
     # Функция по преобразованию raw geojson с данными по административным границам районов. Ноутбук с детальным преобразованием
     # в папке additional_code -- intersect_objects_and_borders
-    def transform_borders(self):
-        df_borders = self.read_data(self.borders_data_name_raw)
+    def transform_borders(self, input_file, output_file, dict_file):
+        df_borders = self.read_data(input_file)
 
         full_list_of_columns = df_borders.columns.values.tolist()
         target_list_of_columns = ['id', 'addr:region', 'boundary', 'name', 'geometry']
@@ -491,36 +491,45 @@ class osm_parser():
         district_map = {}
         for i in range(df_borders.shape[0]):
             district_map[df_borders.loc[i]['district_name']] = df_borders.loc[i]['district_id']
-        with open(self.data_path + 'district_list.json', 'w', encoding='utf-8') as f:
+        with open(self.data_path + dict_file, 'w', encoding='utf-8') as f:
             json.dump(district_map, f)
 
-        self.geo_write_data(df_borders, self.borders_data_name_transform)
+        if input_file == self.regions_borders_data_name_raw:
+            df_borders.rename(columns={'district_name': 'region_name', 'district_area': 'region_area', 'district_id': 'region_id'}, inplace=True)
+
+
+        self.geo_write_data(df_borders, output_file)
 
     #Пересечение объектов с административныеми районами
-    def intersect_objects_and_districts(self, df_object, df_borders):
+    def intersect_objects_and_districts(self, df_object, df_borders, last_column):
         objects_w_district_data = gpd.sjoin(df_object, df_borders)
-        objects_w_district_data.drop(['index_right', 'addr:region', 'boundary', 'district_area'], axis=1, inplace=True)
+        objects_w_district_data.drop(['index_right', 'addr:region', 'boundary', last_column], axis=1, inplace=True)
 
         return objects_w_district_data
 
     #Функция по для добавления данных к какому району относится строение
-    def split_objects_by_districts(self):
-        df_borders = self.read_data(self.borders_data_name_transform)
+    #last_column -- костыль тк названия для датасета границ районво и округов разное
+    def split_objects_by_districts(self, type, last_column):
+        #Пересечение для каждого объекта как в рамках района(district), так и округа(region)
+        if type == 'district':
+            df_borders = self.read_data(self.borders_data_name_transform)
+        elif type == 'region':
+            df_borders = self.read_data(self.regions_borders_data_name_transform)
         df_school = self.read_data(self.school_data_name_transform)
         df_kindergarten = self.read_data(self.kindergarten_data_name_transform)
         df_medicine = self.read_data(self.medicine_data_name_transform)
         df_building = self.read_data(self.building_data_name_transform)
 
-        objects_w_district_data = self.intersect_objects_and_districts(df_school, df_borders)
+        objects_w_district_data = self.intersect_objects_and_districts(df_school, df_borders, last_column)
         self.geo_write_data(objects_w_district_data, self.school_data_name_transform)
 
-        objects_w_district_data = self.intersect_objects_and_districts(df_kindergarten, df_borders)
+        objects_w_district_data = self.intersect_objects_and_districts(df_kindergarten, df_borders, last_column)
         self.geo_write_data(objects_w_district_data, self.kindergarten_data_name_transform)
 
-        objects_w_district_data = self.intersect_objects_and_districts(df_medicine, df_borders)
+        objects_w_district_data = self.intersect_objects_and_districts(df_medicine, df_borders, last_column)
         self.geo_write_data(objects_w_district_data, self.medicine_data_name_transform)
 
-        objects_w_district_data = self.intersect_objects_and_districts(df_building, df_borders)
+        objects_w_district_data = self.intersect_objects_and_districts(df_building, df_borders, last_column)
         self.geo_write_data(objects_w_district_data, self.building_data_name_transform)
 
 
@@ -536,6 +545,8 @@ class osm_parser():
     building_data_name_transform = 'buildings_transform.geojson'
     borders_data_name_raw = 'administrative_borders_raw.geojson'
     borders_data_name_transform = 'administrative_borders_transform.geojson'
+    regions_borders_data_name_raw = 'administrative_regions_raw.geojson'
+    regions_borders_data_name_transform = 'administrative_regions_transform.geojson'
     geo_test_data_name = 'RU-MOW.osm.pbf'
     data_path = ''
     geo = ''
@@ -544,25 +555,11 @@ class osm_parser():
 if __name__ == '__main__':
     osm = osm_parser()
     osm.get_path()
-    osm.transform_school()
-    osm.transform_kindergarten()
-    osm.deftransform_medicine()
-    osm.transform_building()
-    osm.transform_borders()
-    osm.split_objects_by_districts()
-
-
-
-
-
-def try_parse_students():
-    # открываем сайт школы -- например https://schv444.mskobr.ru/
-    # Там переходим в раздел дполнительная информация -> классы -- https://schv444.mskobr.ru/info_add/classes
-    # Там нам нужен файл classes.json?eoId, для каждой школы меняется только eoId
-    # Пробуем его спиздить
-
-    resp = requests.get('https://info-sites.mskobr.ru/api/ekis/classes.json?eoId=13935')
-    #resp = requests.get('https://info-sites.mskobr.ru/api/ekis/classes.json?eoId=13264')
-    print(resp.text)
-
-#try_parse_students()
+    #osm.transform_school()
+    #osm.transform_kindergarten()
+    #osm.deftransform_medicine()
+    #osm.transform_building()
+    #osm.transform_borders(osm.borders_data_name_raw, osm.borders_data_name_transform, 'district_list.json')
+    #osm.transform_borders(osm.regions_borders_data_name_raw, osm.regions_borders_data_name_transform, 'regions_list.json')
+    #osm.split_objects_by_districts('district', 'district_area')
+    osm.split_objects_by_districts('region', 'region_area')

@@ -24,9 +24,15 @@ def run_flask(osm):
     @app.route('/')
     def basic_map():
         maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
-        districts_list = ['relation/181288', 'relation/364551', 'relation/2092928']
-        maps = map_slave.print_district_borders(maps, districts_list)
-        maps = map_slave.print_hexagones(maps, districts_list)
+        districts_list = ['relation/181288', 'relation/364551', 'relation/2092928', 'relation/240229']
+        region_list = ['relation/226149', 'relation/1320234']
+        type_t = 'district'
+        maps = map_slave.print_district_borders(maps, districts_list, type_t)
+        maps = map_slave.print_hexagones(maps, districts_list, type_t)
+        type_t = 'region'
+        maps = map_slave.print_district_borders(maps, region_list, type_t)
+        maps = map_slave.print_hexagones(maps, region_list, type_t)
+
 
         #df_school_test_with_444, df_borders_izm = start()
         #print(df_borders_izm)
