@@ -500,6 +500,50 @@ class osm_parser():
 
         self.geo_write_data(df_borders, output_file)
 
+    #Функция для преобразования данных по школам с datamos
+    def transfrom_schools_mos(self):
+        df_school = self.read_data(self.school_data_name_mos_raw)
+
+        #Проходим по всем строкам и для каждой организации разбиваем мультиполигон на отдельные здания и записываем как полигон
+        df_school_transform = gpd.GeoDataFrame(
+            columns=['id', 'short_name', 'full_name', 'eoid', 'website', 'orgtype', 'address', 'geometry'])
+        for i in range(df_school.shape[0]):
+            short_name = df_school.iloc[i]['Attributes']['ShortName']
+            full_name = df_school.iloc[i]['Attributes']['FullName']
+            eoId = df_school.iloc[i]['Attributes']['IDEKIS']
+            website = df_school.iloc[i]['Attributes']['WebSite']
+            orgtype = df_school.iloc[i]['Attributes']['OrgType']
+            if str(type(df_school.iloc[i]['geometry'])).split("'")[1] == 'shapely.geometry.multipolygon.MultiPolygon':
+                address_list = []
+                mycoordslist = df_school.iloc[i]['geometry'].geoms
+                geom_list = []
+                for j in range(len(df_school.iloc[i]['Attributes']['InstitutionsAddresses'])):
+                    address = df_school.iloc[i]['Attributes']['InstitutionsAddresses'][j]['Address']
+                    geom = mycoordslist[j]
+                    df_school_transform.loc[len(df_school_transform.index)] = [len(df_school_transform.index), short_name, full_name,
+                                                                               eoId, website, orgtype, address, geom]
+            #Если организация и так имеет полигон а не мультиполигон
+            elif str(type(df_school.iloc[i]['geometry'])).split("'")[1] == 'shapely.geometry.polygon.Polygon':
+                for j in range(len(df_school.iloc[i]['Attributes']['InstitutionsAddresses'])):
+                    address = df_school.iloc[i]['Attributes']['InstitutionsAddresses'][j]['Address']
+                geom = df_school.iloc[i]['geometry']
+                df_school_transform.loc[len(df_school_transform.index)] = [len(df_school_transform.index), short_name, full_name,
+                                                                           eoId, website, orgtype, address, geom]
+
+        #Оставляем только нужные типы организаций, считаем центроид и площадь
+        save_list = ['дошкольная образовательная организация', 'общеобразовательная организация']
+        df_school_transform = df_school_transform.loc[df_school_transform['orgtype'].isin(save_list)]
+        df_school_transform['centroid latitude'], df_school_transform['centroid longitude'] = self.calculate_centroid(
+            df_school_transform)
+        border_value = 10000  # Все площади что больше этой заменяются на median_value, подобрано имперически
+        # необходимо в двух случаях: когда полигон является точкой и не получается узнать площадь
+        # и когда школа выкачивается вместе с окружающей ее территорией, что делает ее площадь во много раз больше.
+        # Значение является медианой для площадей школ, площади которых указаны верно
+        median_value = 1307
+        df_school_transform['area'] = self.calculate_area(border_value, median_value, df_school_transform)
+
+        self.geo_write_data(df_school_transform, self.school_data_name_mos_transform)
+
     #Пересечение объектов с административныеми районами
     def intersect_objects_and_districts(self, df_object, df_borders, last_column):
         objects_w_district_data = gpd.sjoin(df_object, df_borders)
@@ -519,6 +563,7 @@ class osm_parser():
         df_kindergarten = self.read_data(self.kindergarten_data_name_transform)
         df_medicine = self.read_data(self.medicine_data_name_transform)
         df_building = self.read_data(self.building_data_name_transform)
+        df_school_mos = self.read_data(self.school_data_name_mos_transform)
 
         objects_w_district_data = self.intersect_objects_and_districts(df_school, df_borders, last_column)
         self.geo_write_data(objects_w_district_data, self.school_data_name_transform)
@@ -531,6 +576,9 @@ class osm_parser():
 
         objects_w_district_data = self.intersect_objects_and_districts(df_building, df_borders, last_column)
         self.geo_write_data(objects_w_district_data, self.building_data_name_transform)
+
+        objects_w_district_data = self.intersect_objects_and_districts(df_school_mos, df_borders, last_column)
+        self.geo_write_data(objects_w_district_data, self.school_data_name_mos_transform)
 
 
 
@@ -547,6 +595,8 @@ class osm_parser():
     borders_data_name_transform = 'administrative_borders_transform.geojson'
     regions_borders_data_name_raw = 'administrative_regions_raw.geojson'
     regions_borders_data_name_transform = 'administrative_regions_transform.geojson'
+    school_data_name_mos_raw = 'school_mos_raw.geojson'
+    school_data_name_mos_transform = 'school_datamos_transform'
     geo_test_data_name = 'RU-MOW.osm.pbf'
     data_path = ''
     geo = ''
@@ -556,10 +606,11 @@ if __name__ == '__main__':
     osm = osm_parser()
     osm.get_path()
     #osm.transform_school()
+    #osm.transfrom_schools_mos()
     #osm.transform_kindergarten()
     #osm.deftransform_medicine()
     #osm.transform_building()
     #osm.transform_borders(osm.borders_data_name_raw, osm.borders_data_name_transform, 'district_list.json')
     #osm.transform_borders(osm.regions_borders_data_name_raw, osm.regions_borders_data_name_transform, 'regions_list.json')
     #osm.split_objects_by_districts('district', 'district_area')
-    osm.split_objects_by_districts('region', 'region_area')
+    #osm.split_objects_by_districts('region', 'region_area')
