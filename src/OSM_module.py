@@ -501,6 +501,7 @@ class osm_parser():
         self.geo_write_data(df_borders, output_file)
 
     #Функция для преобразования данных по школам с datamos
+    #Подробно в ноутбуке data_mos_transform
     def transfrom_schools_mos(self):
         df_school = self.read_data(self.school_data_name_mos_raw)
 
@@ -596,7 +597,7 @@ class osm_parser():
     regions_borders_data_name_raw = 'administrative_regions_raw.geojson'
     regions_borders_data_name_transform = 'administrative_regions_transform.geojson'
     school_data_name_mos_raw = 'school_mos_raw.geojson'
-    school_data_name_mos_transform = 'school_datamos_transform'
+    school_data_name_mos_transform = 'school_datamos_transform.geojson'
     geo_test_data_name = 'RU-MOW.osm.pbf'
     data_path = ''
     geo = ''
