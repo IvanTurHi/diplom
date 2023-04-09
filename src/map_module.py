@@ -170,7 +170,7 @@ class Map_master():
             location_latitude = df_inter.iloc[i]['centroid latitude']
             location_longitude = df_inter.iloc[i]['centroid longitude']
             folium.Marker(location=[location_latitude, location_longitude],
-                          popup='<i>ТЫК</i>', tooltip='Click here', icon=folium.Icon(color=color)).add_to(maps)
+                          popup='<i>{}</i>'.format(df_inter.iloc[i]['short_name']), tooltip='Click here', icon=folium.Icon(color=color)).add_to(maps)
 
         return maps
 

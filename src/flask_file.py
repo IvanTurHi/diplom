@@ -2,7 +2,6 @@ from flask import Flask
 import folium
 from map_module import Map_master
 import geopandas as gpd
-import pandas as pd
 
 
 def run_flask(osm):
@@ -58,19 +57,26 @@ def run_flask(osm):
         maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
         districts_list = ['relation/181288', 'relation/364551', 'relation/2092928', 'relation/240229']
         region_list = ['relation/226149', 'relation/1320234']
+
+        #Отрисовка гексагонов на уровне районов
         type_t = 'district'
         maps = map_slave.print_district_borders(maps, districts_list, type_t)
         maps = map_slave.print_hexagones(maps, districts_list, type_t)
+
+        #Отрисовка гексагонов на уровне округов
         type_t = 'region'
         maps = map_slave.print_district_borders(maps, region_list, type_t)
         maps = map_slave.print_hexagones(maps, region_list, type_t)
 
+        #Вывод школ на уровне округов
         type_o = 'schools'
         df_objects = get_objects_df(type_o)
         type_t = 'region'
         polygons_df = get_polygons_df(type_t)
         color = 'blue'
         maps = map_slave.print_objects(maps, df_objects, polygons_df, color)
+
+        #Вывод школ на уровне районов
         type_t = 'district'
         polygons_df = get_polygons_df(type_t)
         color = 'red'
