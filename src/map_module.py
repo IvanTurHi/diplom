@@ -154,7 +154,7 @@ class Map_master():
                 self.big_polygons_hex_list_regions.append(polygons_hex)
                 self.big_polylines_list_regions.append(polylines)
 
-        print('list_ken', len(self.big_polygons_hex_list_regions), len(self.big_polygons_hex_list_district))
+        #print('list_ken', len(self.big_polygons_hex_list_regions), len(self.big_polygons_hex_list_district))
 
         return maps
 
@@ -167,10 +167,15 @@ class Map_master():
         #print(len(df_inter))
 
         for i in range(df_inter.shape[0]):
+            #Добавление маркера объекта на карту
             location_latitude = df_inter.iloc[i]['centroid latitude']
             location_longitude = df_inter.iloc[i]['centroid longitude']
             folium.Marker(location=[location_latitude, location_longitude],
                           popup='<i>{}</i>'.format(df_inter.iloc[i]['short_name']), tooltip='Click here', icon=folium.Icon(color=color)).add_to(maps)
+
+            #Добавление границ объекта на карту
+            points = [self.swap_points(list(df_inter.iloc[i]['geometry'].exterior.coords))]
+            folium.PolyLine(locations=points, color=color, fill_color="blue", fill_opacity=0.3).add_to(maps)
 
         return maps
 
