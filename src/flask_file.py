@@ -71,10 +71,10 @@ def run_flask(osm):
         #Вывод школ на уровне округов
         type_o = 'schools'
         df_objects = get_objects_df(type_o)
-        #type_t = 'region'
-        #polygons_df = get_polygons_df(type_t)
-        #color = 'blue'
-        #maps = map_slave.print_objects(maps, df_objects, polygons_df, color)
+        type_t = 'region'
+        polygons_df = get_polygons_df(type_t)
+        color = 'blue'
+        maps = map_slave.print_objects(maps, df_objects, polygons_df, color)
 
         #Вывод школ на уровне районов
         type_t = 'district'
