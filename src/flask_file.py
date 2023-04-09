@@ -1,6 +1,8 @@
 from flask import Flask
 import folium
 from map_module import Map_master
+import geopandas as gpd
+import pandas as pd
 
 
 def run_flask(osm):
@@ -20,6 +22,36 @@ def run_flask(osm):
     def hello_sasha():
         return 'Hello, Sasha! This is our diploma. CRY!'
 
+    #Функция для загрузки данных
+    def get_objects_df(type_o):
+        if type_o == 'schools':
+            return osm.read_data(osm.school_data_name_mos_transform)
+        elif type_o == 'buildings':
+            return osm.read_data(osm.building_data_name_transform)
+        elif type_o == 'medicine':
+            return osm.read_data(osm.medicine_data_name_transform)
+
+    #Функция для сбора всех гексагонов в один большой список
+    def form_geom_list_of_polygons(big_list):
+        list_of_p = []
+        for i in range(len(big_list)):
+            for j in range(len(big_list[i])):
+                list_of_p += list(big_list[i][j])
+
+        return list_of_p
+
+    #Функция возвращает датафрейм полигонов, что бы его потом можно было пересечь с датафреймом объектов
+    def get_polygons_df(type_t):
+        polygons_df = gpd.GeoDataFrame(columns=['geometry'])
+        if type_t == 'district':
+            list_of_p = form_geom_list_of_polygons(map_slave.big_polygons_hex_list_district)
+        elif type_t == 'region':
+            list_of_p = form_geom_list_of_polygons(map_slave.big_polygons_hex_list_regions)
+
+        polygons_df['geometry'] = list_of_p
+
+        return polygons_df
+
     #Фигня с картой
     @app.route('/')
     def basic_map():
@@ -32,6 +64,17 @@ def run_flask(osm):
         type_t = 'region'
         maps = map_slave.print_district_borders(maps, region_list, type_t)
         maps = map_slave.print_hexagones(maps, region_list, type_t)
+
+        type_o = 'schools'
+        df_objects = get_objects_df(type_o)
+        type_t = 'region'
+        polygons_df = get_polygons_df(type_t)
+        color = 'blue'
+        maps = map_slave.print_objects(maps, df_objects, polygons_df, color)
+        type_t = 'district'
+        polygons_df = get_polygons_df(type_t)
+        color = 'red'
+        maps = map_slave.print_objects(maps, df_objects, polygons_df, color)
 
 
         #df_school_test_with_444, df_borders_izm = start()

@@ -131,7 +131,7 @@ class Map_master():
 
         return maps, polygons_hex_list, polylines_list
 
-
+    #Функция для отрисовки гексагонов на карте в пределах выбранных районов
     def print_hexagones(self, maps, districts_list, type_t):
         if type_t == 'district':
             df_target_borders = self.get_districts(districts_list)
@@ -142,20 +142,47 @@ class Map_master():
             hexagone_size = 8
             color = 'green'
 
-        big_polygons_hex_list = []
-        big_polylines_list = []
+
         #maps, polygons_hex, polylines = self.create_hexagons(maps, df_target_borders.iloc[0]['geometry'])
         for i in range(df_target_borders.shape[0]):
             maps, polygons_hex, polylines = self.create_hexagons(maps, df_target_borders.iloc[i]['geometry'],
-                                                                 hexagone_size=hexagone_size, color=color)
-            big_polygons_hex_list.append(polygons_hex)
-            big_polylines_list.append(polylines)
+                                                             hexagone_size=hexagone_size, color=color)
+            if type_t == 'district':
+                self.big_polygons_hex_list_district.append(polygons_hex)
+                self.big_polylines_list_district.append(polylines)
+            elif type_t == 'region':
+                self.big_polygons_hex_list_regions.append(polygons_hex)
+                self.big_polylines_list_regions.append(polylines)
+
+        print('list_ken', len(self.big_polygons_hex_list_regions), len(self.big_polygons_hex_list_district))
 
         return maps
 
-    def print_objects(self, maps, df_objects, district_list):
-        pass
+    #Функция для нанесения объектов на карту, которые ложатся внуть полигонов, поступающих на вход
+    def print_objects(self, maps, df_objects, polygons_df, color):
+
+        df_objects['centroid'] = df_objects.geometry.centroid
+        objects_df = df_objects.set_geometry('centroid')
+        df_inter = gpd.sjoin(objects_df, polygons_df)
+        #print(len(df_inter))
+
+        for i in range(df_inter.shape[0]):
+            location_latitude = df_inter.iloc[i]['centroid latitude']
+            location_longitude = df_inter.iloc[i]['centroid longitude']
+            folium.Marker(location=[location_latitude, location_longitude],
+                          popup='<i>ТЫК</i>', tooltip='Click here', icon=folium.Icon(color=color)).add_to(maps)
+
+        return maps
 
 
 
     osm = osm_parser()
+    #Их структура: в них хранятся районы/округа. По первому индексу можно получить соответственно один рейон или округ
+    #Далее ддя каждого района/округа хрантся полигоны, если он является мультиполигоном, второй индекс отвечает за это
+    #Далее хранятся уже сами гексагоны
+    #Тут хранятся полигоны гексагонов по округам
+    big_polygons_hex_list_regions = []
+    big_polylines_list_regions = []
+    #А тут хранятся полигоны гексагонов по районам
+    big_polygons_hex_list_district = []
+    big_polylines_list_district = []
