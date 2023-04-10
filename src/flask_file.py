@@ -42,10 +42,12 @@ def run_flask(osm):
     #Функция возвращает датафрейм полигонов, что бы его потом можно было пересечь с датафреймом объектов
     def get_polygons_df(type_t):
         polygons_df = gpd.GeoDataFrame(columns=['geometry'])
-        if type_t == 'district':
-            list_of_p = form_geom_list_of_polygons(map_slave.big_polygons_hex_list_district)
-        elif type_t == 'region':
-            list_of_p = form_geom_list_of_polygons(map_slave.big_polygons_hex_list_regions)
+        #if type_t == 'district':
+        #    list_of_p = form_geom_list_of_polygons(map_slave.big_polygons_hex_list_district)
+        #elif type_t == 'region':
+        #    list_of_p = form_geom_list_of_polygons(map_slave.big_polygons_hex_list_regions)
+        list_of_p = form_geom_list_of_polygons(map_slave.big_polygons_hex_list_district)
+        list_of_p += form_geom_list_of_polygons(map_slave.big_polygons_hex_list_regions)
 
         polygons_df['geometry'] = list_of_p
 
@@ -60,27 +62,29 @@ def run_flask(osm):
 
         #Отрисовка гексагонов на уровне районов
         type_t = 'district'
-        maps = map_slave.print_district_borders(maps, districts_list, type_t)
-        maps = map_slave.print_hexagones(maps, districts_list, type_t)
+        maps = map_slave.print_district_borders(maps, districts_list, type_t, 'district borders')
+        maps = map_slave.print_hexagones(maps, districts_list, type_t, 'district hexagons')
 
         #Отрисовка гексагонов на уровне округов
         type_t = 'region'
-        maps = map_slave.print_district_borders(maps, region_list, type_t)
-        maps = map_slave.print_hexagones(maps, region_list, type_t)
+        maps = map_slave.print_district_borders(maps, region_list, type_t, 'region borders')
+        maps = map_slave.print_hexagones(maps, region_list, type_t, 'region hexagons')
 
-        #Вывод школ на уровне округов
+        #Вывод школ
         type_o = 'schools'
         df_objects = get_objects_df(type_o)
         type_t = 'region'
         polygons_df = get_polygons_df(type_t)
         color = 'blue'
-        maps = map_slave.print_objects(maps, df_objects, polygons_df, color)
+        maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'school')
 
         #Вывод школ на уровне районов
-        type_t = 'district'
-        polygons_df = get_polygons_df(type_t)
-        color = 'red'
-        maps = map_slave.print_objects(maps, df_objects, polygons_df, color)
+        #type_t = 'district'
+        #polygons_df = get_polygons_df(type_t)
+        #color = 'red'
+        #maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'school')
+
+        folium.LayerControl().add_to(maps)
 
 
         #df_school_test_with_444, df_borders_izm = start()
