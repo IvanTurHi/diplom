@@ -166,7 +166,7 @@ class Map_master():
         return maps
 
     #Функция для нанесения объектов на карту, которые ложатся внуть полигонов, поступающих на вход
-    def print_objects(self, maps, df_objects, polygons_df, color, feature_group_name):
+    def print_objects(self, maps, df_objects, polygons_df, color, feature_group_name, marker, borders, circle):
 
         df_objects['centroid'] = df_objects.geometry.centroid
         objects_df = df_objects.set_geometry('centroid')
@@ -179,12 +179,26 @@ class Map_master():
             #Добавление маркера объекта на карту
             location_latitude = df_inter.iloc[i]['centroid latitude']
             location_longitude = df_inter.iloc[i]['centroid longitude']
-            folium.Marker(location=[location_latitude, location_longitude],
-                          popup='<i>{}</i>'.format(df_inter.iloc[i]['short_name']), tooltip='Click here', icon=folium.Icon(color=color)).add_to(feature_group_object)
+            if marker == True:
+                folium.Marker(location=[location_latitude, location_longitude],
+                          popup='<i>{}</i>'.format(df_inter.iloc[i]['short_name']),
+                              tooltip='Click here', icon=folium.Icon(color=color)).add_to(feature_group_object)
 
             #Добавление границ объекта на карту
-            points = [self.swap_points(list(df_inter.iloc[i]['geometry'].exterior.coords))]
-            folium.PolyLine(locations=points, color=color, fill_color="blue", fill_opacity=0.3).add_to(feature_group_object)
+            if borders == True:
+                points = [self.swap_points(list(df_inter.iloc[i]['geometry'].exterior.coords))]
+                folium.PolyLine(locations=points, color=color, fill_color="blue", fill_opacity=0.3).add_to(feature_group_object)
+
+            #Добавление кругов
+            if circle == True:
+                radius = 500
+                circle_color = 'red'
+                fill_color = 'blue'
+                folium.Circle(location=[location_latitude, location_longitude], radius = radius,
+                              color = circle_color, fill_color = fill_color).add_to(feature_group_object)
+
+            if marker == False and borders == False and circle == False:
+                pass
 
         feature_group_object.add_to(maps)
 
