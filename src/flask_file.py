@@ -1,4 +1,5 @@
 from flask import Flask
+from flask import render_template, render_template_string, request
 import folium
 from map_module import Map_master
 import geopandas as gpd
@@ -8,6 +9,11 @@ def run_flask(osm):
 
     app = Flask(__name__)
     map_slave = Map_master()
+
+    @app.route('/')
+    def basic_page():
+        return render_template('main_page.html')
+
 
     #Тестовая фигня, убрать потом
     def start():
@@ -53,39 +59,72 @@ def run_flask(osm):
 
         return polygons_df
 
+    #def working_wth_map(maps):
+#
+    #    districts_list = ['relation/181288', 'relation/364551', 'relation/2092928', 'relation/240229']
+    #    region_list = ['relation/226149', 'relation/1320234']
+#
+    #    #Отрисовка гексагонов на уровне районов
+    #    type_t = 'district'
+    #    maps = map_slave.print_district_borders(maps, districts_list, type_t, 'district borders')
+    #    maps = map_slave.print_hexagones(maps, districts_list, type_t, 'district hexagons')
+#
+    #    #Отрисовка гексагонов на уровне округов
+    #    type_t = 'region'
+    #    maps = map_slave.print_district_borders(maps, region_list, type_t, 'region borders')
+    #    maps = map_slave.print_hexagones(maps, region_list, type_t, 'region hexagons')
+#
+    #    #Вывод школ
+    #    type_o = 'schools'
+    #    df_objects = get_objects_df(type_o)
+    #    type_t = 'region'
+    #    polygons_df = get_polygons_df(type_t)
+    #    color = 'blue'
+    #    maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'school',
+    #                                   marker=True, borders=True, circle=True)
+#
+    #    folium.LayerControl().add_to(maps)
+#
+    #    return maps
+#
+    #@app.route('/get_data', methods=['POST', 'GET'])
+    #def get_data():
+    #    return (basic_map(True))
+
+    @app.route('/map_d/', methods=['POST'])
+    def get_data():
+        return basic_map(True)
+
     #Фигня с картой
-    @app.route('/')
-    def basic_map():
+    @app.route('/map')
+    def basic_map(data_flag=False):
         maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
-        districts_list = ['relation/181288', 'relation/364551', 'relation/2092928', 'relation/240229']
-        region_list = ['relation/226149', 'relation/1320234']
-
-        #Отрисовка гексагонов на уровне районов
-        type_t = 'district'
-        maps = map_slave.print_district_borders(maps, districts_list, type_t, 'district borders')
-        maps = map_slave.print_hexagones(maps, districts_list, type_t, 'district hexagons')
-
-        #Отрисовка гексагонов на уровне округов
-        type_t = 'region'
-        maps = map_slave.print_district_borders(maps, region_list, type_t, 'region borders')
-        maps = map_slave.print_hexagones(maps, region_list, type_t, 'region hexagons')
-
-        #Вывод школ
-        type_o = 'schools'
-        df_objects = get_objects_df(type_o)
-        type_t = 'region'
-        polygons_df = get_polygons_df(type_t)
-        color = 'blue'
-        maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'school',
-                                       marker=True, borders=True, circle=True)
+        if data_flag == True:
+            districts_list = ['relation/181288', 'relation/364551', 'relation/2092928', 'relation/240229']
+            region_list = ['relation/226149', 'relation/1320234']
+            #Отрисовка гексагонов на уровне районов
+            type_t = 'district'
+            maps = map_slave.print_district_borders(maps, districts_list, type_t, 'district borders')
+            maps = map_slave.print_hexagones(maps, districts_list, type_t, 'district hexagons')
+            #Отрисовка гексагонов на уровне округов
+            type_t = 'region'
+            maps = map_slave.print_district_borders(maps, region_list, type_t, 'region borders')
+            maps = map_slave.print_hexagones(maps, region_list, type_t, 'region hexagons')
+            #Вывод школ
+            type_o = 'schools'
+            df_objects = get_objects_df(type_o)
+            type_t = 'region'
+            polygons_df = get_polygons_df(type_t)
+            color = 'blue'
+            maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'school',
+                                           marker=True, borders=True, circle=True)
+            folium.LayerControl().add_to(maps)
 
         #Вывод школ на уровне районов
         #type_t = 'district'
         #polygons_df = get_polygons_df(type_t)
         #color = 'red'
         #maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'school')
-
-        folium.LayerControl().add_to(maps)
 
 
         #df_school_test_with_444, df_borders_izm = start()
@@ -120,7 +159,34 @@ def run_flask(osm):
         #folium.Marker(location=[location_latitude, location_longitude],
         #              popup='<i>Marker</i>', tooltip='Click here').add_to(map)
 
-        return maps._repr_html_()
+
+
+
+        html_map = maps._repr_html_()
+        #with open('./templates/map.html', 'r') as f:
+        #    html_text = f.read()
+#
+        return render_template('index.html', iframe=html_map)
+#
+        #return maps._repr_html_()
+
+        #В целом работает
+        #maps.save('templates/map.html')
+        #return render_template('index.html')
+
+        #return render_template_string(
+        #"""
+        #    <!DOCTYPE html>
+        #    <html>
+        #        <head></head>
+        #        <body>
+        #            <h1>Using an iframe</h1>
+        #            {{ iframe|safe }}
+        #        </body>
+        #    </html>
+        #""",
+        #iframe=html_map,
+        #)
 
 
     #Адрес сервера, раскомментить на сервере

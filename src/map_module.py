@@ -194,8 +194,8 @@ class Map_master():
                 radius = 500
                 circle_color = 'red'
                 fill_color = 'blue'
-                folium.Circle(location=[location_latitude, location_longitude], radius = radius,
-                              color = circle_color, fill_color = fill_color).add_to(feature_group_object)
+                folium.Circle(location=[location_latitude, location_longitude], radius=radius,
+                              color=circle_color, fill_color=fill_color).add_to(feature_group_object)
 
             if marker == False and borders == False and circle == False:
                 pass
