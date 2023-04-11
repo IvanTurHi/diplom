@@ -91,17 +91,32 @@ def run_flask(osm):
     #def get_data():
     #    return (basic_map(True))
 
+    def get_district_and_region_list(items):
+        districts_list = []
+        regions_list = []
+        for i in items:
+            if 'district' in i[0]:
+                districts_list.append(i[1])
+            else:
+                regions_list.append(i[1])
+        return districts_list, regions_list
+
     @app.route('/map_d/', methods=['POST'])
     def get_data():
-        return basic_map(True)
+        districts_list, regions_list = get_district_and_region_list(request.values.items())
+        #print(district_lists)
+        return basic_map(True, districts_list, regions_list)
+        #for i in request.values.values():
+        #    print(i)
+        #return request.values.values()
 
     #Фигня с картой
     @app.route('/map')
-    def basic_map(data_flag=False):
+    def basic_map(data_flag=False, districts_list=[], region_list=[]):
         maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
         if data_flag == True:
-            districts_list = ['relation/181288', 'relation/364551', 'relation/2092928', 'relation/240229']
-            region_list = ['relation/226149', 'relation/1320234']
+            #districts_list = ['relation/181288', 'relation/364551', 'relation/2092928', 'relation/240229']
+            #region_list = ['relation/226149', 'relation/1320234']
             #Отрисовка гексагонов на уровне районов
             type_t = 'district'
             maps = map_slave.print_district_borders(maps, districts_list, type_t, 'district borders')
@@ -166,7 +181,7 @@ def run_flask(osm):
         #with open('./templates/map.html', 'r') as f:
         #    html_text = f.read()
 #
-        return render_template('index.html', iframe=html_map)
+        return render_template('map_page.html', iframe=html_map, disname='Измайлово')
 #
         #return maps._repr_html_()
 

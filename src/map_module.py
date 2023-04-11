@@ -57,27 +57,28 @@ class Map_master():
 
     #Функция по выводу границ районов. На вход получает список id районов
     def print_district_borders(self, maps, districts_list, type_t, feature_group_name):
-        if type_t == 'district':
-            df_target_borders = self.get_districts(districts_list)
-            id_type = 'district_id'
-            color = 'black'
-        elif type_t == 'region':
-            df_target_borders = self.get_regions(districts_list)
-            id_type = 'region_id'
-            color = 'red'
+        if len(districts_list) > 0:
+            if type_t == 'district':
+                df_target_borders = self.get_districts(districts_list)
+                id_type = 'district_id'
+                color = 'black'
+            elif type_t == 'region':
+                df_target_borders = self.get_regions(districts_list)
+                id_type = 'region_id'
+                color = 'red'
 
-        borders_map = self.get_borders_in_right_oreder(df_target_borders, id_type=id_type)
+            borders_map = self.get_borders_in_right_oreder(df_target_borders, id_type=id_type)
 
-        feature_group_borders = folium.FeatureGroup(feature_group_name)
+            feature_group_borders = folium.FeatureGroup(feature_group_name)
 
-        #fill_color отвечает за заливку внутри полигона
-        #fill_opacity отвечает за прозрачность заливки
-        for i in borders_map:
-            for j in borders_map[i]:
-                #folium.PolyLine(locations=j, color=color, fill_color="blue", fill_opacity=0.3).add_to(maps)
-                folium.PolyLine(locations=j, color=color).add_to(feature_group_borders)
+            #fill_color отвечает за заливку внутри полигона
+            #fill_opacity отвечает за прозрачность заливки
+            for i in borders_map:
+                for j in borders_map[i]:
+                    #folium.PolyLine(locations=j, color=color, fill_color="blue", fill_opacity=0.3).add_to(maps)
+                    folium.PolyLine(locations=j, color=color).add_to(feature_group_borders)
 
-        feature_group_borders.add_to(maps)
+            feature_group_borders.add_to(maps)
         return maps
 
     #Функция извлечения координат для полигоново и мультиполигонов в нужном формате
