@@ -6,6 +6,7 @@ import numpy as np
 from shapely.geometry import Polygon
 import geopandas as gpd
 import json
+import branca
 
 class Map_master():
 
@@ -166,45 +167,154 @@ class Map_master():
 
         return maps
 
+    def intersction(self, df_objects, polygons_df):
+        df_objects['centroid'] = df_objects.geometry.centroid
+        polygons_df['polygon'] = polygons_df.geometry
+        objects_df = df_objects.set_geometry('centroid')
+
+        return gpd.sjoin(objects_df, polygons_df)
+
     #Функция для нанесения объектов на карту, которые ложатся внуть полигонов, поступающих на вход
     def print_objects(self, maps, df_objects, polygons_df, color, feature_group_name, marker, borders, circle):
+        if len(polygons_df) > 0:
+            #df_objects['centroid'] = df_objects.geometry.centroid
+            #objects_df = df_objects.set_geometry('centroid')
+            #df_inter = gpd.sjoin(objects_df, polygons_df)
+            self.df_inter = self.intersction(df_objects, polygons_df)
+            #print(len(df_inter))
 
-        df_objects['centroid'] = df_objects.geometry.centroid
-        objects_df = df_objects.set_geometry('centroid')
-        df_inter = gpd.sjoin(objects_df, polygons_df)
-        #print(len(df_inter))
+            feature_group_object = folium.FeatureGroup(feature_group_name)
 
-        feature_group_object = folium.FeatureGroup(feature_group_name)
+            for i in range(self.df_inter.shape[0]):
+                #Добавление маркера объекта на карту
+                location_latitude = self.df_inter.iloc[i]['centroid latitude']
+                location_longitude = self.df_inter.iloc[i]['centroid longitude']
+                if marker == True:
+                    folium.Marker(location=[location_latitude, location_longitude],
+                              popup='<i>{}</i>'.format(self.df_inter.iloc[i]['short_name']),
+                                  tooltip='Click here', icon=folium.Icon(color=color)).add_to(feature_group_object)
 
-        for i in range(df_inter.shape[0]):
-            #Добавление маркера объекта на карту
-            location_latitude = df_inter.iloc[i]['centroid latitude']
-            location_longitude = df_inter.iloc[i]['centroid longitude']
-            if marker == True:
-                folium.Marker(location=[location_latitude, location_longitude],
-                          popup='<i>{}</i>'.format(df_inter.iloc[i]['short_name']),
-                              tooltip='Click here', icon=folium.Icon(color=color)).add_to(feature_group_object)
+                #Добавление границ объекта на карту
+                if borders == True:
+                    points = [self.swap_points(list(self.df_inter.iloc[i]['geometry'].exterior.coords))]
+                    folium.PolyLine(locations=points, color=color, fill_color="blue", fill_opacity=0.3).add_to(feature_group_object)
 
-            #Добавление границ объекта на карту
-            if borders == True:
-                points = [self.swap_points(list(df_inter.iloc[i]['geometry'].exterior.coords))]
-                folium.PolyLine(locations=points, color=color, fill_color="blue", fill_opacity=0.3).add_to(feature_group_object)
+                #Добавление кругов
+                if circle == True:
+                    radius = 500
+                    circle_color = 'red'
+                    fill_color = 'blue'
+                    folium.Circle(location=[location_latitude, location_longitude], radius=radius,
+                                  color=circle_color, fill_color=fill_color).add_to(feature_group_object)
 
-            #Добавление кругов
-            if circle == True:
-                radius = 500
-                circle_color = 'red'
-                fill_color = 'blue'
-                folium.Circle(location=[location_latitude, location_longitude], radius=radius,
-                              color=circle_color, fill_color=fill_color).add_to(feature_group_object)
+                if marker == False and borders == False and circle == False:
+                    pass
 
-            if marker == False and borders == False and circle == False:
-                pass
-
-        feature_group_object.add_to(maps)
+            feature_group_object.add_to(maps)
 
         return maps
 
+    def color_poly_choropleth(self, maps, data, json, columns, legend_name, feature, bins):
+        folium.Choropleth(
+            geo_data=json,
+            name="choropleth",
+            data=data,
+            columns=columns,
+            key_on="feature.id",
+            fill_color="YlGn",
+            fill_opacity=0.7,
+            line_opacity=0.2,
+            legend_name=legend_name,
+            nan_fill_color='white',
+            bins=bins
+
+        ).add_to(maps)
+
+        return maps
+
+    def fill_opacity(self, x):
+        positive_fill = 0.5
+        negative_fill = 0.0
+        if self.first_flag:
+            self.first_flag = False
+            return negative_fill
+        if x['properties']['index_right'] not in self.is_hex_colored:
+            self.is_hex_colored[x['properties']['index_right']] = 1
+            return positive_fill
+        else:
+            self.is_hex_colored[x['properties']['index_right']] += 1
+            return negative_fill
+
+    def fill_color_for_hex(self, maps, df_intersection_for_choro, feature_group_name, count_map):
+
+        max_count = max(count_map.values())
+        min_count = min(count_map.values())
+        avg_count = int((max_count + min_count) / 2)
+        avg_1 = int((avg_count + min_count) / 2)
+        avg_2 = int((avg_count + max_count) / 2)
+        color_list = ['red', 'yellow', 'green']
+
+        colormap = branca.colormap.LinearColormap(vmin=avg_1, vmax=avg_2, colors=color_list)
+        self.is_hex_colored.clear()
+
+        itog = folium.GeoJson(
+            df_intersection_for_choro,
+            style_function = lambda x: {
+                'fillColor': colormap(x['properties']['school_count']),
+                'color': 'black',
+                'fillOpacity': self.fill_opacity(x)},
+            tooltip = folium.features.GeoJsonTooltip(fields=[
+                'school_count'],
+                 aliases=[
+                "Количество школ: "]),
+            name=feature_group_name).add_to(maps)
+
+        return maps
+
+    def choropleth_for_hex(self, maps, feature_group_name):
+        df_intersection_for_choro = self.df_inter.copy(deep=True)
+        df_intersection_for_choro.set_geometry('polygon')
+        df_intersection_for_choro.drop(columns=['geometry'], axis=1, inplace=True)
+        df_intersection_for_choro.rename(columns={'polygon': 'geometry'}, inplace=True)
+
+        ddf = df_intersection_for_choro.groupby('index_right')['id'].nunique()
+        index_list = list(ddf.index)
+        value_list = list(ddf)
+        count_map = {}
+        df_intersection_for_choro['school_count'] = ''
+        for i in range(len(index_list)):
+            count_map[index_list[i]] = value_list[i]
+            df_intersection_for_choro.loc[(df_intersection_for_choro['index_right'] == index_list[i]), 'school_count'] = value_list[i]
+
+        df_intersection_for_choro = gpd.GeoDataFrame(df_intersection_for_choro.set_index('id')[["geometry", 'index_right', 'school_count']]).to_json()
+
+        maps = self.fill_color_for_hex(maps, df_intersection_for_choro, feature_group_name, count_map)
+
+        return maps
+
+    def print_choropleth(self, maps, df_objects, df_borders, feature_group_name, type_t, object_type_name):
+        if len(df_borders) > 0:
+            if type_t == 'district':
+                id_column = 'district_id'
+            if type_t == 'region':
+                id_column = 'region_id'
+            district_list = list(df_borders[id_column])
+            df_objects = df_objects.loc[df_objects[id_column].isin(district_list)]
+
+            df_objects['geometry'] = df_objects['geometry'].astype(str)
+            agg_all = df_objects.groupby([id_column], as_index=False).agg({'centroid latitude': 'count'}).rename(
+                columns={'centroid latitude': 'counts'})
+            agg_all.rename(columns={id_column: 'id'}, inplace=True)
+            df_borders.rename(columns={id_column: 'id'}, inplace=True)
+            data_geo_1 = gpd.GeoSeries(df_borders.set_index('id')["geometry"]).to_json()
+
+            maps = self.color_poly_choropleth(maps, agg_all, data_geo_1, ["id","counts"],
+                                                                  object_type_name, 'counts', 10)
+
+            maps = self.choropleth_for_hex(maps, feature_group_name)
+
+
+        return maps
 
 
     osm = osm_parser()
@@ -217,3 +327,8 @@ class Map_master():
     #А тут хранятся полигоны гексагонов по районам
     big_polygons_hex_list_district = []
     big_polylines_list_district = []
+    #Датафрейм для пересеченных объектов
+    df_inter = gpd.GeoDataFrame()
+    #Вспомогательные переменные для раскраски гексагонов
+    is_hex_colored = {}
+    first_flag = True

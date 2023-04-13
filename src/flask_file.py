@@ -46,7 +46,7 @@ def run_flask(osm):
         return list_of_p
 
     #Функция возвращает датафрейм полигонов, что бы его потом можно было пересечь с датафреймом объектов
-    def get_polygons_df(type_t):
+    def get_polygons_df():
         polygons_df = gpd.GeoDataFrame(columns=['geometry'])
         #if type_t == 'district':
         #    list_of_p = form_geom_list_of_polygons(map_slave.big_polygons_hex_list_district)
@@ -101,11 +101,27 @@ def run_flask(osm):
                 regions_list.append(i[1])
         return districts_list, regions_list
 
+    def form_df_borders_for_chlor(df_target, support_df, id_name):
+        for i in range(len(support_df)):
+            df_target.loc[len(df_target.index)] = [support_df.iloc[i][id_name], support_df.iloc[i]['geometry']]
+
+        return df_target
+
+    def get_districts_or_regions(districts_list, region_list):
+        if len(districts_list) > 0:
+            return map_slave.get_districts(districts_list), 'district'
+        else:
+            return map_slave.get_regions(region_list), 'region'
+
+
     @app.route('/map_d/', methods=['POST'])
     def get_data():
         districts_list, regions_list = get_district_and_region_list(request.values.items())
         #print(district_lists)
-        return basic_map(True, districts_list, regions_list)
+        data_flag = True
+        if len(districts_list) == 0 and len(regions_list) == 0:
+            data_flag = False
+        return basic_map(data_flag, districts_list, regions_list)
         #for i in request.values.values():
         #    print(i)
         #return request.values.values()
@@ -113,26 +129,67 @@ def run_flask(osm):
     #Фигня с картой
     @app.route('/map')
     def basic_map(data_flag=False, districts_list=[], region_list=[]):
+        map_slave.big_polygons_hex_list_regions = []
+        map_slave.big_polygons_hex_list_district = []
         maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
         if data_flag == True:
             #districts_list = ['relation/181288', 'relation/364551', 'relation/2092928', 'relation/240229']
             #region_list = ['relation/226149', 'relation/1320234']
-            #Отрисовка гексагонов на уровне районов
-            type_t = 'district'
-            maps = map_slave.print_district_borders(maps, districts_list, type_t, 'district borders')
-            maps = map_slave.print_hexagones(maps, districts_list, type_t, 'district hexagons')
-            #Отрисовка гексагонов на уровне округов
-            type_t = 'region'
-            maps = map_slave.print_district_borders(maps, region_list, type_t, 'region borders')
-            maps = map_slave.print_hexagones(maps, region_list, type_t, 'region hexagons')
+
+            if len(districts_list) > 0:
+                #Отрисовка гексагонов на уровне районов
+                type_t = 'district'
+                feature_group_borders_name = 'district borders'
+                feature_group_hexagon_name = 'district hexagons'
+                borders_hex_list = districts_list
+                #maps = map_slave.print_district_borders(maps, districts_list, type_t, 'district borders')
+                #maps = map_slave.print_hexagones(maps, districts_list, type_t, 'district hexagons')
+            else:
+                #Отрисовка гексагонов на уровне округов
+                type_t = 'region'
+                feature_group_borders_name = 'region borders'
+                feature_group_hexagon_name = 'region hexagons'
+                borders_hex_list = region_list
+                #maps = map_slave.print_district_borders(maps, region_list, type_t, 'region borders')
+                #maps = map_slave.print_hexagones(maps, region_list, type_t, 'region hexagons')
+
+            maps = map_slave.print_district_borders(maps, borders_hex_list, type_t, feature_group_borders_name)
+            maps = map_slave.print_hexagones(maps, borders_hex_list, type_t, feature_group_hexagon_name)
+
             #Вывод школ
             type_o = 'schools'
             df_objects = get_objects_df(type_o)
-            type_t = 'region'
-            polygons_df = get_polygons_df(type_t)
+            polygons_df = get_polygons_df()
             color = 'blue'
             maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'school',
-                                           marker=True, borders=True, circle=True)
+                                           marker=True, borders=True, circle=False)
+
+            df_borders, type_t = get_districts_or_regions(districts_list, region_list)
+            #df_districts = map_slave.get_districts(districts_list)
+            #type_t = 'district'
+            maps = map_slave.print_choropleth(maps, df_objects, df_borders, 'schools in hex', type_t, 'schools')
+            #df_regions = map_slave.get_regions(region_list)
+            #type_t = 'region'
+            #maps = map_slave.print_choropleth(maps, df_objects, df_regions, 'schools in hex r', type_t, 'schools')
+
+
+
+            #df_districts = map_slave.get_regions(region_list)
+            #type_t = 'region'
+            #maps = map_slave.print_choropleth(maps, df_objects, df_districts, type_t, 'schools')
+
+            #Построение хлорокарты для районов
+            #df_borders_chlor = gpd.GeoDataFrame(columns=['id', 'geometry'])
+            #df_districts = map_slave.get_districts(districts_list)
+            #df_regions = map_slave.get_regions(region_list)
+            #df_borders_chlor = form_df_borders_for_chlor(df_borders_chlor, df_districts, 'district_id')
+            #df_borders_chlor = form_df_borders_for_chlor(df_borders_chlor, df_regions, 'region_id')
+
+
+
+
+
+
             folium.LayerControl().add_to(maps)
 
         #Вывод школ на уровне районов
