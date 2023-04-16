@@ -9,6 +9,10 @@ def run_flask(osm):
 
     app = Flask(__name__)
     map_slave = Map_master()
+    df_schools = osm.read_data(osm.school_data_name_mos_transform)
+    df_buildings = osm.read_data(osm.building_data_name_transform)
+    df_medicine = osm.read_data(osm.medicine_data_name_transform)
+
 
     @app.route('/')
     def basic_page():
@@ -30,11 +34,14 @@ def run_flask(osm):
     #Функция для загрузки данных
     def get_objects_df(type_o):
         if type_o == 'schools':
-            return osm.read_data(osm.school_data_name_mos_transform)
+            #return osm.read_data(osm.school_data_name_mos_transform)
+            return df_schools
         elif type_o == 'buildings':
-            return osm.read_data(osm.building_data_name_transform)
+            #return osm.read_data(osm.building_data_name_transform)
+            return df_buildings
         elif type_o == 'medicine':
-            return osm.read_data(osm.medicine_data_name_transform)
+            #return osm.read_data(osm.medicine_data_name_transform)
+            return df_medicine
 
     #Функция для сбора всех гексагонов в один большой список
     def form_geom_list_of_polygons(big_list):
@@ -59,47 +66,21 @@ def run_flask(osm):
 
         return polygons_df
 
-    #def working_wth_map(maps):
-#
-    #    districts_list = ['relation/181288', 'relation/364551', 'relation/2092928', 'relation/240229']
-    #    region_list = ['relation/226149', 'relation/1320234']
-#
-    #    #Отрисовка гексагонов на уровне районов
-    #    type_t = 'district'
-    #    maps = map_slave.print_district_borders(maps, districts_list, type_t, 'district borders')
-    #    maps = map_slave.print_hexagones(maps, districts_list, type_t, 'district hexagons')
-#
-    #    #Отрисовка гексагонов на уровне округов
-    #    type_t = 'region'
-    #    maps = map_slave.print_district_borders(maps, region_list, type_t, 'region borders')
-    #    maps = map_slave.print_hexagones(maps, region_list, type_t, 'region hexagons')
-#
-    #    #Вывод школ
-    #    type_o = 'schools'
-    #    df_objects = get_objects_df(type_o)
-    #    type_t = 'region'
-    #    polygons_df = get_polygons_df(type_t)
-    #    color = 'blue'
-    #    maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'school',
-    #                                   marker=True, borders=True, circle=True)
-#
-    #    folium.LayerControl().add_to(maps)
-#
-    #    return maps
-#
-    #@app.route('/get_data', methods=['POST', 'GET'])
-    #def get_data():
-    #    return (basic_map(True))
-
     def get_district_and_region_list(items):
         districts_list = []
         regions_list = []
+        category = 'none'
+        #for i in items:
+        #    print(i[0], i[1])
         for i in items:
             if 'district' in i[0]:
                 districts_list.append(i[1])
-            else:
+            elif 'region' in i[0]:
                 regions_list.append(i[1])
-        return districts_list, regions_list
+            elif 'category' in i[0]:
+                category = i[1]
+                #print(category)
+        return districts_list, regions_list, category
 
     def form_df_borders_for_chlor(df_target, support_df, id_name):
         for i in range(len(support_df)):
@@ -116,19 +97,19 @@ def run_flask(osm):
 
     @app.route('/map_d/', methods=['POST'])
     def get_data():
-        districts_list, regions_list = get_district_and_region_list(request.values.items())
+        districts_list, regions_list, category = get_district_and_region_list(request.values.items())
         #print(district_lists)
         data_flag = True
         if len(districts_list) == 0 and len(regions_list) == 0:
             data_flag = False
-        return basic_map(data_flag, districts_list, regions_list)
+        return basic_map(data_flag, districts_list, regions_list, category)
         #for i in request.values.values():
         #    print(i)
         #return request.values.values()
 
     #Фигня с картой
     @app.route('/map')
-    def basic_map(data_flag=False, districts_list=[], region_list=[]):
+    def basic_map(data_flag=False, districts_list=[], region_list=[], category='none'):
         map_slave.big_polygons_hex_list_regions = []
         map_slave.big_polygons_hex_list_district = []
         maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
@@ -157,21 +138,37 @@ def run_flask(osm):
             maps = map_slave.print_hexagones(maps, borders_hex_list, type_t, feature_group_hexagon_name)
 
             #Вывод школ
-            type_o = 'schools'
-            df_objects = get_objects_df(type_o)
+            #school_print = True
+            #building_print = True
             polygons_df = get_polygons_df()
-            color = 'blue'
-            maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'school',
-                                           marker=True, borders=True, circle=False)
+            if category == 'schools':
+                type_o = category
+                df_objects = get_objects_df(type_o)
+                color = 'red'
+                maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'school',
+                                               marker=False, borders=True, circle=False)
 
-            df_borders, type_t = get_districts_or_regions(districts_list, region_list)
-            #df_districts = map_slave.get_districts(districts_list)
-            #type_t = 'district'
-            maps = map_slave.print_choropleth(maps, df_objects, df_borders, 'schools in hex', type_t, 'schools')
-            #df_regions = map_slave.get_regions(region_list)
-            #type_t = 'region'
-            #maps = map_slave.print_choropleth(maps, df_objects, df_regions, 'schools in hex r', type_t, 'schools')
+                df_borders, type_t = get_districts_or_regions(districts_list, region_list)
+                maps = map_slave.print_choropleth(maps, df_objects, df_borders, 'schools in hex', type_t, 'schools')
 
+            #Вывод зданий
+            if category == 'buildings':
+                type_o = category
+                df_objects = get_objects_df(type_o)
+                color = 'red'
+                maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'buildings',
+                                               marker=False, borders=True, circle=False)
+                df_borders, type_t = get_districts_or_regions(districts_list, region_list)
+                maps = map_slave.print_choropleth(maps, df_objects, df_borders, 'buildings in hex', type_t, 'buildings')
+
+            if category == 'medicine':
+                type_o = category
+                df_objects = get_objects_df(type_o)
+                color = 'red'
+                maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'medicine',
+                                               marker=False, borders=True, circle=False)
+                df_borders, type_t = get_districts_or_regions(districts_list, region_list)
+                maps = map_slave.print_choropleth(maps, df_objects, df_borders, 'medicine in hex', type_t, 'medicine')
 
 
             #df_districts = map_slave.get_regions(region_list)
@@ -238,7 +235,7 @@ def run_flask(osm):
         #with open('./templates/map.html', 'r') as f:
         #    html_text = f.read()
 #
-        return render_template('map_page.html', iframe=html_map, disname='Измайлово')
+        return render_template('map_page.html', iframe=html_map)
 #
         #return maps._repr_html_()
 
