@@ -223,11 +223,22 @@ class Map_master():
                             tooltip='<i>{}</i>'.format(object['short_name'])).add_to(feature_group_object)
 
         if feature_group_name == 'buildings':
-
+            #Раскарска зданий в зависимости от года постройки, в try-except что не трогать все, что не имеет года
+            try:
+                if int(object['year']) < 1930:
+                    fillcolor = 'red'
+                elif int(object['year']) < 1970:
+                    fillcolor = 'orange'
+                elif int(object['year']) < 2000:
+                    fillcolor = 'yellow'
+                elif int(object['year']) < 2023:
+                    fillcolor = 'green'
+            except BaseException:
+                fillcolor = 'blue'
             folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
-                            popup='<i>Количество детей: {} \n Количество школьников: {} \n Количество взрослых: {}</i>'.format(
+                            popup='<i>Количество детей: {} \n Количество школьников: {} \n Количество взрослых: {} \n Год постройки: {}</i>'.format(
                                 object['kindergartens'], object['Pupils'],
-                                object['adults']),
+                                object['adults'], object['year']),
                             tooltip='<i>{}, {}</i>'.format(object['addr:street'],
                                                            object['addr:housenumber'])).add_to(feature_group_object)
 
@@ -241,14 +252,15 @@ class Map_master():
                       color=circle_color, fill_color=fill_color).add_to(feature_group_object)
 
     #Функция для нанесения объектов на карту, которые ложатся внуть полигонов, поступающих на вход
-    def print_objects(self, maps, df_objects, polygons_df, color, feature_group_name, marker, borders, circle):
+    def print_objects(self, maps, df_objects, polygons_df, color, feature_group_name, object_type_name, marker, borders, circle):
         if len(polygons_df) > 0:
             #df_objects['centroid'] = df_objects.geometry.centroid
             #objects_df = df_objects.set_geometry('centroid')
             #df_inter = gpd.sjoin(objects_df, polygons_df)
             self.df_inter = self.intersction(df_objects, polygons_df)
-            #print(len(df_inter))
-
+            #Для отображения года постройки у жилых зданий
+            if object_type_name == 'buildings':
+                self.df_inter['year'].fillna('нет данных', inplace=True)
             feature_group_object = folium.FeatureGroup(feature_group_name)
 
             for i in range(self.df_inter.shape[0]):
@@ -375,7 +387,6 @@ class Map_master():
         cols_list = ['kindergartens', 'Pupils', 'adults']
         count_map = {}
         df_object['count'] = ''
-        print('object_type_name', object_type_name)
         if object_type_name == 'schools' or object_type_name == 'medicine':
             for i in range(len(index_list)):
                 count_map[index_list[i]] = value_list[i]

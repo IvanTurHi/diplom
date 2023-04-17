@@ -95,17 +95,17 @@ def run_flask(osm):
             return map_slave.get_regions(region_list), 'region'
 
 
-    @app.route('/map_d/', methods=['POST'])
+    @app.route('/map_d/', methods=['POST', 'GET'])
     def get_data():
-        districts_list, regions_list, category = get_district_and_region_list(request.values.items())
-        #print(district_lists)
-        data_flag = True
-        if len(districts_list) == 0 and len(regions_list) == 0:
-            data_flag = False
-        return basic_map(data_flag, districts_list, regions_list, category)
-        #for i in request.values.values():
-        #    print(i)
-        #return request.values.values()
+        if request.method == 'POST':
+            districts_list, regions_list, category = get_district_and_region_list(request.values.items())
+
+            data_flag = True
+            if len(districts_list) == 0 and len(regions_list) == 0:
+                data_flag = False
+            return basic_map(data_flag, districts_list, regions_list, category)
+        elif request.method == 'GET':
+            return basic_map(data_flag=False)
 
     #Фигня с картой
     @app.route('/map')
@@ -145,7 +145,7 @@ def run_flask(osm):
                 type_o = category
                 df_objects = get_objects_df(type_o)
                 color = 'red'
-                maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'school',
+                maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'school', 'schools',
                                                marker=False, borders=True, circle=False)
 
                 df_borders, type_t = get_districts_or_regions(districts_list, region_list)
@@ -156,7 +156,7 @@ def run_flask(osm):
                 type_o = category
                 df_objects = get_objects_df(type_o)
                 color = 'red'
-                maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'buildings',
+                maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'buildings', 'buildings',
                                                marker=False, borders=True, circle=False)
                 df_borders, type_t = get_districts_or_regions(districts_list, region_list)
                 maps = map_slave.print_choropleth(maps, df_objects, df_borders, 'buildings in hex', type_t, 'buildings')
@@ -165,7 +165,7 @@ def run_flask(osm):
                 type_o = category
                 df_objects = get_objects_df(type_o)
                 color = 'red'
-                maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'medicine',
+                maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'medicine', 'medicine',
                                                marker=False, borders=True, circle=False)
                 df_borders, type_t = get_districts_or_regions(districts_list, region_list)
                 maps = map_slave.print_choropleth(maps, df_objects, df_borders, 'medicine in hex', type_t, 'medicine')
