@@ -426,14 +426,24 @@ class Map_master():
             df_objects = df_objects.loc[df_objects[id_column].isin(district_list)]
 
             df_objects['geometry'] = df_objects['geometry'].astype(str)
-            agg_all = df_objects.groupby([id_column], as_index=False).agg({'centroid latitude': 'count'}).rename(
-                columns={'centroid latitude': 'counts'})
+            if object_type_name == 'buildings':
+                df_objects['total_number_of_people'] = df_objects['kindergartens'].astype(int) + df_objects['Pupils'].astype(int) + df_objects['adults'].astype(int)
+                agg_all = df_objects.groupby([id_column], as_index=False).agg({'total_number_of_people': 'sum'}).rename(
+                    columns={'total_number_of_people': 'counts'})
+                legend_name = 'number of residents'
+            else:
+                agg_all = df_objects.groupby([id_column], as_index=False).agg({'centroid latitude': 'count'}).rename(
+                    columns={'centroid latitude': 'counts'})
+            if object_type_name == 'schools':
+                legend_name = 'number of schools'
+            if object_type_name == 'medicine':
+                legend_name = 'number of medicine objects'
             agg_all.rename(columns={id_column: 'id'}, inplace=True)
             df_borders.rename(columns={id_column: 'id'}, inplace=True)
             data_geo_1 = gpd.GeoSeries(df_borders.set_index('id')["geometry"]).to_json()
 
             maps = self.color_poly_choropleth(maps, agg_all, data_geo_1, ["id","counts"],
-                                                                  object_type_name, 'counts', 10)
+                                                                  legend_name, 'counts', 10)
 
             maps = self.choropleth_for_hex(maps, feature_group_name, object_type_name)
             #self.feature_group_build.add_to(maps)
