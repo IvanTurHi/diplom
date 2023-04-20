@@ -7,6 +7,7 @@ from shapely.geometry import Polygon
 import geopandas as gpd
 import json
 import branca
+from shapely.geometry import Point
 
 class Map_master():
 
@@ -196,7 +197,7 @@ class Map_master():
                           popup='<i>{}</i>'.format(object['short_name']),
                           tooltip='Click here', icon=folium.Icon(color=color)).add_to(feature_group_object)
 
-    def add_object_borders(self, object, color, fillcolor, fillopacity, feature_group_object, feature_group_name):
+    def add_object_borders(self, maps, object, color, fillcolor, fillopacity, feature_group_object, feature_group_name, mf_group):
         skip_flag = False
         if str(type(object['geometry'])).split("'")[1] == 'shapely.geometry.polygon.Polygon':
             points = [self.swap_points(list(object['geometry'].exterior.coords))]
@@ -218,8 +219,12 @@ class Map_master():
 
         if feature_group_name == 'school':
             #points = [self.swap_points(list(object['geometry'].exterior.coords))]
+            static_text = '<i>{}</i> <br>'.format(object['short_name'])
+            html_text = """
+            <li><a href="/map_{}" target=_top>Построить радиус доступности</a></li>
+              """.format(object['id'])
             folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
-                            popup='<i>{}</i>'.format(object['short_name']),
+                            popup=folium.Popup(static_text + html_text),
                             tooltip='<i>{}</i>'.format(object['short_name'])).add_to(feature_group_object)
 
         if feature_group_name == 'buildings':
@@ -235,12 +240,23 @@ class Map_master():
                     fillcolor = 'green'
             except BaseException:
                 fillcolor = 'blue'
-            folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
-                            popup='<i>Количество детей: {} \n Количество школьников: {} \n Количество взрослых: {} \n Год постройки: {}</i>'.format(
+            statistic_text = '<i>Количество детей: {} <Br> Количество школьников: {} <Br> Количество взрослых: {} <Br> Год постройки: {} <Br> </i>'
+            html = """
+          <li><a href="/map_{}" target=_top>{}</a></li>
+            """.format(object['id'].split('/')[1], object['id'].split('/')[1])
+            polyline = folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
+                            #popup=statistic_text.format(
+                            #    object['kindergartens'], object['Pupils'],
+                            #    object['adults'], object['year']),
+                            popup=folium.Popup(statistic_text.format(
                                 object['kindergartens'], object['Pupils'],
-                                object['adults'], object['year']),
+                                object['adults'], object['year'])),
                             tooltip='<i>{}, {}</i>'.format(object['addr:street'],
-                                                           object['addr:housenumber'])).add_to(feature_group_object)
+                                                           object['addr:housenumber']))
+            if mf_group == 'feature':
+                polyline.add_to(feature_group_object)
+            elif mf_group == 'map':
+                polyline.add_to(maps)
 
         if feature_group_name == 'medicine':
             folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
@@ -278,10 +294,10 @@ class Map_master():
                     #points = [self.swap_points(list(self.df_inter.iloc[i]['geometry'].exterior.coords))]
                     #folium.PolyLine(locations=points, color=color, fill_color="blue", fill_opacity=0.3,
                     #                popup='<i>{}</i>'.format(self.df_inter.iloc[i]['short_name']), tooltip='<i>{}</i>'.format(self.df_inter.iloc[i]['short_name'])).add_to(feature_group_object)
-                    self.add_object_borders(self.df_inter.iloc[i], color=color,
+                    self.add_object_borders(maps, self.df_inter.iloc[i], color=color,
                                             fillcolor='blue', fillopacity=0.3,
                                             feature_group_object=feature_group_object,
-                                            feature_group_name=feature_group_name)
+                                            feature_group_name=feature_group_name, mf_group='feature')
 
                 #Добавление кругов
                 if circle == True:
@@ -291,7 +307,8 @@ class Map_master():
                     #folium.Circle(location=[location_latitude, location_longitude], radius=radius,
                     #              color=circle_color, fill_color=fill_color).add_to(feature_group_object)
 
-                    self.add_circle(location_latitude, location_longitude, radius, circle_color, fill_color, feature_group_object, feature_group_name)
+                    #self.add_circle(location_latitude, location_longitude, radius, circle_color, fill_color, feature_group_object, feature_group_name)
+                    self.df_inter.iloc[i].buffer(500)
 
                 if marker == False and borders == False and circle == False:
                     pass
@@ -331,13 +348,6 @@ class Map_master():
             self.is_hex_colored[x['properties']['index_right']] += 1
             return negative_fill
 
-
-        #if x['properties']['index_right'] not in self.is_hex_colored_school:
-        #    self.is_hex_colored_school[x['properties']['index_right']] = 1
-        #    return positive_fill
-        #else:
-        #    self.is_hex_colored_school[x['properties']['index_right']] += 1
-        #    return negative_fill
 
     def fill_color_for_hex(self, maps, df_intersection_for_choro, feature_group_name, count_map, object_type_name):
 
@@ -411,8 +421,8 @@ class Map_master():
 
         #df_intersection_for_choro = gpd.GeoDataFrame(df_intersection_for_choro.set_index('id')[["geometry", 'index_right', 'school_count']]).to_json()
 
-        df_intersection_for_choro, count_map = self.split_by_hex_and_calculate(df_intersection_for_choro, object_type_name)
-        maps = self.fill_color_for_hex(maps, df_intersection_for_choro, feature_group_name, count_map, object_type_name)
+        self.df_intersection_for_choro, self.count_map = self.split_by_hex_and_calculate(df_intersection_for_choro, object_type_name)
+        maps = self.fill_color_for_hex(maps, self.df_intersection_for_choro, feature_group_name, self.count_map, object_type_name)
 
         return maps
 
@@ -454,6 +464,64 @@ class Map_master():
 
         return maps
 
+    def inter_for_buffer(self, df_objects, polygons_df):
+        df_objects['centroid'] = df_objects.geometry.centroid
+        polygons_df['polygon'] = polygons_df.geometry
+        objects_df = df_objects.set_geometry('centroid')
+
+        return gpd.sjoin(objects_df, polygons_df)
+
+    def print_buffer(self, maps, object, radius, df_buildings, feature_group_name):
+        centroid_latitude = list(object['centroid latitude'])[0]
+        centroid_longitude = list(object['centroid longitude'])[0]
+
+        feature_group = folium.FeatureGroup(feature_group_name)
+
+        df = pd.DataFrame(
+            {
+                'lat': [centroid_latitude],
+                'lon': [centroid_longitude],
+                'rad': [radius]
+            }
+        )
+
+        #Отрисовка круга нужного радиуса на карте. Так сложно потому что земля вам не шарик, а хер пойми что
+        df['geom'] = df.apply(lambda r: Point(r['lon'], r['lat']), axis=1)
+        gdf = gpd.GeoDataFrame(df, geometry='geom', crs='epsg:4326')
+        gdf_flat = gdf.to_crs('epsg:6347')
+        gdf_flat['geom'] = gdf_flat.geometry.buffer(df.rad)
+        gdf = gdf_flat.to_crs('epsg:4326')
+        points = list(list(gdf['geom'])[0].exterior.coords)
+        points = self.swap_points(points)
+        color = 'red'
+        fillcolor = 'blue'
+        fillopacity = 0.3
+        polyline = folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity)
+        polyline.add_to(maps)
+
+        #Датафрейм для пересечения
+        frame_for_inter = gpd.GeoDataFrame()
+        frame_for_inter['geometry'] = [Polygon(self.swap_points(points))]
+        print(frame_for_inter['geometry'])
+
+        #Получаем множество жилых домов, которые попадют в заданный буфер
+        df_inter_buffer = self.inter_for_buffer(df_buildings, frame_for_inter)
+
+        # Добавляем дома на карту
+        for i in range(df_inter_buffer.shape[0]):
+            self.add_object_borders(maps, df_inter_buffer.iloc[i], color='black',
+                                            fillcolor='green', fillopacity=0.3,
+                                            feature_group_object=None,
+                                            feature_group_name=feature_group_name, mf_group='map')
+            #points = [self.swap_points(list(df_inter_buffer.iloc[i]['geometry'].exterior.coords))]
+            #folium.PolyLine(locations=points, color='black', fill_color='green', fill_opacity=0.3,
+            #            popup='<i>{}</i>'.format(df_inter_buffer.iloc[i]['addr:street']),
+            #            tooltip='<i>{}</i>'.format(df_inter_buffer.iloc[i]['addr:housenumber'])).add_to(maps)
+
+        #feature_group.add_to(maps)
+
+        return maps
+
 
     osm = osm_parser()
     #Их структура: в них хранятся районы/округа. По первому индексу можно получить соответственно один рейон или округ
@@ -473,3 +541,6 @@ class Map_master():
 
     feature_group_build = folium.FeatureGroup('buiiiiild')
     feature_group_school = folium.FeatureGroup('schooool')
+
+    df_intersection_for_choro = gpd.GeoDataFrame()
+    count_map = {}

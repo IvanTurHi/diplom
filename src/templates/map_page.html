@@ -3,6 +3,11 @@
 <head></head>
 <body>
 	<h1>BDS</h1>
+<div class="main_container">
+        <ul class="menu-main">
+          <li><a href="{{ url_for('basic_page') }}">Main page</a></li>
+        </ul> 
+    </div>
         {{ iframe|safe }}
   <form method="post" action="/map_d/">
    <p><b>Выберите районы</b></p>

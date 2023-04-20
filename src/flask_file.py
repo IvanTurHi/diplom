@@ -16,6 +16,14 @@ class map_class():
 
     html_map = maps._repr_html_()
 
+    control = folium.LayerControl()
+
+    feature_group_borders_name_region = 'region borders'
+    feature_group_hexagon_name_region = 'region hexagons'
+
+    feature_group_borders_name_district = 'region borders'
+    feature_group_hexagon_name_district = 'region hexagons'
+
 
 def run_flask(osm):
 
@@ -111,6 +119,29 @@ def run_flask(osm):
         elif request.method == 'GET':
             return render_template('map_page.html', iframe=Map.html_map)
 
+    @app.route('/map_<object_id>')
+    def popup_id(object_id):
+        type_o = 'schools'
+        df_objects = get_objects_df(type_o)
+        object = df_objects.loc[df_objects['id'] == int(object_id)]
+        #Тут идет проверка на то, что наша школа не входит в ЦАО, тк для них радиус 750 метров, а не 500
+        distrcit_id_list = ['relation/1257484', 'relation/2162195', 'relation/1255942', 'relation/1257218',
+                            'relation/364001', 'relation/1275551', 'relation/1275608', 'relation/1257786',
+                            'relation/1255987', 'relation/1275627']
+        region_id_list = ['relation/2162196']
+        district_id = list(object['district_id'])[0]
+        region_id = list(object['region_id'])[0]
+        if district_id in distrcit_id_list or region_id in region_id_list:
+            radius = 750
+        else:
+            radius = 500
+        #return render_template('main_page.html')
+        feature_group_name = 'buildings'
+        Map.maps = map_slave.print_buffer(Map.maps, object, radius, df_buildings, feature_group_name)
+        #folium.LayerControl().add_to(Map.maps)
+        Map.repr()
+        return render_template('map_page.html', iframe=Map.html_map)
+
     #Фигня с картой
     @app.route('/map')
     def basic_map(data_flag=False, districts_list=[], region_list=[], category='none'):
@@ -176,63 +207,12 @@ def run_flask(osm):
                 df_borders, type_t = get_districts_or_regions(districts_list, region_list)
                 Map.maps = map_slave.print_choropleth(Map.maps, df_objects, df_borders, 'medicine in hex', type_t, 'medicine')
 
+            #control = folium.LayerControl()
 
-            #df_districts = map_slave.get_regions(region_list)
-            #type_t = 'region'
-            #maps = map_slave.print_choropleth(maps, df_objects, df_districts, type_t, 'schools')
-
-            #Построение хлорокарты для районов
-            #df_borders_chlor = gpd.GeoDataFrame(columns=['id', 'geometry'])
-            #df_districts = map_slave.get_districts(districts_list)
-            #df_regions = map_slave.get_regions(region_list)
-            #df_borders_chlor = form_df_borders_for_chlor(df_borders_chlor, df_districts, 'district_id')
-            #df_borders_chlor = form_df_borders_for_chlor(df_borders_chlor, df_regions, 'region_id')
-
-
-
-
-
-
-            folium.LayerControl().add_to(Map.maps)
-
-        #Вывод школ на уровне районов
-        #type_t = 'district'
-        #polygons_df = get_polygons_df(type_t)
-        #color = 'red'
-        #maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'school')
-
-
-        #df_school_test_with_444, df_borders_izm = start()
-        #print(df_borders_izm)
-        #map = folium.Map()
-#
-        ##Вывод границ района, координаты указаны не в том порядке,
-        ##поэтому координаты каждой точки необходимо поменять местами, иначе оказываемся где-то в Иране
-        #geom = list(df_borders_izm['geometry'])[0]
-        #points = list(geom.exterior.coords)
-        #for i in range(len(points)):
-        #    points[i] = points[i][::-1]
-        #print(points)
-#
-        ##Добавление маркеров школы на карту
-        #for i in range(df_school_test_with_444.shape[0]):
-        #    location_latitude = df_school_test_with_444.iloc[i]['centroid latitude']
-        #    location_longitude = df_school_test_with_444.iloc[i]['centroid longitude']
-        #    folium.Marker(location=[location_latitude, location_longitude],
-        #                  popup='<i>Школа №444</i>', tooltip='Click here').add_to(map)
-#
-        ##Добавление границ района на карту
-        #folium.PolyLine(locations=points, color='red').add_to(map)
-
-        #location_latitude = df_school_test_with_444.iloc[0]['centroid latitude']
-        #location_longitude = df_school_test_with_444.iloc[0]['centroid longitude']
-        #folium.Marker(location=[location_latitude, location_longitude],
-        #              popup='<i>Marker</i>', tooltip='Click here').add_to(map)
-#
-        #location_latitude = df_school_test_with_444.iloc[1]['centroid latitude']
-        #location_longitude = df_school_test_with_444.iloc[1]['centroid longitude']
-        #folium.Marker(location=[location_latitude, location_longitude],
-        #              popup='<i>Marker</i>', tooltip='Click here').add_to(map)
+            #folium.LayerControl().add_to(Map.maps)
+            Map.control.add_to(Map.maps)
+            #control.reset()
+            #print(control.base_layers)
 
 
 
@@ -241,26 +221,7 @@ def run_flask(osm):
         Map.repr()
 #
         return render_template('map_page.html', iframe=Map.html_map)
-#
-        #return maps._repr_html_()
 
-        #В целом работает
-        #maps.save('templates/map.html')
-        #return render_template('index.html')
-
-        #return render_template_string(
-        #"""
-        #    <!DOCTYPE html>
-        #    <html>
-        #        <head></head>
-        #        <body>
-        #            <h1>Using an iframe</h1>
-        #            {{ iframe|safe }}
-        #        </body>
-        #    </html>
-        #""",
-        #iframe=html_map,
-        #)
 
 
     #Адрес сервера, раскомментить на сервере
