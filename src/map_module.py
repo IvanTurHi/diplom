@@ -221,7 +221,7 @@ class Map_master():
             #points = [self.swap_points(list(object['geometry'].exterior.coords))]
             static_text = '<i>{}</i> <br>'.format(object['short_name'])
             html_text = """
-            <li><a href="/map_{}" target=_top>Построить радиус доступности</a></li>
+            <li><a href="/map_{}" target=_parent>Построить радиус доступности</a></li>
               """.format(object['id'])
             folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
                             popup=folium.Popup(static_text + html_text),

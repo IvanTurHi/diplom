@@ -3,14 +3,19 @@ from flask import render_template, render_template_string, request
 import folium
 from map_module import Map_master
 import geopandas as gpd
+from flask import session
+
+people_counter = 0
+map_dict = {}
 
 class map_class():
 
     def initiation(self):
-        self.maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
+        self.maps = folium.Map(width=1000, height=500, left='11%', location=[55.757220, 37.621184], zoom_start=12)
 
     def repr(self):
         self.html_map = self.maps._repr_html_()
+
 
     maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
 
@@ -28,15 +33,27 @@ class map_class():
 def run_flask(osm):
 
     app = Flask(__name__)
+    app.secret_key = '1234567890'
     map_slave = Map_master()
     df_schools = osm.read_data(osm.school_data_name_mos_transform)
     df_buildings = osm.read_data(osm.building_data_name_transform)
     df_medicine = osm.read_data(osm.medicine_data_name_transform)
-    Map = map_class()
+    #Map = map_class()
 
 
     @app.route('/')
     def basic_page():
+        global people_counter
+        global map_dict
+        if 'visits' in session:
+            session['visits'] = session.get('visits') + 1# чтение и обновление данных сессии
+        else:
+            session['visits'] = 1  # настройка данных сессии
+            session['Map'] = people_counter
+            Mapp = map_class()
+            map_dict[session['Map']] = Mapp
+            people_counter += 1
+        #return "Total visits: {}".format(session.get('visits'))
         return render_template('main_page.html')
 
     @app.route('/hello_sasha')
@@ -117,7 +134,7 @@ def run_flask(osm):
                 data_flag = False
             return basic_map(data_flag, districts_list, regions_list, category)
         elif request.method == 'GET':
-            return render_template('map_page.html', iframe=Map.html_map)
+            return render_template('map_page.html', iframe=map_dict[session['Map']].html_map)
 
     @app.route('/map_<object_id>')
     def popup_id(object_id):
@@ -137,19 +154,20 @@ def run_flask(osm):
             radius = 500
         #return render_template('main_page.html')
         feature_group_name = 'buildings'
-        Map.maps = map_slave.print_buffer(Map.maps, object, radius, df_buildings, feature_group_name)
+        map_dict[session['Map']].maps = map_slave.print_buffer(map_dict[session['Map']].maps, object, radius, df_buildings, feature_group_name)
         #folium.LayerControl().add_to(Map.maps)
-        Map.repr()
-        return render_template('map_page.html', iframe=Map.html_map)
+        map_dict[session['Map']].repr()
+        return render_template('map_page.html', iframe=map_dict[session['Map']].html_map)
 
     #Фигня с картой
     @app.route('/map')
     def basic_map(data_flag=False, districts_list=[], region_list=[], category='none'):
+        print(session)
         map_slave.big_polygons_hex_list_regions = []
         map_slave.big_polygons_hex_list_district = []
         #maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
         #Map = map_class()
-        Map.initiation()
+        map_dict[session['Map']].initiation()
         if data_flag == True:
             #districts_list = ['relation/181288', 'relation/364551', 'relation/2092928', 'relation/240229']
             #region_list = ['relation/226149', 'relation/1320234']
@@ -171,8 +189,8 @@ def run_flask(osm):
                 #maps = map_slave.print_district_borders(maps, region_list, type_t, 'region borders')
                 #maps = map_slave.print_hexagones(maps, region_list, type_t, 'region hexagons')
 
-            Map.maps = map_slave.print_district_borders(Map.maps, borders_hex_list, type_t, feature_group_borders_name)
-            Map.maps = map_slave.print_hexagones(Map.maps, borders_hex_list, type_t, feature_group_hexagon_name)
+            map_dict[session['Map']].maps = map_slave.print_district_borders(map_dict[session['Map']].maps, borders_hex_list, type_t, feature_group_borders_name)
+            map_dict[session['Map']].maps = map_slave.print_hexagones(map_dict[session['Map']].maps, borders_hex_list, type_t, feature_group_hexagon_name)
 
             #Вывод школ
             #school_print = True
@@ -182,35 +200,35 @@ def run_flask(osm):
                 type_o = category
                 df_objects = get_objects_df(type_o)
                 color = 'red'
-                Map.maps = map_slave.print_objects(Map.maps, df_objects, polygons_df, color, 'school', 'schools',
+                map_dict[session['Map']].maps = map_slave.print_objects(map_dict[session['Map']].maps, df_objects, polygons_df, color, 'school', 'schools',
                                                marker=False, borders=True, circle=False)
 
                 df_borders, type_t = get_districts_or_regions(districts_list, region_list)
-                Map.maps = map_slave.print_choropleth(Map.maps, df_objects, df_borders, 'schools in hex', type_t, 'schools')
+                map_dict[session['Map']].maps = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, 'schools in hex', type_t, 'schools')
 
             #Вывод зданий
             if category == 'buildings':
                 type_o = category
                 df_objects = get_objects_df(type_o)
                 color = 'red'
-                Map.maps = map_slave.print_objects(Map.maps, df_objects, polygons_df, color, 'buildings', 'buildings',
+                map_dict[session['Map']].maps = map_slave.print_objects(map_dict[session['Map']].maps, df_objects, polygons_df, color, 'buildings', 'buildings',
                                                marker=False, borders=True, circle=False)
                 df_borders, type_t = get_districts_or_regions(districts_list, region_list)
-                Map.maps = map_slave.print_choropleth(Map.maps, df_objects, df_borders, 'buildings in hex', type_t, 'buildings')
+                map_dict[session['Map']].maps = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, 'buildings in hex', type_t, 'buildings')
 
             if category == 'medicine':
                 type_o = category
                 df_objects = get_objects_df(type_o)
                 color = 'red'
-                Map.maps = map_slave.print_objects(Map.maps, df_objects, polygons_df, color, 'medicine', 'medicine',
+                map_dict[session['Map']].maps = map_slave.print_objects(map_dict[session['Map']].maps, df_objects, polygons_df, color, 'medicine', 'medicine',
                                                marker=False, borders=True, circle=False)
                 df_borders, type_t = get_districts_or_regions(districts_list, region_list)
-                Map.maps = map_slave.print_choropleth(Map.maps, df_objects, df_borders, 'medicine in hex', type_t, 'medicine')
+                map_dict[session['Map']].maps = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, 'medicine in hex', type_t, 'medicine')
 
             #control = folium.LayerControl()
 
             #folium.LayerControl().add_to(Map.maps)
-            Map.control.add_to(Map.maps)
+            map_dict[session['Map']].control.add_to(map_dict[session['Map']].maps)
             #control.reset()
             #print(control.base_layers)
 
@@ -218,9 +236,9 @@ def run_flask(osm):
 
 
         #html_map = Map.maps._repr_html_()
-        Map.repr()
+        map_dict[session['Map']].repr()
 #
-        return render_template('map_page.html', iframe=Map.html_map)
+        return render_template('map_page.html', iframe=map_dict[session['Map']].html_map)
 
 
 
