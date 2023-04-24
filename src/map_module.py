@@ -80,8 +80,8 @@ class Map_master():
                     #folium.PolyLine(locations=j, color=color, fill_color="blue", fill_opacity=0.3).add_to(maps)
                     folium.PolyLine(locations=j, color=color).add_to(feature_group_borders)
 
-            feature_group_borders.add_to(maps)
-        return maps
+            #feature_group_borders.add_to(maps)
+        return feature_group_borders
 
     #Функция извлечения координат для полигоново и мультиполигонов в нужном формате
     def extract_borders(self, geom):
@@ -125,7 +125,7 @@ class Map_master():
                 #my_PolyLine = folium.PolyLine(locations=polyline, weight=3, color=color).add_to(feature_group_hex)
                 #maps.add_child(my_PolyLine)
                 folium.PolyLine(locations=polyline, weight=3, color=color).add_to(feature_group_hex)
-                feature_group_hex.add_to(maps)
+                #feature_group_hex.add_to(maps)
 
             polylines_x = []
             for j in range(len(polylines)):
@@ -166,7 +166,7 @@ class Map_master():
 
         #print('list_ken', len(self.big_polygons_hex_list_regions), len(self.big_polygons_hex_list_district))
 
-        return maps
+        return feature_group_hex
 
     def intersction(self, df_objects, polygons_df):
         df_objects['centroid'] = df_objects.geometry.centroid
@@ -313,9 +313,9 @@ class Map_master():
                 if marker == False and borders == False and circle == False:
                     pass
 
-            feature_group_object.add_to(maps)
+            #feature_group_object.add_to(maps)
 
-        return maps
+        return feature_group_object
 
     def color_poly_choropleth(self, maps, data, json, columns, legend_name, feature, bins):
         folium.Choropleth(
@@ -384,11 +384,11 @@ class Map_master():
                  aliases=alias),
             name=feature_group_name).add_to(feature_group_object)
 
-        feature_group_object.add_to(maps)
+        #feature_group_object.add_to(maps)
 
 
 
-        return maps
+        return feature_group_object
 
     def split_by_hex_and_calculate(self, df_object, object_type_name):
         ddf = df_object.groupby('index_right')['id'].nunique()
@@ -422,9 +422,9 @@ class Map_master():
         #df_intersection_for_choro = gpd.GeoDataFrame(df_intersection_for_choro.set_index('id')[["geometry", 'index_right', 'school_count']]).to_json()
 
         self.df_intersection_for_choro, self.count_map = self.split_by_hex_and_calculate(df_intersection_for_choro, object_type_name)
-        maps = self.fill_color_for_hex(maps, self.df_intersection_for_choro, feature_group_name, self.count_map, object_type_name)
+        feature_group_object = self.fill_color_for_hex(maps, self.df_intersection_for_choro, feature_group_name, self.count_map, object_type_name)
 
-        return maps
+        return feature_group_object
 
     def print_choropleth(self, maps, df_objects, df_borders, feature_group_name, type_t, object_type_name):
         if len(df_borders) > 0:
@@ -455,14 +455,14 @@ class Map_master():
             maps = self.color_poly_choropleth(maps, agg_all, data_geo_1, ["id","counts"],
                                                                   legend_name, 'counts', 10)
 
-            maps = self.choropleth_for_hex(maps, feature_group_name, object_type_name)
+            feature_group_object = self.choropleth_for_hex(maps, feature_group_name, object_type_name)
             #self.feature_group_build.add_to(maps)
             #self.feature_group_school.add_to(maps)
 
 
 
 
-        return maps
+        return feature_group_object
 
     def inter_for_buffer(self, df_objects, polygons_df):
         df_objects['centroid'] = df_objects.geometry.centroid
@@ -511,8 +511,8 @@ class Map_master():
         for i in range(df_inter_buffer.shape[0]):
             self.add_object_borders(maps, df_inter_buffer.iloc[i], color='black',
                                             fillcolor='green', fillopacity=0.3,
-                                            feature_group_object=None,
-                                            feature_group_name=feature_group_name, mf_group='map')
+                                            feature_group_object=feature_group,
+                                            feature_group_name=feature_group_name, mf_group='feature')
             #points = [self.swap_points(list(df_inter_buffer.iloc[i]['geometry'].exterior.coords))]
             #folium.PolyLine(locations=points, color='black', fill_color='green', fill_opacity=0.3,
             #            popup='<i>{}</i>'.format(df_inter_buffer.iloc[i]['addr:street']),
@@ -520,7 +520,7 @@ class Map_master():
 
         #feature_group.add_to(maps)
 
-        return maps
+        return feature_group
 
 
     osm = osm_parser()
