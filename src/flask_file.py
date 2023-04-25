@@ -37,6 +37,8 @@ class map_class():
     feature_group_buffer_name = 'buffer'
     feature_group_buffer = folium.FeatureGroup(feature_group_buffer_name)
 
+    category = 'none'
+
 
 
 
@@ -171,6 +173,8 @@ def run_flask(osm):
         map_dict[session['Map']].feature_group_borders.add_to(map_dict[session['Map']].maps)
         map_dict[session['Map']].feature_group_hexagon.add_to(map_dict[session['Map']].maps)
         map_dict[session['Map']].feature_group_objects.add_to(map_dict[session['Map']].maps)
+        #map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
+        map_dict[session['Map']].feature_group_choropleth = map_slave.choropleth_for_hex(map_dict[session['Map']].maps, map_dict[session['Map']].feature_group_choropleth_name, map_dict[session['Map']].category)
         map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
         map_dict[session['Map']].feature_group_buffer = map_slave.print_buffer(map_dict[session['Map']].maps, object, radius, df_buildings, feature_group_name)
         map_dict[session['Map']].feature_group_buffer.add_to(map_dict[session['Map']].maps)
@@ -219,6 +223,7 @@ def run_flask(osm):
             #building_print = True
             polygons_df = get_polygons_df()
             if category == 'schools':
+                map_dict[session['Map']].category = 'schools'
                 type_o = category
                 df_objects = get_objects_df(type_o)
                 color = 'red'
@@ -234,6 +239,7 @@ def run_flask(osm):
 
             #Вывод зданий
             if category == 'buildings':
+                map_dict[session['Map']].category = 'buildings'
                 type_o = category
                 df_objects = get_objects_df(type_o)
                 color = 'red'
@@ -248,6 +254,7 @@ def run_flask(osm):
                 map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
 
             if category == 'medicine':
+                map_dict[session['Map']].category = 'medicine'
                 type_o = category
                 df_objects = get_objects_df(type_o)
                 color = 'red'
