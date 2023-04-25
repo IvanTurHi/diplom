@@ -37,6 +37,7 @@ class map_class():
     feature_group_buffer_name = 'buffer'
     feature_group_buffer = folium.FeatureGroup(feature_group_buffer_name)
 
+
     category = 'none'
 
 

@@ -497,7 +497,7 @@ class Map_master():
         fillcolor = 'blue'
         fillopacity = 0.3
         polyline = folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity)
-        polyline.add_to(maps)
+        polyline.add_to(feature_group)
 
         #Датафрейм для пересечения
         frame_for_inter = gpd.GeoDataFrame()
