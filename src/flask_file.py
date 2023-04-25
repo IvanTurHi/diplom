@@ -4,6 +4,8 @@ import folium
 from map_module import Map_master
 import geopandas as gpd
 from flask import session
+from json2html import *
+from statistic import Stat_master
 
 people_counter = 0
 map_dict = {}
@@ -21,6 +23,8 @@ class map_class():
 
     html_map = maps._repr_html_()
 
+    stat_slave = Stat_master()
+
     control = folium.LayerControl()
 
     feature_group_borders_name = 'borders'
@@ -37,6 +41,8 @@ class map_class():
     feature_group_buffer_name = 'buffer'
     feature_group_buffer = folium.FeatureGroup(feature_group_buffer_name)
 
+    districts_list = []
+    regions_list = []
 
     category = 'none'
 
@@ -51,6 +57,8 @@ def run_flask(osm):
     df_schools = osm.read_data(osm.school_data_name_mos_transform)
     df_buildings = osm.read_data(osm.building_data_name_transform)
     df_medicine = osm.read_data(osm.medicine_data_name_transform)
+    districts_df = osm.read_data(osm.borders_data_name_transform)
+    regions_df = osm.read_data(osm.regions_borders_data_name_transform)
     #Map = map_class()
 
 
@@ -192,6 +200,8 @@ def run_flask(osm):
         #maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
         #Map = map_class()
         map_dict[session['Map']].initiation()
+        map_dict[session['Map']].districts_list = districts_list
+        map_dict[session['Map']].region_list = region_list
         if data_flag == True:
             #districts_list = ['relation/181288', 'relation/364551', 'relation/2092928', 'relation/240229']
             #region_list = ['relation/226149', 'relation/1320234']
@@ -280,6 +290,26 @@ def run_flask(osm):
         map_dict[session['Map']].repr()
 #
         return render_template('map_page.html', iframe=map_dict[session['Map']].html_map)
+
+    @app.route('/stat', methods=['POST', 'GET'])
+    def stat():
+        models = {}
+        if len(map_dict[session['Map']].districts_list) > 0:
+            territories = map_dict[session['Map']].stat_slave.get_districts(map_dict[session['Map']].districts_list, districts_df)
+            for i in range(len(territories)):
+                models[territories[i]] = map_dict[session['Map']].stat_slave.get_district_area(territories[i])
+
+        elif len(map_dict[session['Map']].region_list) > 0:
+            territories = map_dict[session['Map']].stat_slave.get_regions(map_dict[session['Map']].region_list, regions_df)
+            for i in range(len(territories)):
+                models[territories[i]] = map_dict[session['Map']].stat_slave.get_region_area(territories[i])
+
+        else:
+            models['Список выбранных территорий'] = 'Территории не выбраны'
+
+        models = json2html.convert(json=models)
+
+        return render_template('stat.html', json_obj=models)
 
 
 
