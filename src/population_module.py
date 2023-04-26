@@ -578,6 +578,27 @@ class population_module():
         osm.get_path()
         osm.geo_write_data()
 
+    def get_students_number_for_schools(self):
+        osm = osm_parser()
+        osm.get_path()
+        schools_df = osm.read_data('schools_datamos_processing.geojson')
+        students_number_list = []
+
+        for i in range(schools_df.shape[0]):
+            eoid = str(schools_df.iloc[i]['eoid'])
+            print(eoid)
+            try:
+                snumber = self.get_students_number(eoid)
+            except BaseException:
+                print('111111111111', eoid)
+                snumber = 0
+            students_number_list.append(snumber)
+
+        schools_df['students'] = students_number_list
+
+        osm.geo_write_data(schools_df, 'schools_datamos_processing.geojson')
+
+
 
 
     api_key = '0d41eef2b32bf578f1dd43148c5ffed1'
@@ -615,6 +636,8 @@ if __name__ == '__main__':
     #Я пошел пытаться совместить адреса с осм и адреса с реформы жкх. Пожелайте мне удачи
     #pop = population()
     #pop.add_peoples_number_to_building()
+    #pm = population_module()
+    #pm.get_students_number_for_schools()
     pass
 
 

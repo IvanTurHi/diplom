@@ -218,14 +218,37 @@ class Map_master():
             points = self.visualize_hexagons_for_point_object([h3_address])
 
         if feature_group_name == 'school':
-            #points = [self.swap_points(list(object['geometry'].exterior.coords))]
-            static_text = '<i>{}</i> <br>'.format(object['short_name'])
+            if object['workload'] < 100:
+                fillcolor = 'green'
+            elif object['workload'] < 200:
+                fillcolor = 'yellow'
+            elif object['workload'] >= 200:
+                fillcolor = 'red'
+            else:
+                fillcolor = 'blue'
             html_text = """
-            <li><a href="/map_{}" target=_parent>Построить радиус доступности</a></li>
-              """.format(object['id'])
+            <li><a href="/map{}_{}" target=_parent>Построить радиус доступности</a></li>
+              """.format('s', object['id'])
+            static_text = """
+            <i>Школа: {} <Br> Загруженность (в процентах от номинальной): {} <Br> Рейтинг: {} 
+            <Br></i> <li><a href="https://{}" target=_blank>Сайт школы <br> </a></li>
+            """.format(object['short_name'], object['workload'], object['rating'], object['website'])
+
             folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
                             popup=folium.Popup(static_text + html_text),
                             tooltip='<i>{}</i>'.format(object['short_name'])).add_to(feature_group_object)
+
+        if feature_group_name == 'kindergartens':
+            static_text = """
+            <i>Детский сад при школе: {} <Br>  Рейтинг: {} 
+            <Br></i> <li><a href="https://{}" target=_blank>Сайт детского сада<br> </a></li>
+            """.format(object['short_name'],  object['rating'], object['website'])
+            html_text = """
+            <li><a href="/map{}_{}" target=_parent>Построить радиус доступности</a></li>
+              """.format('k', object['id'])
+            folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
+                            popup=folium.Popup(static_text + html_text),
+                            tooltip='<i>Детский сад при школе {}</i>'.format(object['short_name'])).add_to(feature_group_object)
 
         if feature_group_name == 'buildings':
             #Раскарска зданий в зависимости от года постройки, в try-except что не трогать все, что не имеет года
@@ -368,6 +391,8 @@ class Map_master():
             alias = ['Количество жителей: ']
         elif object_type_name == 'medicine':
             alias = ['Количество медицинских учереждений: ']
+        elif object_type_name == 'kindergartens':
+            alias = ['Количество детских садов: ']
         else:
             alias = ['miss: ']
 
@@ -397,7 +422,7 @@ class Map_master():
         cols_list = ['kindergartens', 'Pupils', 'adults']
         count_map = {}
         df_object['count'] = ''
-        if object_type_name == 'schools' or object_type_name == 'medicine':
+        if object_type_name == 'schools' or object_type_name == 'medicine' or object_type_name == 'kindergartens':
             for i in range(len(index_list)):
                 count_map[index_list[i]] = value_list[i]
                 df_object.loc[(df_object['index_right'] == index_list[i]), 'count'] = value_list[i]
@@ -448,6 +473,8 @@ class Map_master():
                 legend_name = 'number of schools'
             if object_type_name == 'medicine':
                 legend_name = 'number of medicine objects'
+            if object_type_name == 'kindergartens':
+                legend_name = 'number of kindergartens'
             agg_all.rename(columns={id_column: 'id'}, inplace=True)
             df_borders.rename(columns={id_column: 'id'}, inplace=True)
             data_geo_1 = gpd.GeoSeries(df_borders.set_index('id')["geometry"]).to_json()

@@ -57,6 +57,7 @@ def run_flask(osm):
     df_schools = osm.read_data(osm.school_data_name_mos_transform)
     df_buildings = osm.read_data(osm.building_data_name_transform)
     df_medicine = osm.read_data(osm.medicine_data_name_transform)
+    df_kindergartens = osm.read_data(osm.kindergartens_data_name_mos_transform)
     districts_df = osm.read_data(osm.borders_data_name_transform)
     regions_df = osm.read_data(osm.regions_borders_data_name_transform)
     #Map = map_class()
@@ -93,6 +94,8 @@ def run_flask(osm):
         elif type_o == 'medicine':
             #return osm.read_data(osm.medicine_data_name_transform)
             return df_medicine
+        elif type_o == 'kindergartens':
+            return df_kindergartens
 
     #Функция для сбора всех гексагонов в один большой список
     def form_geom_list_of_polygons(big_list):
@@ -158,24 +161,33 @@ def run_flask(osm):
         elif request.method == 'GET':
             return render_template('map_page.html', iframe=map_dict[session['Map']].html_map)
 
-    @app.route('/map_<object_id>')
-    def popup_id(object_id):
-        type_o = 'schools'
-        df_objects = get_objects_df(type_o)
-        object = df_objects.loc[df_objects['id'] == int(object_id)]
-        #Тут идет проверка на то, что наша школа не входит в ЦАО, тк для них радиус 750 метров, а не 500
+    @app.route('/map<type>_<object_id>')
+    def popup_id(type, object_id):
         distrcit_id_list = ['relation/1257484', 'relation/2162195', 'relation/1255942', 'relation/1257218',
                             'relation/364001', 'relation/1275551', 'relation/1275608', 'relation/1257786',
                             'relation/1255987', 'relation/1275627']
         region_id_list = ['relation/2162196']
+        if type == 's':
+            type_o = 'schools'
+        elif type == 'k':
+            type_o = 'kindergartens'
+        df_objects = get_objects_df(type_o)
+        object = df_objects.loc[df_objects['id'] == int(object_id)]
+        #Тут идет проверка на то, что наша школа не входит в ЦАО, тк для них радиус 750 метров, а не 500
         district_id = list(object['district_id'])[0]
         region_id = list(object['region_id'])[0]
         centroid_latitude = float(list(object['centroid latitude'])[0])
         centroid_longitude = float(list(object['centroid longitude'])[0])
         if district_id in distrcit_id_list or region_id in region_id_list:
-            radius = 750
+            if type == 's':
+                radius = 750
+            elif type == 'k':
+                radius = 500
         else:
-            radius = 500
+            if type == 's':
+                radius = 500
+            elif type == 'k':
+                radius = 300
         #return render_template('main_page.html')
         feature_group_name = 'buildings'
         map_dict[session['Map']].initiation(centroid_latitude, centroid_longitude, 15)
@@ -248,6 +260,21 @@ def run_flask(osm):
 
                 map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
 
+            if category == 'kindergartens':
+                map_dict[session['Map']].category = 'kindergartens'
+                type_o = category
+                df_objects = get_objects_df(type_o)
+                color = 'red'
+                map_dict[session['Map']].feature_group_objects = map_slave.print_objects(map_dict[session['Map']].maps, df_objects, polygons_df, color, 'kindergartens', 'kindergartens',
+                                               marker=False, borders=True, circle=False)
+
+                map_dict[session['Map']].feature_group_objects.add_to(map_dict[session['Map']].maps)
+
+                df_borders, type_t = get_districts_or_regions(districts_list, region_list)
+                map_dict[session['Map']].feature_group_choropleth = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, 'kindergartens in hex', type_t, 'kindergartens')
+
+                map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
+
             #Вывод зданий
             if category == 'buildings':
                 map_dict[session['Map']].category = 'buildings'
@@ -297,7 +324,7 @@ def run_flask(osm):
         if len(map_dict[session['Map']].districts_list) > 0:
             territories = map_dict[session['Map']].stat_slave.get_districts(map_dict[session['Map']].districts_list, districts_df)
             for i in range(len(territories)):
-                models[territories[i]] = map_dict[session['Map']].stat_slave.get_district_area(territories[i])
+                models[territories[i]] = {1: map_dict[session['Map']].stat_slave.get_district_area(territories[i]), 2: 'ttt'}
 
         elif len(map_dict[session['Map']].region_list) > 0:
             territories = map_dict[session['Map']].stat_slave.get_regions(map_dict[session['Map']].region_list, regions_df)
