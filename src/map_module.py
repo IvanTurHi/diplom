@@ -263,7 +263,14 @@ class Map_master():
                     fillcolor = 'green'
             except BaseException:
                 fillcolor = 'blue'
-            statistic_text = '<i>Количество детей: {} <Br> Количество школьников: {} <Br> Количество взрослых: {} <Br> Год постройки: {} <Br> </i>'
+            total_schools = int(object['over_schools']) + int(object['free_schools'])
+            statistic_text = """
+            <i>Количество детей: {} <Br> Количество школьников: {} <Br> Количество взрослых: {} <Br> 
+            Год постройки: {} <Br> Количество школ в радиусе доступности: {} <Br> Количество свободных школ: {} <Br>
+             Количество детских садов в радиусе доступности: {} <Br> 
+             Количество медицинских учреждений в радусе доступности: {} <Br></i>
+            """.format(object['kindergartens'], object['Pupils'], object['adults'], object['year'], total_schools,
+                       object['free_schools'], object['avaliable_kindergartens'], object['avaliable_medicine'])
             html = """
           <li><a href="/map_{}" target=_top>{}</a></li>
             """.format(object['id'].split('/')[1], object['id'].split('/')[1])
@@ -271,9 +278,7 @@ class Map_master():
                             #popup=statistic_text.format(
                             #    object['kindergartens'], object['Pupils'],
                             #    object['adults'], object['year']),
-                            popup=folium.Popup(statistic_text.format(
-                                object['kindergartens'], object['Pupils'],
-                                object['adults'], object['year'])),
+                            popup=folium.Popup(statistic_text),
                             tooltip='<i>{}, {}</i>'.format(object['addr:street'],
                                                            object['addr:housenumber']))
             if mf_group == 'feature':
@@ -430,7 +435,7 @@ class Map_master():
         if object_type_name == 'buildings':
             for i in range(len(index_list)):
                 total_number_of_people = df_object.loc[df_object['index_right'] == index_list[i], cols_list].astype(int).sum()
-                total_number_of_people = total_number_of_people[0] + total_number_of_people[0] + total_number_of_people[0]
+                total_number_of_people = total_number_of_people[0] + total_number_of_people[1] + total_number_of_people[2]
                 count_map[index_list[i]] = total_number_of_people
                 df_object.loc[(df_object['index_right'] == index_list[i]), 'count'] = float(total_number_of_people)
 

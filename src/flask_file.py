@@ -318,18 +318,70 @@ def run_flask(osm):
 #
         return render_template('map_page.html', iframe=map_dict[session['Map']].html_map)
 
+    #Преобразование данных по районам и округам в папке additional_code ноутбук preparation_for_statistic
     @app.route('/stat', methods=['POST', 'GET'])
     def stat():
         models = {}
         if len(map_dict[session['Map']].districts_list) > 0:
             territories = map_dict[session['Map']].stat_slave.get_districts(map_dict[session['Map']].districts_list, districts_df)
             for i in range(len(territories)):
-                models[territories[i]] = {1: map_dict[session['Map']].stat_slave.get_district_area(territories[i]), 2: 'ttt'}
+                area = map_dict[session['Map']].stat_slave.get_area(territories[i], 'district')
+                schools_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'schools_number')
+                schools_workload = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'schools_workload')
+                kindergartens_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'kindergartens_number')
+                medicine_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'medicine_number')
+                buildings_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'buildings_number')
+                residents_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'residents_number')
+                avg_year = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'avg_year')
+                without_schools = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'without_schools')
+                without_kindergartens = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'without_kindergartens')
+                without_medicine = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'without_medicine')
+                models[territories[i]] = {'Площадь (м2)': area,
+                                          'Количество школ': schools_number,
+                                          'Средняя загруженность школ(в процентах)': schools_workload,
+                                          'Количество детских садов': kindergartens_number,
+                                          'Количество мед учреждений': medicine_number,
+                                          'Количество жилых домов': buildings_number,
+                                          'Количество жителей': residents_number,
+                                          'Средний год постройки зданий': avg_year,
+                                          'Процент домов,находящихся вне установленной зоны пешей доступности от школ': without_schools,
+                                          'Процент домов,находящихся вне установленной зоны пешей доступности от детских садов': without_kindergartens,
+                                          'Процент домов,находящихся вне установленной зоны пешей доступности от медицинских учреждений': without_medicine}
 
         elif len(map_dict[session['Map']].region_list) > 0:
             territories = map_dict[session['Map']].stat_slave.get_regions(map_dict[session['Map']].region_list, regions_df)
             for i in range(len(territories)):
-                models[territories[i]] = map_dict[session['Map']].stat_slave.get_region_area(territories[i])
+                area = map_dict[session['Map']].stat_slave.get_area(territories[i], 'region')
+                schools_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                              'schools_number')
+                schools_workload = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                                'schools_workload')
+                kindergartens_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                                    'kindergartens_number')
+                medicine_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                               'medicine_number')
+                buildings_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                                'buildings_number')
+                residents_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                                'residents_number')
+                avg_year = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region', 'avg_year')
+                without_schools = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                               'without_schools')
+                without_kindergartens = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                                     'without_kindergartens')
+                without_medicine = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                                'without_medicine')
+                models[territories[i]] = {'Площадь (м2)': area,
+                                          'Количество школ': schools_number,
+                                          'Средняя загруженность школ(в процентах)': schools_workload,
+                                          'Количество детских садов': kindergartens_number,
+                                          'Количество мед учреждений': medicine_number,
+                                          'Количество жилых домов': buildings_number,
+                                          'Количество жителей': residents_number,
+                                          'Средний год постройки зданий': avg_year,
+                                          'Процент домов,находящихся вне установленной зоны пешей доступности от школ': without_schools,
+                                          'Процент домов,находящихся вне установленной зоны пешей доступности от детских садов': without_kindergartens,
+                                          'Процент домов,находящихся вне установленной зоны пешей доступности от медицинских учреждений': without_medicine}
 
         else:
             models['Список выбранных территорий'] = 'Территории не выбраны'

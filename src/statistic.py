@@ -13,13 +13,40 @@ class Stat_master():
         self.regions_df = regions_df
         return regions_names
 
-    def get_district_area(self, name):
-        area = int(list(self.districts_df.loc[self.districts_df['district_name'] == name]['district_area'])[0])
-        return area
+    def get_data(self, name, type_o, target):
+        if type_o == 'district':
+            data = round(float(list(self.districts_df.loc[self.districts_df['district_name'] == name][target])[0]), 0)
+        else:
+            data = round(float(list(self.regions_df.loc[self.regions_df['region_name'] == name][target])[0]), 0)
+        return data
 
-    def get_region_area(self, name):
-        area = int(list(self.regions_df.loc[self.regions_df['region_name'] == name]['region_area'])[0])
+    def get_area(self, name, type_o):
+        if type_o == 'district':
+            area = int(list(self.districts_df.loc[self.districts_df['district_name'] == name]['district_area'])[0])
+        else:
+            area = int(list(self.regions_df.loc[self.regions_df['region_name'] == name]['region_area'])[0])
         return area
+#
+    #def get_schools_number(self, name, type_o):
+    #    if type_o == 'district':
+    #        schools_number = int(list(self.districts_df.loc[self.districts_df['district_name'] == name]['schools_number'])[0])
+    #    else:
+    #        schools_number = int(list(self.regions_df.loc[self.regions_df['district_name'] == name]['schools_number'])[0])
+    #    return schools_number
+#
+    #def get_kindergartens_number(self, name, type_o):
+    #    if type_o == 'district':
+    #        schools_workload = int(list(self.districts_df.loc[self.districts_df['district_name'] == name]['kindergartens_number'])[0])
+    #    else:
+    #        schools_workload = int(list(self.regions_df.loc[self.regions_df['district_name'] == name]['schools_workload'])[0])
+    #    return schools_workload
+#
+    #def get_workload(self, name, type_o):
+    #    if type_o == 'district':
+    #        schools_workload = int(list(self.districts_df.loc[self.districts_df['district_name'] == name]['schools_workload'])[0])
+    #    else:
+    #        schools_workload = int(list(self.regions_df.loc[self.regions_df['district_name'] == name]['schools_workload'])[0])
+    #    return schools_workload
 
 
     districts_df = gpd.GeoDataFrame()
