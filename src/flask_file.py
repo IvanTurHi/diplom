@@ -167,12 +167,19 @@ def run_flask(osm):
                             'relation/364001', 'relation/1275551', 'relation/1275608', 'relation/1257786',
                             'relation/1255987', 'relation/1275627']
         region_id_list = ['relation/2162196']
+        print('type', type)
         if type == 's':
             type_o = 'schools'
         elif type == 'k':
             type_o = 'kindergartens'
+        elif type == 'm':
+            type_o = 'medicine'
         df_objects = get_objects_df(type_o)
-        object = df_objects.loc[df_objects['id'] == int(object_id)]
+        if type == 's' or type == 'k':
+            object = df_objects.loc[df_objects['id'] == int(object_id)]
+        elif type == 'm':
+            idd = object_id.replace('=', '/')
+            object = df_objects.loc[df_objects['id'] == idd]
         #Тут идет проверка на то, что наша школа не входит в ЦАО, тк для них радиус 750 метров, а не 500
         district_id = list(object['district_id'])[0]
         region_id = list(object['region_id'])[0]
@@ -183,11 +190,15 @@ def run_flask(osm):
                 radius = 750
             elif type == 'k':
                 radius = 500
+            elif type == 'm':
+                radius = 1500
         else:
             if type == 's':
                 radius = 500
             elif type == 'k':
                 radius = 300
+            elif type == 'm':
+                radius = 1500
         #return render_template('main_page.html')
         feature_group_name = 'buildings'
         map_dict[session['Map']].initiation(centroid_latitude, centroid_longitude, 15)
@@ -197,7 +208,7 @@ def run_flask(osm):
         #map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
         map_dict[session['Map']].feature_group_choropleth = map_slave.choropleth_for_hex(map_dict[session['Map']].maps, map_dict[session['Map']].feature_group_choropleth_name, map_dict[session['Map']].category)
         map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
-        map_dict[session['Map']].feature_group_buffer = map_slave.print_buffer(map_dict[session['Map']].maps, object, radius, df_buildings, feature_group_name)
+        map_dict[session['Map']].feature_group_buffer = map_slave.print_buffer(map_dict[session['Map']].maps, object, radius, df_buildings, feature_group_name, type_o)
         map_dict[session['Map']].feature_group_buffer.add_to(map_dict[session['Map']].maps)
         map_dict[session['Map']].control.add_to(map_dict[session['Map']].maps)
         map_dict[session['Map']].repr()

@@ -191,11 +191,108 @@ class Map_master():
 
         return polylines
 
-    def add_marker(self, location_latitude, location_longitude, object, color, feature_group_object, feature_group_name):
-        if feature_group_name == 'school':
+    def get_table_row(self, left_column_value, right_column_value, left_col_color, right_col_color):
+        table_row = """
+        <tr>
+        <td style="background-color: """ + left_col_color + """;"><span style="color: #ffffff;"> <big>""" + left_column_value + """</big></span></td>
+        <td style="width: 150px;background-color: """ + right_col_color + """;"><big>{}</big></td>""".format(
+            right_column_value) + """
+        </tr>
+        """
+
+        return table_row
+
+    def get_buffer_text(self, header, left_col_color, right_col_color, fields_map):
+        static_text = """
+                    <!DOCTYPE html>
+                    <html>
+        <head>
+        <h4 style="margin-bottom:10"; width="200px">{}</h4>""".format(header) + """
+        </head>
+        <table style="height: 150px; width: 300px; border: 8px">
+        <tbody> """
+
+        for i in fields_map:
+            static_text += self.get_table_row(i, fields_map[i], left_col_color, right_col_color)
+
+        static_text += """
+        </tbody>
+        </table>
+        </html>
+        """
+
+        return static_text
+
+
+    def add_marker(self, location_latitude, location_longitude, object, color, feature_group_object, feature_group_name, total_buildings_number, kinder_number, students_number, adults_number):
+        if feature_group_name == 'schools':
+            #static_text = """
+            #<i>Количество жилых зданий в радиусе доступности: {} <Br> Количество детей школьного возраста, проживающих в радиусе доступности: {}
+            #<Br> Общее количество человек, проживающих в радиусе доступности: {} <Br></i>
+            #""".format(total_buildings_number, students_number, kinder_number + students_number + adults_number)
+            left_col_color = "#19a7bd"
+            right_col_color = "#f2f0d3"
+            header = list(object['short_name'])[0]
+            total_buildings_number_text = 'Количество жилых зданий в радиусе доступности'
+            total_buildings_number = total_buildings_number
+            children_text = 'Количество детей школьного возраста, проживающих в радиусе доступности'
+            children_number = students_number
+            total_number_text = 'Общее количество человек, проживающих в радиусе доступности'
+            total_number = kinder_number + students_number + adults_number
+
+            fields_map = {}
+            fields_map[total_buildings_number_text] = total_buildings_number
+            fields_map[children_text] = children_number
+            fields_map[total_number_text] = total_number
+
+            static_text = self.get_buffer_text(header, left_col_color, right_col_color, fields_map)
+            tooltip_text = '<i>{}</i>'.format(list(object['short_name'])[0])
             folium.Marker(location=[location_latitude, location_longitude],
-                          popup='<i>{}</i>'.format(object['short_name']),
-                          tooltip='Click here', icon=folium.Icon(color=color)).add_to(feature_group_object)
+                          popup=folium.Popup(folium.Html(static_text, script=True), parse_html=True),
+                          tooltip=folium.Tooltip(tooltip_text), icon=folium.Icon(color=color)).add_to(feature_group_object)
+
+        if feature_group_name == 'kindergartens':
+            left_col_color = "#19a7bd"
+            right_col_color = "#f2f0d3"
+            header = 'Детский сад при школе ' + list(object['short_name'])[0]
+            total_buildings_number_text = 'Количество жилых зданий в радиусе доступности'
+            total_buildings_number = total_buildings_number
+            children_text = 'Количество детей детсадовского возраста, проживающих в радиусе доступности'
+            children_number = kinder_number
+            total_number_text = 'Общее количество человек, проживающих в радиусе доступности'
+            total_number = kinder_number + students_number + adults_number
+
+            fields_map = {}
+            fields_map[total_buildings_number_text] = total_buildings_number
+            fields_map[children_text] = children_number
+            fields_map[total_number_text] = total_number
+
+            static_text = self.get_buffer_text(header, left_col_color, right_col_color, fields_map)
+
+            tooltip_text = '<i>{}</i>'.format(list(object['short_name'])[0])
+            folium.Marker(location=[location_latitude, location_longitude],
+                          popup=folium.Popup(folium.Html(static_text, script=True), parse_html=True),
+                          tooltip=folium.Tooltip(tooltip_text), icon=folium.Icon(color=color)).add_to(feature_group_object)
+
+        if feature_group_name == 'medicine':
+            left_col_color = "#19a7bd"
+            right_col_color = "#f2f0d3"
+            header = 'Медицинское учреждение'
+            total_buildings_number_text = 'Количество жилых зданий в радиусе доступности'
+            total_buildings_number = total_buildings_number
+            total_number_text = 'Общее количество человек, проживающих в радиусе доступности'
+            total_number = kinder_number + students_number + adults_number
+
+            fields_map = {}
+            fields_map[total_buildings_number_text] = total_buildings_number
+            fields_map[total_number_text] = total_number
+
+            static_text = self.get_buffer_text(header, left_col_color, right_col_color, fields_map)
+
+            tooltip_text = 'Медицинское учреждение'
+            folium.Marker(location=[location_latitude, location_longitude],
+                          popup=folium.Popup(folium.Html(static_text, script=True), parse_html=True),
+                          tooltip=folium.Tooltip(tooltip_text), icon=folium.Icon(color=color)).add_to(feature_group_object)
 
     def add_object_borders(self, maps, object, color, fillcolor, fillopacity, feature_group_object, feature_group_name, mf_group):
         skip_flag = False
@@ -227,24 +324,63 @@ class Map_master():
             else:
                 fillcolor = 'blue'
             html_text = """
-            <li><a href="/map{}_{}" target=_parent>Построить радиус доступности</a></li>
+            <li><a href="/map{}_{}" target=_parent><big><big>Построить радиус доступности</big></big></a></li>
               """.format('s', object['id'])
-            static_text = """
-            <i>Школа: {} <Br> Загруженность (в процентах от номинальной): {} <Br> Рейтинг: {} 
-            <Br></i> <li><a href="https://{}" target=_blank>Сайт школы <br> </a></li>
-            """.format(object['short_name'], object['workload'], object['rating'], object['website'])
+            #static_text = """
+            #<i>Школа: {} <Br> Загруженность (в процентах от номинальной): {} <Br> Рейтинг: {}
+            #<Br></i> <li><a href="https://{}" target=_blank>Сайт школы <br> </a></li>
+            #""".format(object['short_name'], object['workload'], object['rating'], object['website'])
+
+            name_text = 'Школа'
+            workload_text = 'Загруженность (в процентах от номинальной)'
+            rating_text = 'Рейтинг'
+            website_text = 'Сайт школы'
+            header = object['short_name']
+            left_col_color = "#19a7bd"
+            right_col_color = "#f2f0d3"
+
+            fields_map = {}
+            fields_map[name_text] = object['short_name']
+            fields_map[workload_text] = object['workload']
+            fields_map[rating_text] = object['rating']
+            fields_map[website_text] = '<a href="https://{}" target=_blank>{}<br> </a>'.format(object['website'], object['website'])
+
+            if fields_map[rating_text] == '' or object['rating'] == 'nan':
+                fields_map[rating_text] = 'Нет данных'
+
+            static_text = self.get_buffer_text(header, left_col_color, right_col_color, fields_map)
 
             folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
                             popup=folium.Popup(static_text + html_text),
                             tooltip='<i>{}</i>'.format(object['short_name'])).add_to(feature_group_object)
 
         if feature_group_name == 'kindergartens':
-            static_text = """
-            <i>Детский сад при школе: {} <Br>  Рейтинг: {} 
-            <Br></i> <li><a href="https://{}" target=_blank>Сайт детского сада<br> </a></li>
-            """.format(object['short_name'],  object['rating'], object['website'])
+            #static_text = """
+            #<i>Детский сад при школе: {} <Br>  Рейтинг: {}
+            #<Br></i> <li><a href="https://{}" target=_blank>Сайт детского сада<br> </a></li>
+            #""".format(object['short_name'],  object['rating'], object['website'])
+
+            name_text = 'Детский сад при школе'
+            capacity_text = 'Расчетная вместимость(чел)'
+            rating_text = 'Рейтинг'
+            website_text = 'Сайт школы'
+            header = 'Детский сад при школе ' + object['short_name']
+            left_col_color = "#19a7bd"
+            right_col_color = "#f2f0d3"
+
+            fields_map = {}
+            fields_map[name_text] = object['short_name']
+            fields_map[capacity_text] = object['capacity']
+            fields_map[rating_text] = object['rating']
+            fields_map[website_text] = '<a href="https://{}" target=_blank>{}<br> </a>'.format(object['website'], object['website'])
+
+            if fields_map[rating_text] == '' or object['rating'] == 'nan':
+                fields_map[rating_text] = 'Нет данных'
+
+            static_text = self.get_buffer_text(header, left_col_color, right_col_color, fields_map)
+
             html_text = """
-            <li><a href="/map{}_{}" target=_parent>Построить радиус доступности</a></li>
+            <li><a href="/map{}_{}" target=_parent><big><big>Построить радиус доступности</big></big></a></li>
               """.format('k', object['id'])
             folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
                             popup=folium.Popup(static_text + html_text),
@@ -264,16 +400,42 @@ class Map_master():
             except BaseException:
                 fillcolor = 'blue'
             total_schools = int(object['over_schools']) + int(object['free_schools'])
-            statistic_text = """
-            <i>Количество детей: {} <Br> Количество школьников: {} <Br> Количество взрослых: {} <Br> 
-            Год постройки: {} <Br> Количество школ в радиусе доступности: {} <Br> Количество свободных школ: {} <Br>
-             Количество детских садов в радиусе доступности: {} <Br> 
-             Количество медицинских учреждений в радусе доступности: {} <Br></i>
-            """.format(object['kindergartens'], object['Pupils'], object['adults'], object['year'], total_schools,
-                       object['free_schools'], object['avaliable_kindergartens'], object['avaliable_medicine'])
+            #statistic_text = """
+            #<i>Количество детей: {} <Br> Количество школьников: {} <Br> Количество взрослых: {} <Br>
+            #Год постройки: {} <Br> Количество школ в радиусе доступности: {} <Br> Количество свободных школ: {} <Br>
+            # Количество детских садов в радиусе доступности: {} <Br>
+            # Количество медицинских учреждений в радусе доступности: {} <Br></i>
+            #""".format(object['kindergartens'], object['Pupils'], object['adults'], object['year'], total_schools,
+            #           object['free_schools'], object['avaliable_kindergartens'], object['avaliable_medicine'])
             html = """
           <li><a href="/map_{}" target=_top>{}</a></li>
             """.format(object['id'].split('/')[1], object['id'].split('/')[1])
+
+            fields_map = {}
+            kinder_text = 'Количество детей'
+            student_text = 'Количество школьников'
+            adult_text = 'Количество взрослых'
+            year_text = 'Год постройки'
+            schools_number_text = 'Количество школ в радиусе доступности'
+            avaliable_schools_number_text = 'Количество свободных школ'
+            kinder_number_text = 'Количество детских садов в радиусе доступности'
+            med_number_text = 'Количество медицинских учреждений в радусе доступности'
+
+            header = '<i>{}, {}</i>'.format(object['addr:street'],
+                                                           object['addr:housenumber'])
+            left_col_color = "#19a7bd"
+            right_col_color = "#f2f0d3"
+            fields_map[kinder_text] = object['kindergartens']
+            fields_map[student_text] = object['Pupils']
+            fields_map[adult_text] = object['adults']
+            fields_map[year_text] = object['year']
+            fields_map[schools_number_text] = total_schools
+            fields_map[avaliable_schools_number_text] = object['free_schools']
+            fields_map[kinder_number_text] = object['avaliable_kindergartens']
+            fields_map[med_number_text] = object['avaliable_medicine']
+
+            statistic_text = self.get_buffer_text(header, left_col_color, right_col_color, fields_map)
+
             polyline = folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
                             #popup=statistic_text.format(
                             #    object['kindergartens'], object['Pupils'],
@@ -287,8 +449,11 @@ class Map_master():
                 polyline.add_to(maps)
 
         if feature_group_name == 'medicine':
+            html_text = """
+                        <li><a href="/map{}_{}" target=_parent><big><big>Построить радиус доступности</big></big></a></li>
+                          """.format('m', object['id'].split('/')[0] + '=' + object['id'].split('/')[1])
             folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
-                            popup='<i>{}</i>'.format(object['addr:street']),
+                            popup=folium.Popup(html_text),
                             tooltip='<i>{}</i>'.format(object['addr:housenumber'])).add_to(feature_group_object)
 
     def add_circle(self, location_latitude, location_longitude, radius, circle_color, fill_color, feature_group_object, feature_group_name):
@@ -503,7 +668,7 @@ class Map_master():
 
         return gpd.sjoin(objects_df, polygons_df)
 
-    def print_buffer(self, maps, object, radius, df_buildings, feature_group_name):
+    def print_buffer(self, maps, object, radius, df_buildings, feature_group_name, type_o):
         centroid_latitude = list(object['centroid latitude'])[0]
         centroid_longitude = list(object['centroid longitude'])[0]
 
@@ -536,8 +701,19 @@ class Map_master():
         frame_for_inter['geometry'] = [Polygon(self.swap_points(points))]
         print(frame_for_inter['geometry'])
 
-        #Получаем множество жилых домов, которые попадют в заданный буфер
+        #Получаем множество жилых домов, которые попадют в заданный буфер и считаем данные
         df_inter_buffer = self.inter_for_buffer(df_buildings, frame_for_inter)
+        kinder_number = 0
+        students_number = 0
+        adults_number = 0
+        total_buildings_number = df_inter_buffer.shape[0]
+        for i in range(df_inter_buffer.shape[0]):
+            kinder_number += int(df_inter_buffer.iloc[i]['kindergartens'])
+            students_number += int(df_inter_buffer.iloc[i]['Pupils'])
+            adults_number += int(df_inter_buffer.iloc[i]['adults'])
+
+        #Добавляем маркер для объекта,для которого строится буффер
+        self.add_marker(centroid_latitude, centroid_longitude, object, 'blue', feature_group, type_o, total_buildings_number, kinder_number, students_number, adults_number)
 
         # Добавляем дома на карту
         for i in range(df_inter_buffer.shape[0]):
