@@ -325,7 +325,8 @@ class Map_master():
                 fillcolor = 'blue'
             html_text = """
             <li><a href="/map{}_{}" target=_parent><big><big>Построить радиус доступности</big></big></a></li>
-              """.format('s', object['id'])
+            <li><a href="/data_update{}_{}" target=_blank><big><big>Редактировать данные</big></big></a></li>
+            """.format('s', object['id'], 's', object['id'])
             #static_text = """
             #<i>Школа: {} <Br> Загруженность (в процентах от номинальной): {} <Br> Рейтинг: {}
             #<Br></i> <li><a href="https://{}" target=_blank>Сайт школы <br> </a></li>

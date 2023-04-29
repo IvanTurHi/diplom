@@ -161,13 +161,7 @@ def run_flask(osm):
         elif request.method == 'GET':
             return render_template('map_page.html', iframe=map_dict[session['Map']].html_map)
 
-    @app.route('/map<type>_<object_id>')
-    def popup_id(type, object_id):
-        distrcit_id_list = ['relation/1257484', 'relation/2162195', 'relation/1255942', 'relation/1257218',
-                            'relation/364001', 'relation/1275551', 'relation/1275608', 'relation/1257786',
-                            'relation/1255987', 'relation/1275627']
-        region_id_list = ['relation/2162196']
-        print('type', type)
+    def return_object_for_buffer_and_update(type, object_id):
         if type == 's':
             type_o = 'schools'
         elif type == 'k':
@@ -180,6 +174,33 @@ def run_flask(osm):
         elif type == 'm':
             idd = object_id.replace('=', '/')
             object = df_objects.loc[df_objects['id'] == idd]
+
+        return object, type_o
+
+    @app.route('/data_update<type>_<object_id>')
+    def data_update(type, object_id):
+        object = return_object_for_buffer_and_update(type, object_id)
+
+
+    @app.route('/map<type>_<object_id>')
+    def popup_id(type, object_id):
+        distrcit_id_list = ['relation/1257484', 'relation/2162195', 'relation/1255942', 'relation/1257218',
+                            'relation/364001', 'relation/1275551', 'relation/1275608', 'relation/1257786',
+                            'relation/1255987', 'relation/1275627']
+        region_id_list = ['relation/2162196']
+        #if type == 's':
+        #    type_o = 'schools'
+        #elif type == 'k':
+        #    type_o = 'kindergartens'
+        #elif type == 'm':
+        #    type_o = 'medicine'
+        #df_objects = get_objects_df(type_o)
+        #if type == 's' or type == 'k':
+        #    object = df_objects.loc[df_objects['id'] == int(object_id)]
+        #elif type == 'm':
+        #    idd = object_id.replace('=', '/')
+        #    object = df_objects.loc[df_objects['id'] == idd]
+        object, type_o = return_object_for_buffer_and_update(type, object_id)
         #Тут идет проверка на то, что наша школа не входит в ЦАО, тк для них радиус 750 метров, а не 500
         district_id = list(object['district_id'])[0]
         region_id = list(object['region_id'])[0]
@@ -347,6 +368,21 @@ def run_flask(osm):
                 without_schools = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'without_schools')
                 without_kindergartens = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'without_kindergartens')
                 without_medicine = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'without_medicine')
+                schools_index = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'obespech_schools_index')
+                is_schools_obespech = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district',
+                                                                             'is_obespech_schools')
+                if is_schools_obespech == 0:
+                    is_schools_obespech = 'Нет'
+                elif is_schools_obespech == 1:
+                    is_schools_obespech = 'Да'
+                kinder_index = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'obespech_kinder_index')
+                is_kinder_obespech = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district',
+                                                                             'is_obespech_kinder')
+                if is_kinder_obespech == 0:
+                    is_kinder_obespech = 'Нет'
+                elif is_kinder_obespech == 1:
+                    is_kinder_obespech = 'Да'
+
                 models[territories[i]] = {'Площадь (м2)': area,
                                           'Количество школ': schools_number,
                                           'Средняя загруженность школ(в процентах)': schools_workload,
@@ -357,7 +393,11 @@ def run_flask(osm):
                                           'Средний год постройки зданий': avg_year,
                                           'Процент домов,находящихся вне установленной зоны пешей доступности от школ': without_schools,
                                           'Процент домов,находящихся вне установленной зоны пешей доступности от детских садов': without_kindergartens,
-                                          'Процент домов,находящихся вне установленной зоны пешей доступности от медицинских учреждений': without_medicine}
+                                          'Процент домов,находящихся вне установленной зоны пешей доступности от медицинских учреждений': without_medicine,
+                                          'Количество мест в школах (на 1000 человек)': schools_index,
+                                          'Удовлетворяет ли количество мест в школах нормативам': is_schools_obespech,
+                                          'Количество мест в детских садах (на 1000 человек)': kinder_index,
+                                          'Удовлетворяет ли количество мест детских садах нормативам': is_kinder_obespech}
 
         elif len(map_dict[session['Map']].region_list) > 0:
             territories = map_dict[session['Map']].stat_slave.get_regions(map_dict[session['Map']].region_list, regions_df)
