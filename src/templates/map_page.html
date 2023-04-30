@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head></head>
+<body>
+	<h1>BDS</h1>
+<div class="main_container">
+        <ul class="menu-main">
+          <li><a href="{{ url_for('basic_page') }}">Main page</a></li>
+        </ul> 
+    </div>
+        {{ iframe|safe }}
+  <form method="post" action="/map_d/">
+   <p><b>Выберите районы</b></p>
+   <p><input type="checkbox" name="district1" value="relation/1255704">район Восточное Измайлово<Br>
+   <input type="checkbox" name="district2" value="relation/1255680">район Северное Измайлово<Br>
+   <input type="checkbox" name="district3" value="relation/1319245">район Измайлово<Br> 
+   <input type="checkbox" name="district4" value="relation/1319263">район Ивановское<Br>
+   <input type="checkbox" name="district5" value="relation/1319142">район Гольяново<Br>
+   <input type="checkbox" name="region1" value="relation/226149">Западный административный округ<Br>
+   <input type="checkbox" name="region2" value="relation/1320234">Восточный административный округ<Br>
+   <input type="radio" name="category" value="schools">Школы<Br>
+   <input type="radio" name="category" value="kindergartens">Детские сады<Br>
+   <input type="radio" name="category" value="buildings">Жилые здания<Br>
+   <input type="radio" name="category" value="medicine">Медицинские объекты</p>
+   <p><input type="submit" value="Получить данные"></p>
+  </form>
+  <form method="post" action="/stat">
+    <p><input type="button" value="посмотреть статистику" onclick="openStat()"></p>
+  </form>
+	<script language="JavaScript">
+	<!-- hide
+	function openStat() {
+	  myWin= open("/stat");
+	}
+	// -->
+	</script>
+</body>
+</html>

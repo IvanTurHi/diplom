@@ -1,21 +1,83 @@
 from flask import Flask
+from flask import render_template, render_template_string, request
 import folium
 from map_module import Map_master
 import geopandas as gpd
+from flask import session
+from json2html import *
+from statistic import Stat_master
+
+people_counter = 0
+map_dict = {}
+
+class map_class():
+
+    def initiation(self, centroid_latitude=55.757220, centroid_longitude=37.621184, zoom=12):
+        self.maps = folium.Map(width=1000, height=500, left='11%', location=[centroid_latitude, centroid_longitude], zoom_start=zoom)
+
+    def repr(self):
+        self.html_map = self.maps._repr_html_()
+
+
+    maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
+
+    html_map = maps._repr_html_()
+
+    stat_slave = Stat_master()
+
+    control = folium.LayerControl()
+
+    feature_group_borders_name = 'borders'
+    feature_group_hexagon_name = 'hexagons'
+    feature_group_borders = folium.FeatureGroup(feature_group_borders_name)
+    feature_group_hexagon = folium.FeatureGroup(feature_group_hexagon_name)
+
+    feature_group_objects_name = 'object'
+    feature_group_objects = folium.FeatureGroup(feature_group_objects_name)
+
+    feature_group_choropleth_name = 'choropleth'
+    feature_group_choropleth = folium.FeatureGroup(feature_group_choropleth_name)
+
+    feature_group_buffer_name = 'buffer'
+    feature_group_buffer = folium.FeatureGroup(feature_group_buffer_name)
+
+    districts_list = []
+    regions_list = []
+
+    category = 'none'
+
+
 
 
 def run_flask(osm):
 
     app = Flask(__name__)
+    app.secret_key = '1234567890'
     map_slave = Map_master()
+    df_schools = osm.read_data(osm.school_data_name_mos_transform)
+    df_buildings = osm.read_data(osm.building_data_name_transform)
+    df_medicine = osm.read_data(osm.medicine_data_name_transform)
+    df_kindergartens = osm.read_data(osm.kindergartens_data_name_mos_transform)
+    districts_df = osm.read_data(osm.borders_data_name_transform)
+    regions_df = osm.read_data(osm.regions_borders_data_name_transform)
+    #Map = map_class()
 
-    #Тестовая фигня, убрать потом
-    def start():
-        df_school = osm.read_data(osm.school_data_name_transform)
-        df_school_test_with_444 = df_school.loc[df_school['district_name'] == 'район Измайлово']
-        df_borders = osm.read_data(osm.borders_data_name_transform)
-        df_borders_izm = df_borders.loc[df_borders['district_name'] == 'район Измайлово']
-        return df_school_test_with_444, df_borders_izm
+
+    @app.route('/')
+    def basic_page():
+        global people_counter
+        global map_dict
+        if 'visits' in session:
+            session['visits'] = session.get('visits') + 1# чтение и обновление данных сессии
+            map_dict[session['Map']] = map_dict[session['Map']]
+        else:
+            session['visits'] = 1  # настройка данных сессии
+            session['Map'] = people_counter
+            Mapp = map_class()
+            map_dict[session['Map']] = Mapp
+            people_counter += 1
+        #return "Total visits: {}".format(session.get('visits'))
+        return render_template('main_page.html')
 
     @app.route('/hello_sasha')
     def hello_sasha():
@@ -24,11 +86,16 @@ def run_flask(osm):
     #Функция для загрузки данных
     def get_objects_df(type_o):
         if type_o == 'schools':
-            return osm.read_data(osm.school_data_name_mos_transform)
+            #return osm.read_data(osm.school_data_name_mos_transform)
+            return df_schools
         elif type_o == 'buildings':
-            return osm.read_data(osm.building_data_name_transform)
+            #return osm.read_data(osm.building_data_name_transform)
+            return df_buildings
         elif type_o == 'medicine':
-            return osm.read_data(osm.medicine_data_name_transform)
+            #return osm.read_data(osm.medicine_data_name_transform)
+            return df_medicine
+        elif type_o == 'kindergartens':
+            return df_kindergartens
 
     #Функция для сбора всех гексагонов в один большой список
     def form_geom_list_of_polygons(big_list):
@@ -40,7 +107,7 @@ def run_flask(osm):
         return list_of_p
 
     #Функция возвращает датафрейм полигонов, что бы его потом можно было пересечь с датафреймом объектов
-    def get_polygons_df(type_t):
+    def get_polygons_df():
         polygons_df = gpd.GeoDataFrame(columns=['geometry'])
         #if type_t == 'district':
         #    list_of_p = form_geom_list_of_polygons(map_slave.big_polygons_hex_list_district)
@@ -53,74 +120,327 @@ def run_flask(osm):
 
         return polygons_df
 
-    #Фигня с картой
-    @app.route('/')
-    def basic_map():
-        maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
-        districts_list = ['relation/181288', 'relation/364551', 'relation/2092928', 'relation/240229']
-        region_list = ['relation/226149', 'relation/1320234']
+    def get_district_and_region_list(items):
+        districts_list = []
+        regions_list = []
+        category = 'none'
+        #for i in items:
+        #    print(i[0], i[1])
+        for i in items:
+            if 'district' in i[0]:
+                districts_list.append(i[1])
+            elif 'region' in i[0]:
+                regions_list.append(i[1])
+            elif 'category' in i[0]:
+                category = i[1]
+                #print(category)
+        return districts_list, regions_list, category
 
-        #Отрисовка гексагонов на уровне районов
-        type_t = 'district'
-        maps = map_slave.print_district_borders(maps, districts_list, type_t, 'district borders')
-        maps = map_slave.print_hexagones(maps, districts_list, type_t, 'district hexagons')
+    def form_df_borders_for_chlor(df_target, support_df, id_name):
+        for i in range(len(support_df)):
+            df_target.loc[len(df_target.index)] = [support_df.iloc[i][id_name], support_df.iloc[i]['geometry']]
 
-        #Отрисовка гексагонов на уровне округов
-        type_t = 'region'
-        maps = map_slave.print_district_borders(maps, region_list, type_t, 'region borders')
-        maps = map_slave.print_hexagones(maps, region_list, type_t, 'region hexagons')
+        return df_target
 
-        #Вывод школ
-        type_o = 'schools'
+    def get_districts_or_regions(districts_list, region_list):
+        if len(districts_list) > 0:
+            return map_slave.get_districts(districts_list), 'district'
+        else:
+            return map_slave.get_regions(region_list), 'region'
+
+
+    @app.route('/map_d/', methods=['POST', 'GET'])
+    def get_data():
+        if request.method == 'POST':
+            districts_list, regions_list, category = get_district_and_region_list(request.values.items())
+
+            data_flag = True
+            if len(districts_list) == 0 and len(regions_list) == 0:
+                data_flag = False
+            return basic_map(data_flag, districts_list, regions_list, category)
+        elif request.method == 'GET':
+            return render_template('map_page.html', iframe=map_dict[session['Map']].html_map)
+
+    def return_object_for_buffer_and_update(type, object_id):
+        if type == 's':
+            type_o = 'schools'
+        elif type == 'k':
+            type_o = 'kindergartens'
+        elif type == 'm':
+            type_o = 'medicine'
         df_objects = get_objects_df(type_o)
-        type_t = 'region'
-        polygons_df = get_polygons_df(type_t)
-        color = 'blue'
-        maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'school',
-                                       marker=True, borders=True, circle=True)
+        if type == 's' or type == 'k':
+            object = df_objects.loc[df_objects['id'] == int(object_id)]
+        elif type == 'm':
+            idd = object_id.replace('=', '/')
+            object = df_objects.loc[df_objects['id'] == idd]
 
-        #Вывод школ на уровне районов
-        #type_t = 'district'
-        #polygons_df = get_polygons_df(type_t)
-        #color = 'red'
-        #maps = map_slave.print_objects(maps, df_objects, polygons_df, color, 'school')
+        return object, type_o
 
-        folium.LayerControl().add_to(maps)
+    @app.route('/data_update<type>_<object_id>')
+    def data_update(type, object_id):
+        object = return_object_for_buffer_and_update(type, object_id)
 
 
-        #df_school_test_with_444, df_borders_izm = start()
-        #print(df_borders_izm)
-        #map = folium.Map()
+    @app.route('/map<type>_<object_id>')
+    def popup_id(type, object_id):
+        distrcit_id_list = ['relation/1257484', 'relation/2162195', 'relation/1255942', 'relation/1257218',
+                            'relation/364001', 'relation/1275551', 'relation/1275608', 'relation/1257786',
+                            'relation/1255987', 'relation/1275627']
+        region_id_list = ['relation/2162196']
+        #if type == 's':
+        #    type_o = 'schools'
+        #elif type == 'k':
+        #    type_o = 'kindergartens'
+        #elif type == 'm':
+        #    type_o = 'medicine'
+        #df_objects = get_objects_df(type_o)
+        #if type == 's' or type == 'k':
+        #    object = df_objects.loc[df_objects['id'] == int(object_id)]
+        #elif type == 'm':
+        #    idd = object_id.replace('=', '/')
+        #    object = df_objects.loc[df_objects['id'] == idd]
+        object, type_o = return_object_for_buffer_and_update(type, object_id)
+        #Тут идет проверка на то, что наша школа не входит в ЦАО, тк для них радиус 750 метров, а не 500
+        district_id = list(object['district_id'])[0]
+        region_id = list(object['region_id'])[0]
+        centroid_latitude = float(list(object['centroid latitude'])[0])
+        centroid_longitude = float(list(object['centroid longitude'])[0])
+        if district_id in distrcit_id_list or region_id in region_id_list:
+            if type == 's':
+                radius = 750
+            elif type == 'k':
+                radius = 500
+            elif type == 'm':
+                radius = 1500
+        else:
+            if type == 's':
+                radius = 500
+            elif type == 'k':
+                radius = 300
+            elif type == 'm':
+                radius = 1500
+        #return render_template('main_page.html')
+        feature_group_name = 'buildings'
+        map_dict[session['Map']].initiation(centroid_latitude, centroid_longitude, 15)
+        map_dict[session['Map']].feature_group_borders.add_to(map_dict[session['Map']].maps)
+        map_dict[session['Map']].feature_group_hexagon.add_to(map_dict[session['Map']].maps)
+        map_dict[session['Map']].feature_group_objects.add_to(map_dict[session['Map']].maps)
+        #map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
+        map_dict[session['Map']].feature_group_choropleth = map_slave.choropleth_for_hex(map_dict[session['Map']].maps, map_dict[session['Map']].feature_group_choropleth_name, map_dict[session['Map']].category)
+        map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
+        map_dict[session['Map']].feature_group_buffer = map_slave.print_buffer(map_dict[session['Map']].maps, object, radius, df_buildings, feature_group_name, type_o)
+        map_dict[session['Map']].feature_group_buffer.add_to(map_dict[session['Map']].maps)
+        map_dict[session['Map']].control.add_to(map_dict[session['Map']].maps)
+        map_dict[session['Map']].repr()
+        return render_template('map_page.html', iframe=map_dict[session['Map']].html_map)
+
+    #Фигня с картой
+    @app.route('/map')
+    def basic_map(data_flag=False, districts_list=[], region_list=[], category='none'):
+        print(session)
+        map_slave.big_polygons_hex_list_regions = []
+        map_slave.big_polygons_hex_list_district = []
+        #maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
+        #Map = map_class()
+        map_dict[session['Map']].initiation()
+        map_dict[session['Map']].districts_list = districts_list
+        map_dict[session['Map']].region_list = region_list
+        if data_flag == True:
+            #districts_list = ['relation/181288', 'relation/364551', 'relation/2092928', 'relation/240229']
+            #region_list = ['relation/226149', 'relation/1320234']
+
+            if len(districts_list) > 0:
+                #Отрисовка гексагонов на уровне районов
+                type_t = 'district'
+                feature_group_borders_name = 'district borders'
+                feature_group_hexagon_name = 'district hexagons'
+                borders_hex_list = districts_list
+                #maps = map_slave.print_district_borders(maps, districts_list, type_t, 'district borders')
+                #maps = map_slave.print_hexagones(maps, districts_list, type_t, 'district hexagons')
+            else:
+                #Отрисовка гексагонов на уровне округов
+                type_t = 'region'
+                feature_group_borders_name = 'region borders'
+                feature_group_hexagon_name = 'region hexagons'
+                borders_hex_list = region_list
+                #maps = map_slave.print_district_borders(maps, region_list, type_t, 'region borders')
+                #maps = map_slave.print_hexagones(maps, region_list, type_t, 'region hexagons')
+
+            map_dict[session['Map']].feature_group_borders = map_slave.print_district_borders(map_dict[session['Map']].maps, borders_hex_list, type_t, feature_group_borders_name)
+            map_dict[session['Map']].feature_group_hexagon = map_slave.print_hexagones(map_dict[session['Map']].maps, borders_hex_list, type_t, feature_group_hexagon_name)
+
+            map_dict[session['Map']].feature_group_borders.add_to(map_dict[session['Map']].maps)
+            map_dict[session['Map']].feature_group_hexagon.add_to(map_dict[session['Map']].maps)
+
+            #Вывод школ
+            #school_print = True
+            #building_print = True
+            polygons_df = get_polygons_df()
+            if category == 'schools':
+                map_dict[session['Map']].category = 'schools'
+                type_o = category
+                df_objects = get_objects_df(type_o)
+                color = 'red'
+                map_dict[session['Map']].feature_group_objects = map_slave.print_objects(map_dict[session['Map']].maps, df_objects, polygons_df, color, 'school', 'schools',
+                                               marker=False, borders=True, circle=False)
+
+                map_dict[session['Map']].feature_group_objects.add_to(map_dict[session['Map']].maps)
+
+                df_borders, type_t = get_districts_or_regions(districts_list, region_list)
+                map_dict[session['Map']].feature_group_choropleth = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, 'schools in hex', type_t, 'schools')
+
+                map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
+
+            if category == 'kindergartens':
+                map_dict[session['Map']].category = 'kindergartens'
+                type_o = category
+                df_objects = get_objects_df(type_o)
+                color = 'red'
+                map_dict[session['Map']].feature_group_objects = map_slave.print_objects(map_dict[session['Map']].maps, df_objects, polygons_df, color, 'kindergartens', 'kindergartens',
+                                               marker=False, borders=True, circle=False)
+
+                map_dict[session['Map']].feature_group_objects.add_to(map_dict[session['Map']].maps)
+
+                df_borders, type_t = get_districts_or_regions(districts_list, region_list)
+                map_dict[session['Map']].feature_group_choropleth = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, 'kindergartens in hex', type_t, 'kindergartens')
+
+                map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
+
+            #Вывод зданий
+            if category == 'buildings':
+                map_dict[session['Map']].category = 'buildings'
+                type_o = category
+                df_objects = get_objects_df(type_o)
+                color = 'red'
+                map_dict[session['Map']].feature_group_objects = map_slave.print_objects(map_dict[session['Map']].maps, df_objects, polygons_df, color, 'buildings', 'buildings',
+                                               marker=False, borders=True, circle=False)
+
+                map_dict[session['Map']].feature_group_objects.add_to(map_dict[session['Map']].maps)
+
+                df_borders, type_t = get_districts_or_regions(districts_list, region_list)
+                map_dict[session['Map']].feature_group_choropleth = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, 'buildings in hex', type_t, 'buildings')
+
+                map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
+
+            if category == 'medicine':
+                map_dict[session['Map']].category = 'medicine'
+                type_o = category
+                df_objects = get_objects_df(type_o)
+                color = 'red'
+                map_dict[session['Map']].feature_group_objects = map_slave.print_objects(map_dict[session['Map']].maps, df_objects, polygons_df, color, 'medicine', 'medicine',
+                                               marker=False, borders=True, circle=False)
+                map_dict[session['Map']].feature_group_objects.add_to(map_dict[session['Map']].maps)
+
+                df_borders, type_t = get_districts_or_regions(districts_list, region_list)
+                map_dict[session['Map']].feature_group_choropleth = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, 'medicine in hex', type_t, 'medicine')
+
+                map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
+
+            #control = folium.LayerControl()
+
+            #folium.LayerControl().add_to(Map.maps)
+            map_dict[session['Map']].control.add_to(map_dict[session['Map']].maps)
+
+
+
+
+        #html_map = Map.maps._repr_html_()
+        map_dict[session['Map']].repr()
 #
-        ##Вывод границ района, координаты указаны не в том порядке,
-        ##поэтому координаты каждой точки необходимо поменять местами, иначе оказываемся где-то в Иране
-        #geom = list(df_borders_izm['geometry'])[0]
-        #points = list(geom.exterior.coords)
-        #for i in range(len(points)):
-        #    points[i] = points[i][::-1]
-        #print(points)
-#
-        ##Добавление маркеров школы на карту
-        #for i in range(df_school_test_with_444.shape[0]):
-        #    location_latitude = df_school_test_with_444.iloc[i]['centroid latitude']
-        #    location_longitude = df_school_test_with_444.iloc[i]['centroid longitude']
-        #    folium.Marker(location=[location_latitude, location_longitude],
-        #                  popup='<i>Школа №444</i>', tooltip='Click here').add_to(map)
-#
-        ##Добавление границ района на карту
-        #folium.PolyLine(locations=points, color='red').add_to(map)
+        return render_template('map_page.html', iframe=map_dict[session['Map']].html_map)
 
-        #location_latitude = df_school_test_with_444.iloc[0]['centroid latitude']
-        #location_longitude = df_school_test_with_444.iloc[0]['centroid longitude']
-        #folium.Marker(location=[location_latitude, location_longitude],
-        #              popup='<i>Marker</i>', tooltip='Click here').add_to(map)
-#
-        #location_latitude = df_school_test_with_444.iloc[1]['centroid latitude']
-        #location_longitude = df_school_test_with_444.iloc[1]['centroid longitude']
-        #folium.Marker(location=[location_latitude, location_longitude],
-        #              popup='<i>Marker</i>', tooltip='Click here').add_to(map)
+    #Преобразование данных по районам и округам в папке additional_code ноутбук preparation_for_statistic
+    @app.route('/stat', methods=['POST', 'GET'])
+    def stat():
+        models = {}
+        if len(map_dict[session['Map']].districts_list) > 0:
+            territories = map_dict[session['Map']].stat_slave.get_districts(map_dict[session['Map']].districts_list, districts_df)
+            for i in range(len(territories)):
+                area = map_dict[session['Map']].stat_slave.get_area(territories[i], 'district')
+                schools_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'schools_number')
+                schools_workload = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'schools_workload')
+                kindergartens_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'kindergartens_number')
+                medicine_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'medicine_number')
+                buildings_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'buildings_number')
+                residents_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'residents_number')
+                avg_year = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'avg_year')
+                without_schools = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'without_schools')
+                without_kindergartens = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'without_kindergartens')
+                without_medicine = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'without_medicine')
+                schools_index = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'obespech_schools_index')
+                is_schools_obespech = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district',
+                                                                             'is_obespech_schools')
+                if is_schools_obespech == 0:
+                    is_schools_obespech = 'Нет'
+                elif is_schools_obespech == 1:
+                    is_schools_obespech = 'Да'
+                kinder_index = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district', 'obespech_kinder_index')
+                is_kinder_obespech = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district',
+                                                                             'is_obespech_kinder')
+                if is_kinder_obespech == 0:
+                    is_kinder_obespech = 'Нет'
+                elif is_kinder_obespech == 1:
+                    is_kinder_obespech = 'Да'
 
-        return maps._repr_html_()
+                models[territories[i]] = {'Площадь (м2)': area,
+                                          'Количество школ': schools_number,
+                                          'Средняя загруженность школ(в процентах)': schools_workload,
+                                          'Количество детских садов': kindergartens_number,
+                                          'Количество мед учреждений': medicine_number,
+                                          'Количество жилых домов': buildings_number,
+                                          'Количество жителей': residents_number,
+                                          'Средний год постройки зданий': avg_year,
+                                          'Процент домов,находящихся вне установленной зоны пешей доступности от школ': without_schools,
+                                          'Процент домов,находящихся вне установленной зоны пешей доступности от детских садов': without_kindergartens,
+                                          'Процент домов,находящихся вне установленной зоны пешей доступности от медицинских учреждений': without_medicine,
+                                          'Количество мест в школах (на 1000 человек)': schools_index,
+                                          'Удовлетворяет ли количество мест в школах нормативам': is_schools_obespech,
+                                          'Количество мест в детских садах (на 1000 человек)': kinder_index,
+                                          'Удовлетворяет ли количество мест детских садах нормативам': is_kinder_obespech}
+
+        elif len(map_dict[session['Map']].region_list) > 0:
+            territories = map_dict[session['Map']].stat_slave.get_regions(map_dict[session['Map']].region_list, regions_df)
+            for i in range(len(territories)):
+                area = map_dict[session['Map']].stat_slave.get_area(territories[i], 'region')
+                schools_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                              'schools_number')
+                schools_workload = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                                'schools_workload')
+                kindergartens_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                                    'kindergartens_number')
+                medicine_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                               'medicine_number')
+                buildings_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                                'buildings_number')
+                residents_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                                'residents_number')
+                avg_year = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region', 'avg_year')
+                without_schools = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                               'without_schools')
+                without_kindergartens = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                                     'without_kindergartens')
+                without_medicine = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
+                                                                                'without_medicine')
+                models[territories[i]] = {'Площадь (м2)': area,
+                                          'Количество школ': schools_number,
+                                          'Средняя загруженность школ(в процентах)': schools_workload,
+                                          'Количество детских садов': kindergartens_number,
+                                          'Количество мед учреждений': medicine_number,
+                                          'Количество жилых домов': buildings_number,
+                                          'Количество жителей': residents_number,
+                                          'Средний год постройки зданий': avg_year,
+                                          'Процент домов,находящихся вне установленной зоны пешей доступности от школ': without_schools,
+                                          'Процент домов,находящихся вне установленной зоны пешей доступности от детских садов': without_kindergartens,
+                                          'Процент домов,находящихся вне установленной зоны пешей доступности от медицинских учреждений': without_medicine}
+
+        else:
+            models['Список выбранных территорий'] = 'Территории не выбраны'
+
+        models = json2html.convert(json=models)
+
+        return render_template('stat.html', json_obj=models)
+
 
 
     #Адрес сервера, раскомментить на сервере

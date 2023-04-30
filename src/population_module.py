@@ -281,6 +281,85 @@ class population():
 
         osm.geo_write_data(df_buildings, osm.building_data_name_transform)
 
+    #Функция для получения данных об этажности здания
+    def get_levels(self, df_buildings, median_level):
+        list_of_levels = list(df_buildings['building:levels'])
+        print(len(list_of_levels))
+        list_of_levels.count('')
+        for i in range(len(list_of_levels)):
+            # Есть 6 багов в этажности, инфы никакой, тупо игнорим и ставим среднее значение этажности
+            try:
+                list_of_levels[i] = float(list_of_levels[i])
+                if list_of_levels[i] == 0:
+                    list_of_levels[i] = median_level
+            except ValueError:
+                # print(list_of_levels[i])
+                list_of_levels[i] = median_level
+
+        return list_of_levels
+
+    #Функция для подсчета площади здания, основываясь на его площади и количестве этажей, если не указана жилая площадь
+    def get_areas(self, df_buildings, list_of_levels, basic_footprint, median_level):
+        list_of_areas = list(df_buildings['area'])
+        for i in range(len(list_of_areas)):
+            if '.' in list_of_areas[i] and ' ' not in list_of_areas[i]:
+                try:
+                    list_of_areas[i] = float(list_of_areas[i]) * list_of_levels[i]
+                except ValueError:
+                    # print(1, list_of_areas[i])
+                    list_of_areas[i] = basic_footprint * median_level
+            else:
+                try:
+                    list_of_areas[i] = list_of_areas[i].replace(' ', '')
+                    list_of_areas[i] = float(list_of_areas[i].replace(',', '.'))
+                except ValueError:
+                    # print(2, list_of_areas[i])
+                    list_of_areas[i] = basic_footprint * median_level
+
+        return list_of_areas
+
+    #Функция добавления данных о количестве жителей в доме
+    #Подробно в ноутбуке peoples_dencity в папке additionnal_code
+    def add_peoples_number_to_building(self):
+        osm = osm_parser()
+        osm.get_path()
+        df_buildings = osm.read_data(osm.building_data_name_transform)
+
+        with open(osm.data_path + 'statistical_number_of_people.json', 'r') as f:
+            peopls_number = json.load(f)
+
+        #Среднее значение этажности
+        median_level = 9.0
+        #Среднее значение футпринта здания
+        basic_footprint = 1000
+        #Корректирующий коэффициент, на который мы умножаем среднюю плотность чтоб повысить точность
+        correction_coef = 1.05083
+
+        list_of_levels = self.get_levels(df_buildings, median_level)
+        list_of_areas = self.get_areas(df_buildings, list_of_levels, basic_footprint, median_level)
+
+        df_buildings['area'] = list_of_areas
+        total_area_sum = df_buildings['area'].sum()
+
+        #Высчитываем плотность для детсадовцев, школьников и взрослых, основываясь на данных площади и стат данных
+        density_of_kindergartens = (peopls_number['kindergartens'] / total_area_sum) * correction_coef
+        density_of_pupils = (peopls_number['Pupils'] / total_area_sum) * correction_coef
+        density_of_adults = (peopls_number['adults'] / total_area_sum) * correction_coef
+
+        total_density = ((peopls_number['kindergartens'] + peopls_number['Pupils'] + peopls_number['adults']) / total_area_sum) * correction_coef
+
+        df_buildings['kindergartens'] = ''
+        df_buildings['Pupils'] = ''
+        df_buildings['adults'] = ''
+
+        for i in range(df_buildings.shape[0]):
+            df_buildings.loc[i, 'kindergartens'] = round(df_buildings.loc[i]['area'] * density_of_kindergartens)
+            df_buildings.loc[i, 'Pupils'] = round(df_buildings.loc[i]['area'] * density_of_pupils)
+            df_buildings.loc[i, 'adults'] = round(df_buildings.loc[i]['area'] * density_of_adults)
+
+        osm.geo_write_data(df_buildings, osm.building_data_name_transform)
+
+
     buildings_area_data = 'buildings_area.json'
 
 
@@ -499,6 +578,27 @@ class population_module():
         osm.get_path()
         osm.geo_write_data()
 
+    def get_students_number_for_schools(self):
+        osm = osm_parser()
+        osm.get_path()
+        schools_df = osm.read_data('schools_datamos_processing.geojson')
+        students_number_list = []
+
+        for i in range(schools_df.shape[0]):
+            eoid = str(schools_df.iloc[i]['eoid'])
+            print(eoid)
+            try:
+                snumber = self.get_students_number(eoid)
+            except BaseException:
+                print('111111111111', eoid)
+                snumber = 0
+            students_number_list.append(snumber)
+
+        schools_df['students'] = students_number_list
+
+        osm.geo_write_data(schools_df, 'schools_datamos_processing.geojson')
+
+
 
 
     api_key = '0d41eef2b32bf578f1dd43148c5ffed1'
@@ -531,9 +631,14 @@ if __name__ == '__main__':
     #pm = population_module()
     #pm.get_website()
     #pm.parse_students()
-    pp = parser()
-    pp.tyr_to_parse()
+    #pp = parser()
+    #pp.tyr_to_parse()
     #Я пошел пытаться совместить адреса с осм и адреса с реформы жкх. Пожелайте мне удачи
+    #pop = population()
+    #pop.add_peoples_number_to_building()
+    #pm = population_module()
+    #pm.get_students_number_for_schools()
+    pass
 
 
 

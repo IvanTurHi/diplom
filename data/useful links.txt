@@ -21,3 +21,5 @@ OSMnx -- https://osmnx.readthedocs.io/en/stable/index.html
 folium и heatmap -- https://habr.com/ru/post/709092/
 Туториал по folium -- https://youtu.be/t9Ed5QyO7qY
 Подробно про гексагоны -- https://h3geo.org/docs/core-library/restable/
+Про Choropleth -- https://towardsdatascience.com/how-to-step-up-your-folium-choropleth-map-skills-17cf6de7c6fe
+Несколько choropleth -- https://habr.com/ru/articles/714182/

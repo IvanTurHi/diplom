@@ -6,6 +6,8 @@ import numpy as np
 from shapely.geometry import Polygon
 import geopandas as gpd
 import json
+import branca
+from shapely.geometry import Point
 
 class Map_master():
 
@@ -57,28 +59,29 @@ class Map_master():
 
     #Функция по выводу границ районов. На вход получает список id районов
     def print_district_borders(self, maps, districts_list, type_t, feature_group_name):
-        if type_t == 'district':
-            df_target_borders = self.get_districts(districts_list)
-            id_type = 'district_id'
-            color = 'black'
-        elif type_t == 'region':
-            df_target_borders = self.get_regions(districts_list)
-            id_type = 'region_id'
-            color = 'red'
+        if len(districts_list) > 0:
+            if type_t == 'district':
+                df_target_borders = self.get_districts(districts_list)
+                id_type = 'district_id'
+                color = 'black'
+            elif type_t == 'region':
+                df_target_borders = self.get_regions(districts_list)
+                id_type = 'region_id'
+                color = 'red'
 
-        borders_map = self.get_borders_in_right_oreder(df_target_borders, id_type=id_type)
+            borders_map = self.get_borders_in_right_oreder(df_target_borders, id_type=id_type)
 
-        feature_group_borders = folium.FeatureGroup(feature_group_name)
+            feature_group_borders = folium.FeatureGroup(feature_group_name)
 
-        #fill_color отвечает за заливку внутри полигона
-        #fill_opacity отвечает за прозрачность заливки
-        for i in borders_map:
-            for j in borders_map[i]:
-                #folium.PolyLine(locations=j, color=color, fill_color="blue", fill_opacity=0.3).add_to(maps)
-                folium.PolyLine(locations=j, color=color).add_to(feature_group_borders)
+            #fill_color отвечает за заливку внутри полигона
+            #fill_opacity отвечает за прозрачность заливки
+            for i in borders_map:
+                for j in borders_map[i]:
+                    #folium.PolyLine(locations=j, color=color, fill_color="blue", fill_opacity=0.3).add_to(maps)
+                    folium.PolyLine(locations=j, color=color).add_to(feature_group_borders)
 
-        feature_group_borders.add_to(maps)
-        return maps
+            #feature_group_borders.add_to(maps)
+        return feature_group_borders
 
     #Функция извлечения координат для полигоново и мультиполигонов в нужном формате
     def extract_borders(self, geom):
@@ -122,7 +125,7 @@ class Map_master():
                 #my_PolyLine = folium.PolyLine(locations=polyline, weight=3, color=color).add_to(feature_group_hex)
                 #maps.add_child(my_PolyLine)
                 folium.PolyLine(locations=polyline, weight=3, color=color).add_to(feature_group_hex)
-                feature_group_hex.add_to(maps)
+                #feature_group_hex.add_to(maps)
 
             polylines_x = []
             for j in range(len(polylines)):
@@ -163,47 +166,570 @@ class Map_master():
 
         #print('list_ken', len(self.big_polygons_hex_list_regions), len(self.big_polygons_hex_list_district))
 
-        return maps
+        return feature_group_hex
+
+    def intersction(self, df_objects, polygons_df):
+        df_objects['centroid'] = df_objects.geometry.centroid
+        polygons_df['polygon'] = polygons_df.geometry
+        objects_df = df_objects.set_geometry('centroid')
+
+        return gpd.sjoin(objects_df, polygons_df)
+
+    #Функция для визуализации тех объектов, у которых тип указан точкой
+    def visualize_hexagons_for_point_object(self, hexagons):
+
+        polylines = []
+        lat = []
+        lng = []
+        for hex in hexagons:
+            polygons = h3.h3_set_to_multi_polygon([hex], geo_json=False)
+            outlines = [loop for polygon in polygons for loop in polygon]
+            polyline = [outline + [outline[0]] for outline in outlines][0]
+            lat.extend(map(lambda v: v[0], polyline))
+            lng.extend(map(lambda v: v[1], polyline))
+            polylines += polyline
+
+        return polylines
+
+    def get_table_row(self, left_column_value, right_column_value, left_col_color, right_col_color):
+        table_row = """
+        <tr>
+        <td style="background-color: """ + left_col_color + """;"><span style="color: #ffffff;"> <big>""" + left_column_value + """</big></span></td>
+        <td style="width: 150px;background-color: """ + right_col_color + """;"><big>{}</big></td>""".format(
+            right_column_value) + """
+        </tr>
+        """
+
+        return table_row
+
+    def get_buffer_text(self, header, left_col_color, right_col_color, fields_map):
+        static_text = """
+                    <!DOCTYPE html>
+                    <html>
+        <head>
+        <h4 style="margin-bottom:10"; width="200px">{}</h4>""".format(header) + """
+        </head>
+        <table style="height: 150px; width: 300px; border: 8px">
+        <tbody> """
+
+        for i in fields_map:
+            static_text += self.get_table_row(i, fields_map[i], left_col_color, right_col_color)
+
+        static_text += """
+        </tbody>
+        </table>
+        </html>
+        """
+
+        return static_text
+
+
+    def add_marker(self, location_latitude, location_longitude, object, color, feature_group_object, feature_group_name, total_buildings_number, kinder_number, students_number, adults_number):
+        if feature_group_name == 'schools':
+            #static_text = """
+            #<i>Количество жилых зданий в радиусе доступности: {} <Br> Количество детей школьного возраста, проживающих в радиусе доступности: {}
+            #<Br> Общее количество человек, проживающих в радиусе доступности: {} <Br></i>
+            #""".format(total_buildings_number, students_number, kinder_number + students_number + adults_number)
+            left_col_color = "#19a7bd"
+            right_col_color = "#f2f0d3"
+            header = list(object['short_name'])[0]
+            total_buildings_number_text = 'Количество жилых зданий в радиусе доступности'
+            total_buildings_number = total_buildings_number
+            children_text = 'Количество детей школьного возраста, проживающих в радиусе доступности'
+            children_number = students_number
+            total_number_text = 'Общее количество человек, проживающих в радиусе доступности'
+            total_number = kinder_number + students_number + adults_number
+
+            fields_map = {}
+            fields_map[total_buildings_number_text] = total_buildings_number
+            fields_map[children_text] = children_number
+            fields_map[total_number_text] = total_number
+
+            static_text = self.get_buffer_text(header, left_col_color, right_col_color, fields_map)
+            tooltip_text = '<i>{}</i>'.format(list(object['short_name'])[0])
+            folium.Marker(location=[location_latitude, location_longitude],
+                          popup=folium.Popup(folium.Html(static_text, script=True), parse_html=True),
+                          tooltip=folium.Tooltip(tooltip_text), icon=folium.Icon(color=color)).add_to(feature_group_object)
+
+        if feature_group_name == 'kindergartens':
+            left_col_color = "#19a7bd"
+            right_col_color = "#f2f0d3"
+            header = 'Детский сад при школе ' + list(object['short_name'])[0]
+            total_buildings_number_text = 'Количество жилых зданий в радиусе доступности'
+            total_buildings_number = total_buildings_number
+            children_text = 'Количество детей детсадовского возраста, проживающих в радиусе доступности'
+            children_number = kinder_number
+            total_number_text = 'Общее количество человек, проживающих в радиусе доступности'
+            total_number = kinder_number + students_number + adults_number
+
+            fields_map = {}
+            fields_map[total_buildings_number_text] = total_buildings_number
+            fields_map[children_text] = children_number
+            fields_map[total_number_text] = total_number
+
+            static_text = self.get_buffer_text(header, left_col_color, right_col_color, fields_map)
+
+            tooltip_text = '<i>{}</i>'.format(list(object['short_name'])[0])
+            folium.Marker(location=[location_latitude, location_longitude],
+                          popup=folium.Popup(folium.Html(static_text, script=True), parse_html=True),
+                          tooltip=folium.Tooltip(tooltip_text), icon=folium.Icon(color=color)).add_to(feature_group_object)
+
+        if feature_group_name == 'medicine':
+            left_col_color = "#19a7bd"
+            right_col_color = "#f2f0d3"
+            header = 'Медицинское учреждение'
+            total_buildings_number_text = 'Количество жилых зданий в радиусе доступности'
+            total_buildings_number = total_buildings_number
+            total_number_text = 'Общее количество человек, проживающих в радиусе доступности'
+            total_number = kinder_number + students_number + adults_number
+
+            fields_map = {}
+            fields_map[total_buildings_number_text] = total_buildings_number
+            fields_map[total_number_text] = total_number
+
+            static_text = self.get_buffer_text(header, left_col_color, right_col_color, fields_map)
+
+            tooltip_text = 'Медицинское учреждение'
+            folium.Marker(location=[location_latitude, location_longitude],
+                          popup=folium.Popup(folium.Html(static_text, script=True), parse_html=True),
+                          tooltip=folium.Tooltip(tooltip_text), icon=folium.Icon(color=color)).add_to(feature_group_object)
+
+    def add_object_borders(self, maps, object, color, fillcolor, fillopacity, feature_group_object, feature_group_name, mf_group):
+        skip_flag = False
+        if str(type(object['geometry'])).split("'")[1] == 'shapely.geometry.polygon.Polygon':
+            points = [self.swap_points(list(object['geometry'].exterior.coords))]
+
+        elif str(type(object['geometry'])).split("'")[1] == 'shapely.geometry.point.Point':
+            h3_address = h3.geo_to_h3(object['centroid latitude'], object['centroid longitude'],  12)
+            points = self.visualize_hexagons_for_point_object([h3_address])
+
+        elif str(type(object['geometry'])).split("'")[1] == 'shapely.geometry.multipolygon.MultiPolygon':
+            mycoordslist = [list(x.exterior.coords) for x in object['geometry'].geoms]
+            mycoordslist_unzip = []
+            for j in mycoordslist:
+                mycoordslist_unzip += j
+            points = [self.swap_points(mycoordslist_unzip)]
+
+        elif str(type(object['geometry'])).split("'")[1] == 'shapely.geometry.linestring.LineString':
+            h3_address = h3.geo_to_h3(object['centroid latitude'], object['centroid longitude'], 12)
+            points = self.visualize_hexagons_for_point_object([h3_address])
+
+        if feature_group_name == 'school':
+            if object['workload'] < 100:
+                fillcolor = 'green'
+            elif object['workload'] < 200:
+                fillcolor = 'yellow'
+            elif object['workload'] >= 200:
+                fillcolor = 'red'
+            else:
+                fillcolor = 'blue'
+            html_text = """
+            <li><a href="/map{}_{}" target=_parent><big><big>Построить радиус доступности</big></big></a></li>
+            <li><a href="/data_update{}_{}" target=_blank><big><big>Редактировать данные</big></big></a></li>
+            """.format('s', object['id'], 's', object['id'])
+            #static_text = """
+            #<i>Школа: {} <Br> Загруженность (в процентах от номинальной): {} <Br> Рейтинг: {}
+            #<Br></i> <li><a href="https://{}" target=_blank>Сайт школы <br> </a></li>
+            #""".format(object['short_name'], object['workload'], object['rating'], object['website'])
+
+            name_text = 'Школа'
+            workload_text = 'Загруженность (в процентах от номинальной)'
+            rating_text = 'Рейтинг'
+            website_text = 'Сайт школы'
+            header = object['short_name']
+            left_col_color = "#19a7bd"
+            right_col_color = "#f2f0d3"
+
+            fields_map = {}
+            fields_map[name_text] = object['short_name']
+            fields_map[workload_text] = object['workload']
+            fields_map[rating_text] = object['rating']
+            fields_map[website_text] = '<a href="https://{}" target=_blank>{}<br> </a>'.format(object['website'], object['website'])
+
+            if fields_map[rating_text] == '' or object['rating'] == 'nan':
+                fields_map[rating_text] = 'Нет данных'
+
+            static_text = self.get_buffer_text(header, left_col_color, right_col_color, fields_map)
+
+            folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
+                            popup=folium.Popup(static_text + html_text),
+                            tooltip='<i>{}</i>'.format(object['short_name'])).add_to(feature_group_object)
+
+        if feature_group_name == 'kindergartens':
+            #static_text = """
+            #<i>Детский сад при школе: {} <Br>  Рейтинг: {}
+            #<Br></i> <li><a href="https://{}" target=_blank>Сайт детского сада<br> </a></li>
+            #""".format(object['short_name'],  object['rating'], object['website'])
+
+            name_text = 'Детский сад при школе'
+            capacity_text = 'Расчетная вместимость(чел)'
+            rating_text = 'Рейтинг'
+            website_text = 'Сайт школы'
+            header = 'Детский сад при школе ' + object['short_name']
+            left_col_color = "#19a7bd"
+            right_col_color = "#f2f0d3"
+
+            fields_map = {}
+            fields_map[name_text] = object['short_name']
+            fields_map[capacity_text] = object['capacity']
+            fields_map[rating_text] = object['rating']
+            fields_map[website_text] = '<a href="https://{}" target=_blank>{}<br> </a>'.format(object['website'], object['website'])
+
+            if fields_map[rating_text] == '' or object['rating'] == 'nan':
+                fields_map[rating_text] = 'Нет данных'
+
+            static_text = self.get_buffer_text(header, left_col_color, right_col_color, fields_map)
+
+            html_text = """
+            <li><a href="/map{}_{}" target=_parent><big><big>Построить радиус доступности</big></big></a></li>
+              """.format('k', object['id'])
+            folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
+                            popup=folium.Popup(static_text + html_text),
+                            tooltip='<i>Детский сад при школе {}</i>'.format(object['short_name'])).add_to(feature_group_object)
+
+        if feature_group_name == 'buildings':
+            #Раскарска зданий в зависимости от года постройки, в try-except что не трогать все, что не имеет года
+            try:
+                if int(object['year']) < 1930:
+                    fillcolor = 'red'
+                elif int(object['year']) < 1970:
+                    fillcolor = 'orange'
+                elif int(object['year']) < 2000:
+                    fillcolor = 'yellow'
+                elif int(object['year']) < 2023:
+                    fillcolor = 'green'
+            except BaseException:
+                fillcolor = 'blue'
+            total_schools = int(object['over_schools']) + int(object['free_schools'])
+            #statistic_text = """
+            #<i>Количество детей: {} <Br> Количество школьников: {} <Br> Количество взрослых: {} <Br>
+            #Год постройки: {} <Br> Количество школ в радиусе доступности: {} <Br> Количество свободных школ: {} <Br>
+            # Количество детских садов в радиусе доступности: {} <Br>
+            # Количество медицинских учреждений в радусе доступности: {} <Br></i>
+            #""".format(object['kindergartens'], object['Pupils'], object['adults'], object['year'], total_schools,
+            #           object['free_schools'], object['avaliable_kindergartens'], object['avaliable_medicine'])
+            html = """
+          <li><a href="/map_{}" target=_top>{}</a></li>
+            """.format(object['id'].split('/')[1], object['id'].split('/')[1])
+
+            fields_map = {}
+            kinder_text = 'Количество детей'
+            student_text = 'Количество школьников'
+            adult_text = 'Количество взрослых'
+            year_text = 'Год постройки'
+            schools_number_text = 'Количество школ в радиусе доступности'
+            avaliable_schools_number_text = 'Количество свободных школ'
+            kinder_number_text = 'Количество детских садов в радиусе доступности'
+            med_number_text = 'Количество медицинских учреждений в радусе доступности'
+
+            header = '<i>{}, {}</i>'.format(object['addr:street'],
+                                                           object['addr:housenumber'])
+            left_col_color = "#19a7bd"
+            right_col_color = "#f2f0d3"
+            fields_map[kinder_text] = object['kindergartens']
+            fields_map[student_text] = object['Pupils']
+            fields_map[adult_text] = object['adults']
+            fields_map[year_text] = object['year']
+            fields_map[schools_number_text] = total_schools
+            fields_map[avaliable_schools_number_text] = object['free_schools']
+            fields_map[kinder_number_text] = object['avaliable_kindergartens']
+            fields_map[med_number_text] = object['avaliable_medicine']
+
+            statistic_text = self.get_buffer_text(header, left_col_color, right_col_color, fields_map)
+
+            polyline = folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
+                            #popup=statistic_text.format(
+                            #    object['kindergartens'], object['Pupils'],
+                            #    object['adults'], object['year']),
+                            popup=folium.Popup(statistic_text),
+                            tooltip='<i>{}, {}</i>'.format(object['addr:street'],
+                                                           object['addr:housenumber']))
+            if mf_group == 'feature':
+                polyline.add_to(feature_group_object)
+            elif mf_group == 'map':
+                polyline.add_to(maps)
+
+        if feature_group_name == 'medicine':
+            html_text = """
+                        <li><a href="/map{}_{}" target=_parent><big><big>Построить радиус доступности</big></big></a></li>
+                          """.format('m', object['id'].split('/')[0] + '=' + object['id'].split('/')[1])
+            folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
+                            popup=folium.Popup(html_text),
+                            tooltip='<i>{}</i>'.format(object['addr:housenumber'])).add_to(feature_group_object)
+
+    def add_circle(self, location_latitude, location_longitude, radius, circle_color, fill_color, feature_group_object, feature_group_name):
+        folium.Circle(location=[location_latitude, location_longitude], radius=radius,
+                      color=circle_color, fill_color=fill_color).add_to(feature_group_object)
 
     #Функция для нанесения объектов на карту, которые ложатся внуть полигонов, поступающих на вход
-    def print_objects(self, maps, df_objects, polygons_df, color, feature_group_name, marker, borders, circle):
+    def print_objects(self, maps, df_objects, polygons_df, color, feature_group_name, object_type_name, marker, borders, circle):
+        if len(polygons_df) > 0:
+            #df_objects['centroid'] = df_objects.geometry.centroid
+            #objects_df = df_objects.set_geometry('centroid')
+            #df_inter = gpd.sjoin(objects_df, polygons_df)
+            self.df_inter = self.intersction(df_objects, polygons_df)
+            #Для отображения года постройки у жилых зданий
+            if object_type_name == 'buildings':
+                self.df_inter['year'].fillna('нет данных', inplace=True)
+            feature_group_object = folium.FeatureGroup(feature_group_name)
 
-        df_objects['centroid'] = df_objects.geometry.centroid
-        objects_df = df_objects.set_geometry('centroid')
-        df_inter = gpd.sjoin(objects_df, polygons_df)
-        #print(len(df_inter))
+            for i in range(self.df_inter.shape[0]):
+                #Добавление маркера объекта на карту
+                location_latitude = self.df_inter.iloc[i]['centroid latitude']
+                location_longitude = self.df_inter.iloc[i]['centroid longitude']
+                if marker == True:
+                    #folium.Marker(location=[location_latitude, location_longitude],
+                    #          popup='<i>{}</i>'.format(self.df_inter.iloc[i]['short_name']),
+                    #              tooltip='Click here', icon=folium.Icon(color=color)).add_to(feature_group_object)
+                    self.add_marker(location_latitude, location_longitude, self.df_inter.iloc[i], color, feature_group_object, feature_group_name)
+
+                #Добавление границ объекта на карту
+                if borders == True:
+                    #points = [self.swap_points(list(self.df_inter.iloc[i]['geometry'].exterior.coords))]
+                    #folium.PolyLine(locations=points, color=color, fill_color="blue", fill_opacity=0.3,
+                    #                popup='<i>{}</i>'.format(self.df_inter.iloc[i]['short_name']), tooltip='<i>{}</i>'.format(self.df_inter.iloc[i]['short_name'])).add_to(feature_group_object)
+                    self.add_object_borders(maps, self.df_inter.iloc[i], color=color,
+                                            fillcolor='blue', fillopacity=0.3,
+                                            feature_group_object=feature_group_object,
+                                            feature_group_name=feature_group_name, mf_group='feature')
+
+                #Добавление кругов
+                if circle == True:
+                    radius = 500
+                    circle_color = 'red'
+                    fill_color = 'blue'
+                    #folium.Circle(location=[location_latitude, location_longitude], radius=radius,
+                    #              color=circle_color, fill_color=fill_color).add_to(feature_group_object)
+
+                    #self.add_circle(location_latitude, location_longitude, radius, circle_color, fill_color, feature_group_object, feature_group_name)
+                    self.df_inter.iloc[i].buffer(500)
+
+                if marker == False and borders == False and circle == False:
+                    pass
+
+            #feature_group_object.add_to(maps)
+
+        return feature_group_object
+
+    def color_poly_choropleth(self, maps, data, json, columns, legend_name, feature, bins):
+        folium.Choropleth(
+            geo_data=json,
+            name="choropleth",
+            data=data,
+            columns=columns,
+            key_on="feature.id",
+            fill_color="YlGn",
+            fill_opacity=0.7,
+            line_opacity=0.2,
+            legend_name=legend_name,
+            nan_fill_color='white',
+            bins=bins
+
+        ).add_to(maps)
+
+        return maps
+
+    def fill_opacity(self, x):
+        positive_fill = 0.5
+        negative_fill = 0.0
+        if self.first_flag:
+            self.first_flag = False
+            return negative_fill
+        if x['properties']['index_right'] not in self.is_hex_colored:
+            self.is_hex_colored[x['properties']['index_right']] = 1
+            return positive_fill
+        else:
+            self.is_hex_colored[x['properties']['index_right']] += 1
+            return negative_fill
+
+
+    def fill_color_for_hex(self, maps, df_intersection_for_choro, feature_group_name, count_map, object_type_name):
+
+        max_count = max(count_map.values())
+        min_count = min(count_map.values())
+        avg_count = int((max_count + min_count) / 2)
+        avg_1 = int((avg_count + min_count) / 2)
+        avg_2 = int((avg_count + max_count) / 2)
+        color_list = ['red', 'yellow', 'green']
+
+        colormap = branca.colormap.LinearColormap(vmin=avg_1, vmax=avg_2, colors=color_list)
+        self.is_hex_colored.clear()
+        self.first_flag = True
+
+        if object_type_name == 'schools':
+            alias = ['Количество школ: ']
+        elif object_type_name == 'buildings':
+            alias = ['Количество жителей: ']
+        elif object_type_name == 'medicine':
+            alias = ['Количество медицинских учереждений: ']
+        elif object_type_name == 'kindergartens':
+            alias = ['Количество детских садов: ']
+        else:
+            alias = ['miss: ']
 
         feature_group_object = folium.FeatureGroup(feature_group_name)
 
-        for i in range(df_inter.shape[0]):
-            #Добавление маркера объекта на карту
-            location_latitude = df_inter.iloc[i]['centroid latitude']
-            location_longitude = df_inter.iloc[i]['centroid longitude']
-            if marker == True:
-                folium.Marker(location=[location_latitude, location_longitude],
-                          popup='<i>{}</i>'.format(df_inter.iloc[i]['short_name']),
-                              tooltip='Click here', icon=folium.Icon(color=color)).add_to(feature_group_object)
+        folium.GeoJson(
+            df_intersection_for_choro,
+            style_function=lambda x: {
+                'fillColor': colormap(x['properties']['count']),
+                'color': 'black',
+                'fillOpacity': self.fill_opacity(x)},
+            tooltip=folium.features.GeoJsonTooltip(fields=[
+                'count'],
+                 aliases=alias),
+            name=feature_group_name).add_to(feature_group_object)
 
-            #Добавление границ объекта на карту
-            if borders == True:
-                points = [self.swap_points(list(df_inter.iloc[i]['geometry'].exterior.coords))]
-                folium.PolyLine(locations=points, color=color, fill_color="blue", fill_opacity=0.3).add_to(feature_group_object)
+        #feature_group_object.add_to(maps)
 
-            #Добавление кругов
-            if circle == True:
-                radius = 500
-                circle_color = 'red'
-                fill_color = 'blue'
-                folium.Circle(location=[location_latitude, location_longitude], radius = radius,
-                              color = circle_color, fill_color = fill_color).add_to(feature_group_object)
 
-            if marker == False and borders == False and circle == False:
-                pass
 
-        feature_group_object.add_to(maps)
+        return feature_group_object
 
-        return maps
+    def split_by_hex_and_calculate(self, df_object, object_type_name):
+        ddf = df_object.groupby('index_right')['id'].nunique()
+        index_list = list(ddf.index)
+        value_list = list(ddf)
+        cols_list = ['kindergartens', 'Pupils', 'adults']
+        count_map = {}
+        df_object['count'] = ''
+        if object_type_name == 'schools' or object_type_name == 'medicine' or object_type_name == 'kindergartens':
+            for i in range(len(index_list)):
+                count_map[index_list[i]] = value_list[i]
+                df_object.loc[(df_object['index_right'] == index_list[i]), 'count'] = value_list[i]
 
+        if object_type_name == 'buildings':
+            for i in range(len(index_list)):
+                total_number_of_people = df_object.loc[df_object['index_right'] == index_list[i], cols_list].astype(int).sum()
+                total_number_of_people = total_number_of_people[0] + total_number_of_people[1] + total_number_of_people[2]
+                count_map[index_list[i]] = total_number_of_people
+                df_object.loc[(df_object['index_right'] == index_list[i]), 'count'] = float(total_number_of_people)
+
+        df_intersection_for_choro = gpd.GeoDataFrame(df_object.set_index('id')[["geometry", 'index_right', 'count']]).to_json()
+
+        return df_intersection_for_choro, count_map
+
+    def choropleth_for_hex(self, maps, feature_group_name, object_type_name):
+        df_intersection_for_choro = self.df_inter.copy(deep=True)
+        df_intersection_for_choro.set_geometry('polygon')
+        df_intersection_for_choro.drop(columns=['geometry'], axis=1, inplace=True)
+        df_intersection_for_choro.rename(columns={'polygon': 'geometry'}, inplace=True)
+
+        #df_intersection_for_choro = gpd.GeoDataFrame(df_intersection_for_choro.set_index('id')[["geometry", 'index_right', 'school_count']]).to_json()
+
+        self.df_intersection_for_choro, self.count_map = self.split_by_hex_and_calculate(df_intersection_for_choro, object_type_name)
+        feature_group_object = self.fill_color_for_hex(maps, self.df_intersection_for_choro, feature_group_name, self.count_map, object_type_name)
+
+        return feature_group_object
+
+    def print_choropleth(self, maps, df_objects, df_borders, feature_group_name, type_t, object_type_name):
+        if len(df_borders) > 0:
+            if type_t == 'district':
+                id_column = 'district_id'
+            if type_t == 'region':
+                id_column = 'region_id'
+            district_list = list(df_borders[id_column])
+            df_objects = df_objects.loc[df_objects[id_column].isin(district_list)]
+
+            df_objects['geometry'] = df_objects['geometry'].astype(str)
+            if object_type_name == 'buildings':
+                df_objects['total_number_of_people'] = df_objects['kindergartens'].astype(int) + df_objects['Pupils'].astype(int) + df_objects['adults'].astype(int)
+                agg_all = df_objects.groupby([id_column], as_index=False).agg({'total_number_of_people': 'sum'}).rename(
+                    columns={'total_number_of_people': 'counts'})
+                legend_name = 'number of residents'
+            else:
+                agg_all = df_objects.groupby([id_column], as_index=False).agg({'centroid latitude': 'count'}).rename(
+                    columns={'centroid latitude': 'counts'})
+            if object_type_name == 'schools':
+                legend_name = 'number of schools'
+            if object_type_name == 'medicine':
+                legend_name = 'number of medicine objects'
+            if object_type_name == 'kindergartens':
+                legend_name = 'number of kindergartens'
+            agg_all.rename(columns={id_column: 'id'}, inplace=True)
+            df_borders.rename(columns={id_column: 'id'}, inplace=True)
+            data_geo_1 = gpd.GeoSeries(df_borders.set_index('id')["geometry"]).to_json()
+
+            maps = self.color_poly_choropleth(maps, agg_all, data_geo_1, ["id","counts"],
+                                                                  legend_name, 'counts', 10)
+
+            feature_group_object = self.choropleth_for_hex(maps, feature_group_name, object_type_name)
+            #self.feature_group_build.add_to(maps)
+            #self.feature_group_school.add_to(maps)
+
+
+
+
+        return feature_group_object
+
+    def inter_for_buffer(self, df_objects, polygons_df):
+        df_objects['centroid'] = df_objects.geometry.centroid
+        polygons_df['polygon'] = polygons_df.geometry
+        objects_df = df_objects.set_geometry('centroid')
+
+        return gpd.sjoin(objects_df, polygons_df)
+
+    def print_buffer(self, maps, object, radius, df_buildings, feature_group_name, type_o):
+        centroid_latitude = list(object['centroid latitude'])[0]
+        centroid_longitude = list(object['centroid longitude'])[0]
+
+        feature_group = folium.FeatureGroup(feature_group_name)
+
+        df = pd.DataFrame(
+            {
+                'lat': [centroid_latitude],
+                'lon': [centroid_longitude],
+                'rad': [radius]
+            }
+        )
+
+        #Отрисовка круга нужного радиуса на карте. Так сложно потому что земля вам не шарик, а хер пойми что
+        df['geom'] = df.apply(lambda r: Point(r['lon'], r['lat']), axis=1)
+        gdf = gpd.GeoDataFrame(df, geometry='geom', crs='epsg:4326')
+        gdf_flat = gdf.to_crs('epsg:6347')
+        gdf_flat['geom'] = gdf_flat.geometry.buffer(df.rad)
+        gdf = gdf_flat.to_crs('epsg:4326')
+        points = list(list(gdf['geom'])[0].exterior.coords)
+        points = self.swap_points(points)
+        color = 'red'
+        fillcolor = 'blue'
+        fillopacity = 0.3
+        polyline = folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity)
+        polyline.add_to(feature_group)
+
+        #Датафрейм для пересечения
+        frame_for_inter = gpd.GeoDataFrame()
+        frame_for_inter['geometry'] = [Polygon(self.swap_points(points))]
+        print(frame_for_inter['geometry'])
+
+        #Получаем множество жилых домов, которые попадют в заданный буфер и считаем данные
+        df_inter_buffer = self.inter_for_buffer(df_buildings, frame_for_inter)
+        kinder_number = 0
+        students_number = 0
+        adults_number = 0
+        total_buildings_number = df_inter_buffer.shape[0]
+        for i in range(df_inter_buffer.shape[0]):
+            kinder_number += int(df_inter_buffer.iloc[i]['kindergartens'])
+            students_number += int(df_inter_buffer.iloc[i]['Pupils'])
+            adults_number += int(df_inter_buffer.iloc[i]['adults'])
+
+        #Добавляем маркер для объекта,для которого строится буффер
+        self.add_marker(centroid_latitude, centroid_longitude, object, 'blue', feature_group, type_o, total_buildings_number, kinder_number, students_number, adults_number)
+
+        # Добавляем дома на карту
+        for i in range(df_inter_buffer.shape[0]):
+            self.add_object_borders(maps, df_inter_buffer.iloc[i], color='black',
+                                            fillcolor='green', fillopacity=0.3,
+                                            feature_group_object=feature_group,
+                                            feature_group_name=feature_group_name, mf_group='feature')
+            #points = [self.swap_points(list(df_inter_buffer.iloc[i]['geometry'].exterior.coords))]
+            #folium.PolyLine(locations=points, color='black', fill_color='green', fill_opacity=0.3,
+            #            popup='<i>{}</i>'.format(df_inter_buffer.iloc[i]['addr:street']),
+            #            tooltip='<i>{}</i>'.format(df_inter_buffer.iloc[i]['addr:housenumber'])).add_to(maps)
+
+        #feature_group.add_to(maps)
+
+        return feature_group
 
 
     osm = osm_parser()
@@ -216,3 +742,14 @@ class Map_master():
     #А тут хранятся полигоны гексагонов по районам
     big_polygons_hex_list_district = []
     big_polylines_list_district = []
+    #Датафрейм для пересеченных объектов
+    df_inter = gpd.GeoDataFrame()
+    #Вспомогательные переменные для раскраски гексагонов
+    is_hex_colored = {}
+    first_flag = True
+
+    feature_group_build = folium.FeatureGroup('buiiiiild')
+    feature_group_school = folium.FeatureGroup('schooool')
+
+    df_intersection_for_choro = gpd.GeoDataFrame()
+    count_map = {}

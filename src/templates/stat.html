@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head></head>
+<body>
+		<div class="about" style="height: unset;">
+			<span class="t5">Результат запроса:</span>
+			{% block body %}
+			{{json_obj|safe}}
+			{% endblock %}
+		</div>
+</body>
+</html>
