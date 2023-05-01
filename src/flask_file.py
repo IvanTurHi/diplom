@@ -6,6 +6,7 @@ import geopandas as gpd
 from flask import session
 from json2html import *
 from statistic import Stat_master
+from folium.plugins import Draw
 
 people_counter = 0
 map_dict = {}
@@ -26,6 +27,8 @@ class map_class():
     stat_slave = Stat_master()
 
     control = folium.LayerControl()
+
+    draw = Draw(export=False, draw_options={'circle': False, 'rectangle': False, 'circlemarker': False, 'polyline':False})
 
     feature_group_borders_name = 'borders'
     feature_group_hexagon_name = 'hexagons'
@@ -400,26 +403,8 @@ def run_flask(osm):
                             'relation/1255987', 'relation/1275627']
         region_id_list = ['relation/2162196']
         object, type_o = return_object_for_buffer_and_update(type, object_id)
-        #Тут идет проверка на то, что наша  объект не входит в ЦАО, тк для них радиус 750 метров, а не 500
-        #district_id = list(object['district_id'])[0]
-        #region_id = list(object['region_id'])[0]
-        #centroid_latitude = float(list(object['centroid latitude'])[0])
-        #centroid_longitude = float(list(object['centroid longitude'])[0])
-        #if district_id in distrcit_id_list or region_id in region_id_list:
-        #    if type == 's':
-        #        radius = 750
-        #    elif type == 'k':
-        #        radius = 500
-        #    elif type == 'm':
-        #        radius = 1500
-        #else:
-        #    if type == 's':
-        #        radius = 500
-        #    elif type == 'k':
-        #        radius = 300
-        #    elif type == 'm':
-        #        radius = 1500
 
+        #Тут идет проверка на то, что наша  объект не входит в ЦАО, тк для них радиус 750 метров, а не 500
         centroid_latitude, centroid_longitude, radius = get_radius_and_lat_lon(object, type, distrcit_id_list, region_id_list)
         #return render_template('main_page.html')
         feature_group_name = 'buildings'
@@ -435,6 +420,21 @@ def run_flask(osm):
         map_dict[session['Map']].control.add_to(map_dict[session['Map']].maps)
         map_dict[session['Map']].repr()
         return render_template('map_page.html', iframe=map_dict[session['Map']].html_map)
+
+    @app.route('/map_add')
+    def map_add():
+        new_object_dict = {}
+        for i in request.values.items():
+            new_object_dict[i[0]] = i[1]
+
+        return 'Sorry, but it does not work'
+
+    @app.route('/add_building')
+    def add_object():
+        map_dict[session['Map']].initiation()
+        map_dict[session['Map']].draw.add_to(map_dict[session['Map']].maps)
+        map_dict[session['Map']].repr()
+        return render_template('add_page.html', iframe=map_dict[session['Map']].html_map)
 
     #Фигня с картой
     @app.route('/map')

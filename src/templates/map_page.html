@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
-<head></head>
+<head>
+<link href="{{ url_for('static', filename='check_box.css') }}"  rel="stylesheet" />
+</head>
 <body>
 	<h1>BDS</h1>
 <div class="main_container">
@@ -11,14 +13,328 @@
         {{ iframe|safe }}
   <form method="post" action="/map_d/">
    <p><b>Выберите районы</b></p>
-   <p><input type="checkbox" name="district1" value="relation/1255704">район Восточное Измайлово<Br>
-   <input type="checkbox" name="district2" value="relation/1255680">район Северное Измайлово<Br>
-   <input type="checkbox" name="district3" value="relation/1319245">район Измайлово<Br> 
-   <input type="checkbox" name="district4" value="relation/1319263">район Ивановское<Br>
-   <input type="checkbox" name="district5" value="relation/1319142">район Гольяново<Br>
-   <input type="checkbox" name="region1" value="relation/226149">Западный административный округ<Br>
-   <input type="checkbox" name="region2" value="relation/1320234">Восточный административный округ<Br>
-   <input type="radio" name="category" value="schools">Школы<Br>
+  <div class="multiselect">
+    <div class="selectBox" onclick="showCheckboxes()">
+      <select>
+        <option>Выберите район или округ</option>
+      </select>
+      <div class="overSelect"></div>
+    </div>
+    <div id="checkboxes">
+  <label for="1"><input type="checkbox" id="1" name="district1" value="relation/1281220">Академический</label>
+  
+  <label for="2"><input type="checkbox" id="2" name="district2" value="relation/1250526">Алексеевский</label>
+  
+  <label for="3"><input type="checkbox" id="3" name="district3" value="relation/446083">Алтуфьевский</label>
+  
+  <label for="4"><input type="checkbox" id="4" name="district4" value="relation/1257484">Арбат</label>
+  
+  <label for="5"><input type="checkbox" id="5" name="district5" value="relation/446079">Аэропорт</label>
+  
+  <label for="6"><input type="checkbox" id="6" name="district6" value="relation/1252465">Бабушкинский</label>
+  
+  <label for="7"><input type="checkbox" id="7" name="district7" value="relation/2162195">Басманный</label>
+  
+  <label for="8"><input type="checkbox" id="8" name="district8" value="relation/445298">Беговой</label>
+  
+  <label for="9"><input type="checkbox" id="9" name="district9" value="relation/446082">Бескудниковский</label>
+  
+  <label for="10"><input type="checkbox" id="10" name="district10" value="relation/446085">Бибирево</label>
+  
+  <label for="11"><input type="checkbox" id="11" name="district11" value="relation/950639">Бирюлёво Восточное</label>
+  
+  <label for="12"><input type="checkbox" id="12" name="district12" value="relation/950658">Бирюлёво Западное</label>
+  
+  <label for="13"><input type="checkbox" id="13" name="district13" value="relation/1319060">Богородское</label>
+  
+  <label for="14"><input type="checkbox" id="14" name="district14" value="relation/531287">Братеево</label>
+  
+  <label for="15"><input type="checkbox" id="15" name="district15" value="relation/1252424">Бутырский</label>
+  
+  <label for="16"><input type="checkbox" id="16" name="district16" value="relation/574667">Вешняки</label>
+  
+  <label for="17"><input type="checkbox" id="17" name="district17" value="relation/181288">Внуково</label>
+  
+  <label for="18"><input type="checkbox" id="18" name="district18" value="relation/380708">Внуковское</label>
+  
+  <label for="19"><input type="checkbox" id="19" name="district19" value="relation/446078">Войковский</label>
+  
+  <label for="20"><input type="checkbox" id="20" name="district20" value="relation/2092922">Вороновское</label>
+  
+  <label for="21"><input type="checkbox" id="21" name="district21" value="relation/380702">Воскресенское</label>
+  
+  <label for="22"><input type="checkbox" id="22" name="district22" value="relation/445285">Восточное Дегунино</label>
+  
+  <label for="23"><input type="checkbox" id="23" name="district23" value="relation/1255704">Восточное Измайлово</label>
+  
+  <label for="24"><input type="checkbox" id="24" name="district24" value="relation/548619">Выхино-Жулебино</label>
+  
+  <label for="25"><input type="checkbox" id="25" name="district25" value="relation/1281648">Гагаринский</label>
+  
+  <label for="26"><input type="checkbox" id="26" name="district26" value="relation/445297">Головинский</label>
+  
+  <label for="27"><input type="checkbox" id="27" name="district27" value="relation/1319142">Гольяново</label>
+  
+  <label for="28"><input type="checkbox" id="28" name="district28" value="relation/1281209">Даниловский</label>
+  
+  <label for="29"><input type="checkbox" id="29" name="district29" value="relation/380706">Десёновское</label>
+  
+  <label for="30"><input type="checkbox" id="30" name="district30" value="relation/445278">Дмитровский</label>
+  
+  <label for="31"><input type="checkbox" id="31" name="district31" value="relation/444908">Донской</label>
+  
+  <label for="32"><input type="checkbox" id="32" name="district32" value="relation/446114">Дорогомилово</label>
+  
+  <label for="33"><input type="checkbox" id="33" name="district33" value="relation/1255942">Замоскворечье</label>
+  
+  <label for="34"><input type="checkbox" id="34" name="district34" value="relation/445275">Западное Дегунино</label>
+  
+  <label for="35"><input type="checkbox" id="35" name="district35" value="relation/1292286">Зюзино</label>
+  
+  <label for="36"><input type="checkbox" id="36" name="district36" value="relation/531264">Зябликово</label>
+  
+  <label for="37"><input type="checkbox" id="37" name="district37" value="relation/1319263">Ивановское</label>
+  
+  <label for="38"><input type="checkbox" id="38" name="district38" value="relation/1319245">Измайлово</label>
+  
+  <label for="39"><input type="checkbox" id="39" name="district39" value="relation/455208">Капотня</label>
+  
+  <label for="40"><input type="checkbox" id="40" name="district40" value="relation/1693596">Киевский</label>
+  
+  <label for="41"><input type="checkbox" id="41" name="district41" value="relation/2092924">Клёновское</label>
+  
+  <label for="42"><input type="checkbox" id="42" name="district42" value="relation/1668007">Кокошкино</label>
+  
+  <label for="43"><input type="checkbox" id="43" name="district43" value="relation/952191">Коньково</label>
+  
+  <label for="44"><input type="checkbox" id="44" name="district44" value="relation/445277">Коптево</label>
+  
+  <label for="45"><input type="checkbox" id="45" name="district45" value="relation/1255576">Косино-Ухтомский</label>
+  
+  <label for="46"><input type="checkbox" id="46" name="district46" value="relation/1292211">Котловка</label>
+  
+  <label for="47"><input type="checkbox" id="47" name="district47" value="relation/2092925">Краснопахорское</label>
+  
+  <label for="48"><input type="checkbox" id="48" name="district48" value="relation/1257218">Красносельский</label>
+  
+  <label for="49"><input type="checkbox" id="49" name="district49" value="relation/240229">Крылатское</label>
+  
+  <label for="50"><input type="checkbox" id="50" name="district50" value="relation/1320371">Крюково</label>
+  
+  <label for="51"><input type="checkbox" id="51" name="district51" value="relation/444812">Кузьминки</label>
+  
+  <label for="52"><input type="checkbox" id="52" name="district52" value="relation/226927">Кунцево</label>
+  
+  <label for="53"><input type="checkbox" id="53" name="district53" value="relation/442741">Куркино</label>
+  
+  <label for="54"><input type="checkbox" id="54" name="district54" value="relation/445273">Левобережный</label>
+  
+  <label for="55"><input type="checkbox" id="55" name="district55" value="relation/1278064">Лефортово</label>
+  
+  <label for="56"><input type="checkbox" id="56" name="district56" value="relation/446084">Лианозово</label>
+  
+  <label for="57"><input type="checkbox" id="57" name="district57" value="relation/1281702">Ломоносовский</label>
+  
+  <label for="58"><input type="checkbox" id="58" name="district58" value="relation/1252448">Лосиноостровский</label>
+  
+  <label for="59"><input type="checkbox" id="59" name="district59" value="relation/455203">Люблино</label>
+  
+  <label for="60"><input type="checkbox" id="60" name="district60" value="relation/1693661">Марушкинское</label>
+  
+  <label for="61"><input type="checkbox" id="61" name="district61" value="relation/1250724">Марфино</label>
+  
+  <label for="62"><input type="checkbox" id="62" name="district62" value="relation/1252407">Марьина Роща</label>
+  
+  <label for="63"><input type="checkbox" id="63" name="district63" value="relation/455222">Марьино</label>
+  
+  <label for="64"><input type="checkbox" id="64" name="district64" value="relation/1320566">Матушкино</label>
+  
+  <label for="65"><input type="checkbox" id="65" name="district65" value="relation/1319078">Метрогородок</label>
+  
+  <label for="66"><input type="checkbox" id="66" name="district66" value="relation/364001">Мещанский</label>
+  
+  <label for="67"><input type="checkbox" id="67" name="district67" value="relation/442733">Митино</label>
+  
+  <label for="68"><input type="checkbox" id="68" name="district68" value="relation/2092927">Михайлово-Ярцевское</label>
+  
+  <label for="69"><input type="checkbox" id="69" name="district69" value="relation/1257472">Можайский</label>
+  
+  <label for="70"><input type="checkbox" id="70" name="district70" value="relation/445283">Молжаниновский</label>
+  
+  <label for="71"><input type="checkbox" id="71" name="district71" value="relation/455528">Москворечье-Сабурово</label>
+  
+  <label for="72"><input type="checkbox" id="72" name="district72" value="relation/380707">Московский</label>
+  
+  <label for="73"><input type="checkbox" id="73" name="district73" value="relation/380703">Мосрентген</label>
+  
+  <label for="74"><input type="checkbox" id="74" name="district74" value="relation/535655">Нагатино-Садовники</label>
+  
+  <label for="75"><input type="checkbox" id="75" name="district75" value="relation/455460">Нагатинский Затон</label>
+  
+  <label for="76"><input type="checkbox" id="76" name="district76" value="relation/535662">Нагорный</label>
+  
+  <label for="77"><input type="checkbox" id="77" name="district77" value="relation/1255577">Некрасовка</label>
+  
+  <label for="78"><input type="checkbox" id="78" name="district78" value="relation/1278046">Нижегородский</label>
+  
+  <label for="79"><input type="checkbox" id="79" name="district79" value="relation/446117">Ново-Переделкино</label>
+  
+  <label for="80"><input type="checkbox" id="80" name="district80" value="relation/1298976">Новогиреево</label>
+  
+  <label for="81"><input type="checkbox" id="81" name="district81" value="relation/1255602">Новокосино</label>
+  
+  <label for="82"><input type="checkbox" id="82" name="district82" value="relation/1693667">Новофёдоровское</label>
+  
+  <label for="83"><input type="checkbox" id="83" name="district83" value="relation/1292499">Обручевский</label>
+  
+  <label for="84"><input type="checkbox" id="84" name="district84" value="relation/455539">Орехово-Борисово Северное</label>
+  
+  <label for="85"><input type="checkbox" id="85" name="district85" value="relation/456807">Орехово-Борисово Южное</label>
+  
+  <label for="86"><input type="checkbox" id="86" name="district86" value="relation/1250619">Останкинский</label>
+  
+  <label for="87"><input type="checkbox" id="87" name="district87" value="relation/445282">Отрадное</label>
+  
+  <label for="88"><input type="checkbox" id="88" name="district88" value="relation/1292749">Очаково-Матвеевское</label>
+  
+  <label for="89"><input type="checkbox" id="89" name="district89" value="relation/1693672">Первомайское</label>
+  
+  <label for="90"><input type="checkbox" id="90" name="district90" value="relation/1299013">Перово</label>
+  
+  <label for="91"><input type="checkbox" id="91" name="district91" value="relation/455451">Печатники</label>
+  
+  <label for="92"><input type="checkbox" id="92" name="district92" value="relation/446081">Покровское-Стрешнево</label>
+  
+  <label for="93"><input type="checkbox" id="93" name="district93" value="relation/1299106">Преображенское</label>
+  
+  <label for="94"><input type="checkbox" id="94" name="district94" value="relation/1275551">Пресненский</label>
+  
+  <label for="95"><input type="checkbox" id="95" name="district95" value="relation/1292679">Проспект Вернадского</label>
+  
+  <label for="96"><input type="checkbox" id="96" name="district96" value="relation/446115">Раменки</label>
+  
+  <label for="97"><input type="checkbox" id="97" name="district97" value="relation/2092928">Роговское</label>
+  
+  <label for="98"><input type="checkbox" id="98" name="district98" value="relation/446272">Ростокино</label>
+  
+  <label for="99"><input type="checkbox" id="99" name="district99" value="relation/2092929">Рязановское</label>
+  
+  <label for="100"><input type="checkbox" id="100" name="district100" value="relation/1255563">Рязанский</label>
+  
+  <label for="101"><input type="checkbox" id="101" name="district101" value="relation/1320570">Савёлки</label>
+  
+  <label for="102"><input type="checkbox" id="102" name="district102" value="relation/445281">Савёловский</label>
+  
+  <label for="103"><input type="checkbox" id="103" name="district103" value="relation/1250618">Свиблово</label>
+  
+  <label for="104"><input type="checkbox" id="104" name="district104" value="relation/1257455">Северное Бутово</label>
+  
+  <label for="105"><input type="checkbox" id="105" name="district105" value="relation/1255680">Северное Измайлово</label>
+  
+  <label for="106"><input type="checkbox" id="106" name="district106" value="relation/446086">Северное Медведково</label>
+  
+  <label for="107"><input type="checkbox" id="107" name="district107" value="relation/445279">Северное Тушино</label>
+  
+  <label for="108"><input type="checkbox" id="108" name="district108" value="relation/445284">Северный</label>
+  
+  <label for="109"><input type="checkbox" id="109" name="district109" value="relation/1320510">Силино</label>
+  
+  <label for="110"><input type="checkbox" id="110" name="district110" value="relation/445280">Сокол</label>
+  
+  <label for="111"><input type="checkbox" id="111" name="district111" value="relation/1299031">Соколиная Гора</label>
+  
+  <label for="112"><input type="checkbox" id="112" name="district112" value="relation/364551">Сокольники</label>
+  
+  <label for="113"><input type="checkbox" id="113" name="district113" value="relation/446116">Солнцево</label>
+  
+  <label for="114"><input type="checkbox" id="114" name="district114" value="relation/380704">Сосенское</label>
+  
+  <label for="115"><input type="checkbox" id="115" name="district115" value="relation/1320424">Старое Крюково</label>
+  
+  <label for="116"><input type="checkbox" id="116" name="district116" value="relation/434560">Строгино</label>
+  
+  <label for="117"><input type="checkbox" id="117" name="district117" value="relation/1275608">Таганский</label>
+  
+  <label for="118"><input type="checkbox" id="118" name="district118" value="relation/1257786">Тверской</label>
+  
+  <label for="119"><input type="checkbox" id="119" name="district119" value="relation/455184">Текстильщики</label>
+  
+  <label for="120"><input type="checkbox" id="120" name="district120" value="relation/445276">Тимирязевский</label>
+  
+  <label for="121"><input type="checkbox" id="121" name="district121" value="relation/1292731">Тропарёво-Никулино</label>
+  
+  <label for="122"><input type="checkbox" id="122" name="district122" value="relation/951336">Тёплый Стан</label>
+  
+  <label for="123"><input type="checkbox" id="123" name="district123" value="relation/446111">Фили-Давыдково</label>
+  
+  <label for="124"><input type="checkbox" id="124" name="district124" value="relation/380705">Филимонковское</label>
+  
+  <label for="125"><input type="checkbox" id="125" name="district125" value="relation/446112">Филёвский Парк</label>
+  
+  <label for="126"><input type="checkbox" id="126" name="district126" value="relation/1255987">Хамовники</label>
+  
+  <label for="127"><input type="checkbox" id="127" name="district127" value="relation/445274">Ховрино</label>
+  
+  <label for="128"><input type="checkbox" id="128" name="district128" value="relation/428431">Хорошёво-Мнёвники</label>
+  
+  <label for="129"><input type="checkbox" id="129" name="district129" value="relation/445299">Хорошёвский</label>
+  
+  <label for="130"><input type="checkbox" id="130" name="district130" value="relation/950641">Царицыно</label>
+  
+  <label for="131"><input type="checkbox" id="131" name="district131" value="relation/535680">Чертаново Северное</label>
+  
+  <label for="132"><input type="checkbox" id="132" name="district132" value="relation/951305">Чертаново Центральное</label>
+  
+  <label for="133"><input type="checkbox" id="133" name="district133" value="relation/950664">Чертаново Южное</label>
+  
+  <label for="134"><input type="checkbox" id="134" name="district134" value="relation/1281263">Черёмушки</label>
+  
+  <label for="135"><input type="checkbox" id="135" name="district135" value="relation/2092931">Щаповское</label>
+  
+  <label for="136"><input type="checkbox" id="136" name="district136" value="relation/431464">Щукино</label>
+  
+  <label for="137"><input type="checkbox" id="137" name="district137" value="relation/1257403">Южное Бутово</label>
+  
+  <label for="138"><input type="checkbox" id="138" name="district138" value="relation/446087">Южное Медведково</label>
+  
+  <label for="139"><input type="checkbox" id="139" name="district139" value="relation/446080">Южное Тушино</label>
+  
+  <label for="140"><input type="checkbox" id="140" name="district140" value="relation/1278096">Южнопортовый</label>
+  
+  <label for="141"><input type="checkbox" id="141" name="district141" value="relation/1275627">Якиманка</label>
+  
+  <label for="142"><input type="checkbox" id="142" name="district142" value="relation/446271">Ярославский</label>
+  
+  <label for="143"><input type="checkbox" id="143" name="district143" value="relation/951334">Ясенево</label>
+  
+  <label for="144"><input type="checkbox" id="144" name="district144" value="relation/1703093">городской округ Троицк</label>
+  
+  <label for="145"><input type="checkbox" id="145" name="district145" value="relation/1703095">городской округ Щербинка</label>
+  
+  <label for="r1"><input type="checkbox" id="r1" name="region1" value="relation/1320234">Восточный административный округ</label>
+  
+  <label for="r2"><input type="checkbox" id="r2" name="region2" value="relation/226149">Западный административный округ</label>
+  
+  <label for="r3"><input type="checkbox" id="r3" name="region3" value="relation/2263058">Новомосковский административный округ</label>
+  
+  <label for="r4"><input type="checkbox" id="r4" name="region4" value="relation/162903">Северный административный округ</label>
+  
+  <label for="r5"><input type="checkbox" id="r5" name="region5" value="relation/1252558">Северо-Восточный административный округ</label>
+  
+  <label for="r6"><input type="checkbox" id="r6" name="region6" value="relation/446092">Северо-Западный административный округ</label>
+  
+  <label for="r7"><input type="checkbox" id="r7" name="region7" value="relation/2263059">Троицкий административный округ</label>
+  
+  <label for="r8"><input type="checkbox" id="r8" name="region8" value="relation/2162196">Центральный административный округ</label>
+  
+  <label for="r9"><input type="checkbox" id="r9" name="region9" value="relation/1278703">Юго-Восточный административный округ</label>
+  
+  <label for="r10"><input type="checkbox" id="r10" name="region10" value="relation/1304596">Юго-Западный административный округ</label>
+  
+  <label for="r11"><input type="checkbox" id="r11" name="region11" value="relation/1282181">Южный административный округ</label>
+</div>
+  </div>
+   <p><input type="radio" name="category" value="schools">Школы<Br>
    <input type="radio" name="category" value="kindergartens">Детские сады<Br>
    <input type="radio" name="category" value="buildings">Жилые здания<Br>
    <input type="radio" name="category" value="medicine">Медицинские объекты</p>
@@ -27,10 +343,36 @@
   <form method="post" action="/stat">
     <p><input type="button" value="посмотреть статистику" onclick="openStat()"></p>
   </form>
-	<script language="JavaScript">
+  <form method="post" action="/add_building">
+    <p><input type="button" value="Добавить жилой дом" onclick="openNewBuilding()"></p>
+  </form>
+
+<script type="text/javascript">
+var expanded = false;
+
+function showCheckboxes() {
+  var checkboxes = document.getElementById("checkboxes");
+  if (!expanded) {
+    checkboxes.style.display = "block";
+    expanded = true;
+  } else {
+    checkboxes.style.display = "none";
+    expanded = false;
+  }
+}
+</script>
+
+<script language="JavaScript">
 	<!-- hide
 	function openStat() {
 	  myWin= open("/stat");
+	}
+	// -->
+	</script>
+<script language="JavaScript">
+	<!-- hide
+	function openNewBuilding() {
+	  myWin= open("/add_building");
 	}
 	// -->
 	</script>

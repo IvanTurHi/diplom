@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head></head>
+<body>
+	<h1>ADD</h1>
+<div class="main_container">
+        <ul class="menu-main">
+          <li><a href="{{ url_for('basic_page') }}">Main page</a></li>
+        </ul> 
+    </div>
+        {{ iframe|safe }}
+  <form action="/map_add">
+  <label for="kindergartens">Количество детей детсадовского возраста</label>
+  <input type="text" id="kindergartens" name="kindergartens"><Br>
+    <label for="Pupils">Количество детей школьного возраста</label>
+    <input type="text" id="Pupils" name="Pupils"><br>
+    <label for="adults">Количество взрослых</label>
+    <input type="text" id="adults" name="adults"><br>
+<input type="submit" value="Добавить объект">
+</body>
+</html>
