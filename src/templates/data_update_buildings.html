@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <title>Редактирование данных о жилых домах</title>
+ </head>
+ <body>
+  <form action="/map_redaction_{{total_map['type']}}_{{total_map['id']}}">
+  <label for="kindergartens">Количество детей детсадовского возраста</label>
+  <input type="text" id="kindergartens" name="kindergartens" value={{ total_map['kindergartens']}}><Br>
+    <label for="Pupils">Количество детей школьного возраста</label>
+    <input type="text" id="Pupils" name="Pupils" value={{total_map['Pupils']}}><br>
+    <label for="adults">Количество взрослых</label>
+    <input type="text" id="adults" name="adults" value={{total_map['adults']}}><br>
+<input type="submit" value="Сохранить изменения">
+  </form>
+ </body>
+</html>

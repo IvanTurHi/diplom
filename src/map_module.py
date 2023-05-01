@@ -325,7 +325,7 @@ class Map_master():
                 fillcolor = 'blue'
             html_text = """
             <li><a href="/map{}_{}" target=_parent><big><big>Построить радиус доступности</big></big></a></li>
-            <li><a href="/data_update{}_{}" target=_blank><big><big>Редактировать данные</big></big></a></li>
+            <li><a href="/data_update{}_{}" target=_parent><big><big>Редактировать данные</big></big></a></li>
             """.format('s', object['id'], 's', object['id'])
             #static_text = """
             #<i>Школа: {} <Br> Загруженность (в процентах от номинальной): {} <Br> Рейтинг: {}
@@ -333,6 +333,8 @@ class Map_master():
             #""".format(object['short_name'], object['workload'], object['rating'], object['website'])
 
             name_text = 'Школа'
+            students_number_text = 'Количество учеников'
+            capacity_text = 'Номинальная вместимость'
             workload_text = 'Загруженность (в процентах от номинальной)'
             rating_text = 'Рейтинг'
             website_text = 'Сайт школы'
@@ -342,6 +344,8 @@ class Map_master():
 
             fields_map = {}
             fields_map[name_text] = object['short_name']
+            fields_map[students_number_text] = object['students']
+            fields_map[capacity_text] = object['capacity']
             fields_map[workload_text] = object['workload']
             fields_map[rating_text] = object['rating']
             fields_map[website_text] = '<a href="https://{}" target=_blank>{}<br> </a>'.format(object['website'], object['website'])
@@ -382,7 +386,8 @@ class Map_master():
 
             html_text = """
             <li><a href="/map{}_{}" target=_parent><big><big>Построить радиус доступности</big></big></a></li>
-              """.format('k', object['id'])
+            <li><a href="/data_update{}_{}" target=_parent><big><big>Редактировать данные</big></big></a></li>
+              """.format('k', object['id'], 'k', object['id'])
             folium.PolyLine(locations=points, color=color, fill_color=fillcolor, fill_opacity=fillopacity,
                             popup=folium.Popup(static_text + html_text),
                             tooltip='<i>Детский сад при школе {}</i>'.format(object['short_name'])).add_to(feature_group_object)
@@ -409,8 +414,8 @@ class Map_master():
             #""".format(object['kindergartens'], object['Pupils'], object['adults'], object['year'], total_schools,
             #           object['free_schools'], object['avaliable_kindergartens'], object['avaliable_medicine'])
             html = """
-          <li><a href="/map_{}" target=_top>{}</a></li>
-            """.format(object['id'].split('/')[1], object['id'].split('/')[1])
+            <li><a href="/data_update{}_{}" target=_parent><big><big>Редактировать данные</big></big></a></li>
+            """.format('b', object['id'].split('/')[0] + '=' + object['id'].split('/')[1])
 
             fields_map = {}
             kinder_text = 'Количество детей'
@@ -441,7 +446,7 @@ class Map_master():
                             #popup=statistic_text.format(
                             #    object['kindergartens'], object['Pupils'],
                             #    object['adults'], object['year']),
-                            popup=folium.Popup(statistic_text),
+                            popup=folium.Popup(statistic_text + html),
                             tooltip='<i>{}, {}</i>'.format(object['addr:street'],
                                                            object['addr:housenumber']))
             if mf_group == 'feature':
@@ -700,7 +705,7 @@ class Map_master():
         #Датафрейм для пересечения
         frame_for_inter = gpd.GeoDataFrame()
         frame_for_inter['geometry'] = [Polygon(self.swap_points(points))]
-        print(frame_for_inter['geometry'])
+        #print(frame_for_inter['geometry'])
 
         #Получаем множество жилых домов, которые попадют в заданный буфер и считаем данные
         df_inter_buffer = self.inter_for_buffer(df_buildings, frame_for_inter)
@@ -730,6 +735,36 @@ class Map_master():
         #feature_group.add_to(maps)
 
         return feature_group
+
+    def print_buffer_short(self, object, radius, df_buildings):
+        centroid_latitude = list(object['centroid latitude'])[0]
+        centroid_longitude = list(object['centroid longitude'])[0]
+
+        df = pd.DataFrame(
+            {
+                'lat': [centroid_latitude],
+                'lon': [centroid_longitude],
+                'rad': [radius]
+            }
+        )
+
+        #Отрисовка круга нужного радиуса на карте. Так сложно потому что земля вам не шарик, а хер пойми что
+        df['geom'] = df.apply(lambda r: Point(r['lon'], r['lat']), axis=1)
+        gdf = gpd.GeoDataFrame(df, geometry='geom', crs='epsg:4326')
+        gdf_flat = gdf.to_crs('epsg:6347')
+        gdf_flat['geom'] = gdf_flat.geometry.buffer(df.rad)
+        gdf = gdf_flat.to_crs('epsg:4326')
+        points = list(list(gdf['geom'])[0].exterior.coords)
+        points = self.swap_points(points)
+
+        #Датафрейм для пересечения
+        frame_for_inter = gpd.GeoDataFrame()
+        frame_for_inter['geometry'] = [Polygon(self.swap_points(points))]
+
+        #Получаем множество жилых домов, которые попадют в заданный буфер и считаем данные
+        df_inter_buffer = self.inter_for_buffer(df_buildings, frame_for_inter)
+
+        return df_inter_buffer
 
 
     osm = osm_parser()

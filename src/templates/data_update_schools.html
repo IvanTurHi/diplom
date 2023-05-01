@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8">
+  <title>Редактирование данных по школам</title>
+ </head>
+ <body>
+  <form action="/map_redaction_{{total_map['type']}}_{{total_map['id']}}">
+  <label for="name">Номинальная вместимость</label>
+  <input type="text" id="capacity" name="capacity" value={{ total_map['capacity']|safe }}><Br>
+    <label for="age">Количество учеников</label>
+    <input type="text" id="students" name="students" value={{total_map['students_number']|safe }}><br>
+    <label for="age">Рейтинг</label>
+    <input type="text" id="rating" name="rating" value={{total_map['rating']|safe }}><br>
+<input type="submit" value="Сохранить изменения">
+  </form>
+ </body>
+</html>
