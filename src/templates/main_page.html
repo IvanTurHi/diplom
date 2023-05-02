@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <link href="https://fonts.googleapis.com/css?family=Comfortaa&display=swap" rel="stylesheet" />
+    <link href="{{ url_for('static', filename='main_style.css') }}"  rel="stylesheet" />
     <title>Главная</title>
 </head>
 <body>
@@ -8,6 +10,18 @@
         <ul class="menu-main">
           <li><a href="{{ url_for('basic_map') }}">Interactive</br>map</a></li>
         </ul> 
+    </div>
+        <div class="about">
+            <span class="t5">Сервис анализа городской социальной инфраструктуры</span>
+        </div>
+        <div class="down_menu">
+            <div class="v11_0"></div>
+            <span class="v11_5">Руководитель:</br></br>Прокофьева Екатерина Николаевна</span>
+            <span class="v11_4">Котакты:</br></br>project530@miem.hse.ru</br>+7 (999) 888-77-66</span>
+            <span class="v11_6">Команда разработки:</br></br>Геворков Иван<br>Осипов Александр<br></span>
+            <div class="v11_8"></div>
+            <div class="v11_7"></div>
+        </div>
     </div>
 </body>
 </html>

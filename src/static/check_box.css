@@ -31,3 +31,38 @@
 #checkboxes label:hover {
   background-color: #1e90ff;
 }
+.menu-main {
+  display: table;
+  width: 100%;
+  background: rgba(91,140,90,1);
+  margin: 0;
+}
+
+.menu-main ul{
+  display: table-row;
+  margin: 0;
+}
+.menu-main li {
+    text-align: center;
+    width: 25%;
+    display: table-cell;
+    padding: 0;
+    margin: 0;
+}
+
+.menu-main a {
+  line-height: normal;
+  display: inline-block;
+    
+  text-decoration: none;
+  font-family: 'Comfortaa', sans-serif;
+  position: relative;
+  color: rgba(230,232,239,1);
+  font-weight: Bold;
+  font-size: 3.5vw;
+  text-align: center;
+}
+body{
+  margin: 0;
+  overflow-x: hidden;
+}

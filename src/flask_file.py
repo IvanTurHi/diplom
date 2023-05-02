@@ -14,13 +14,13 @@ map_dict = {}
 class map_class():
 
     def initiation(self, centroid_latitude=55.757220, centroid_longitude=37.621184, zoom=12):
-        self.maps = folium.Map(width=1000, height=500, left='11%', location=[centroid_latitude, centroid_longitude], zoom_start=zoom)
+        self.maps = folium.Map(width=1000, height=500, left='11%', top='10%', location=[centroid_latitude, centroid_longitude], zoom_start=zoom)
 
     def repr(self):
         self.html_map = self.maps._repr_html_()
 
 
-    maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
+    maps = folium.Map(width=1000, height=500, left='11%', top='10%', location=[55.4424, 37.3636], zoom_start=9)
 
     html_map = maps._repr_html_()
 

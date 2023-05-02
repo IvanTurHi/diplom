@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+<title>Интерактивная карта социальной инфраструктуры</title>
 <link href="{{ url_for('static', filename='check_box.css') }}"  rel="stylesheet" />
 </head>
 <body>
-	<h1>BDS</h1>
 <div class="main_container">
         <ul class="menu-main">
           <li><a href="{{ url_for('basic_page') }}">Main page</a></li>
@@ -342,9 +342,6 @@
   </form>
   <form method="post" action="/stat">
     <p><input type="button" value="посмотреть статистику" onclick="openStat()"></p>
-  </form>
-  <form method="post" action="/add_building">
-    <p><input type="button" value="Добавить жилой дом" onclick="openNewBuilding()"></p>
   </form>
 
 <script type="text/javascript">
