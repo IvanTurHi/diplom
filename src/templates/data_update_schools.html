@@ -5,6 +5,7 @@
   <title>Редактирование данных по школам</title>
  </head>
  <body>
+  <label>После обновления данных, изменения будут автоматически применены к окружающим домам и району</label>
   <form action="/map_redaction_{{total_map['type']}}_{{total_map['id']}}">
   <label for="name">Номинальная вместимость</label>
   <input type="text" id="capacity" name="capacity" value={{ total_map['capacity']|safe }}><Br>

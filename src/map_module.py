@@ -557,20 +557,30 @@ class Map_master():
         avg_2 = int((avg_count + max_count) / 2)
         color_list = ['red', 'yellow', 'green']
 
-        colormap = branca.colormap.LinearColormap(vmin=avg_1, vmax=avg_2, colors=color_list)
-        self.is_hex_colored.clear()
-        self.first_flag = True
+
 
         if object_type_name == 'schools':
             alias = ['Количество школ: ']
+            avg_1 = 1
+            avg_2 = 3
         elif object_type_name == 'buildings':
             alias = ['Количество жителей: ']
+            avg_1 = 1000
+            avg_2 = 3000
         elif object_type_name == 'medicine':
             alias = ['Количество медицинских учереждений: ']
+            avg_1 = 1
+            avg_2 = 3
         elif object_type_name == 'kindergartens':
             alias = ['Количество детских садов: ']
+            avg_1 = 1
+            avg_2 = 3
         else:
             alias = ['miss: ']
+
+        colormap = branca.colormap.LinearColormap(vmin=avg_1, vmax=avg_2, colors=color_list)
+        self.is_hex_colored.clear()
+        self.first_flag = True
 
         feature_group_object = folium.FeatureGroup(feature_group_name)
 
@@ -782,9 +792,6 @@ class Map_master():
     #Вспомогательные переменные для раскраски гексагонов
     is_hex_colored = {}
     first_flag = True
-
-    feature_group_build = folium.FeatureGroup('buiiiiild')
-    feature_group_school = folium.FeatureGroup('schooool')
 
     df_intersection_for_choro = gpd.GeoDataFrame()
     count_map = {}
