@@ -14,13 +14,13 @@ map_dict = {}
 class map_class():
 
     def initiation(self, centroid_latitude=55.757220, centroid_longitude=37.621184, zoom=12):
-        self.maps = folium.Map(width=1000, height=500, left='11%', top='10%', location=[centroid_latitude, centroid_longitude], zoom_start=zoom)
+        self.maps = folium.Map(width='90%', height='100%', left='5%', location=[centroid_latitude, centroid_longitude], zoom_start=zoom)
 
     def repr(self):
         self.html_map = self.maps._repr_html_()
 
 
-    maps = folium.Map(width=1000, height=500, left='11%', top='10%', location=[55.4424, 37.3636], zoom_start=9)
+    maps = folium.Map(width=1000, height=600, location=[55.4424, 37.3636], zoom_start=9)
 
     html_map = maps._repr_html_()
 
@@ -38,7 +38,7 @@ class map_class():
     feature_group_objects_name = 'object'
     feature_group_objects = folium.FeatureGroup(feature_group_objects_name)
 
-    feature_group_choropleth_name = 'choropleth'
+    feature_group_choropleth_name = 'Распредление внутри района'
     feature_group_choropleth = folium.FeatureGroup(feature_group_choropleth_name)
 
     feature_group_buffer_name = 'buffer'
@@ -81,6 +81,10 @@ def run_flask(osm):
             people_counter += 1
         #return "Total visits: {}".format(session.get('visits'))
         return render_template('main_page.html')
+
+    @app.route('/about')
+    def about():
+        return render_template('about_page.html')
 
     @app.route('/hello_sasha')
     def hello_sasha():
@@ -454,16 +458,16 @@ def run_flask(osm):
             if len(districts_list) > 0:
                 #Отрисовка гексагонов на уровне районов
                 type_t = 'district'
-                feature_group_borders_name = 'district borders'
-                feature_group_hexagon_name = 'district hexagons'
+                feature_group_borders_name = 'Границы районов'
+                feature_group_hexagon_name = 'Гексагональная сетка'
                 borders_hex_list = districts_list
                 #maps = map_slave.print_district_borders(maps, districts_list, type_t, 'district borders')
                 #maps = map_slave.print_hexagones(maps, districts_list, type_t, 'district hexagons')
             else:
                 #Отрисовка гексагонов на уровне округов
                 type_t = 'region'
-                feature_group_borders_name = 'region borders'
-                feature_group_hexagon_name = 'region hexagons'
+                feature_group_borders_name = 'Границы округов'
+                feature_group_hexagon_name = 'Гексагональная сетка'
                 borders_hex_list = region_list
                 #maps = map_slave.print_district_borders(maps, region_list, type_t, 'region borders')
                 #maps = map_slave.print_hexagones(maps, region_list, type_t, 'region hexagons')
@@ -483,13 +487,14 @@ def run_flask(osm):
                 type_o = category
                 df_objects = get_objects_df(type_o)
                 color = 'red'
+                map_dict[session['Map']].feature_group_choropleth_name = 'Распределение школ внутри района'
                 map_dict[session['Map']].feature_group_objects = map_slave.print_objects(map_dict[session['Map']].maps, df_objects, polygons_df, color, 'school', 'schools',
                                                marker=False, borders=True, circle=False)
 
                 map_dict[session['Map']].feature_group_objects.add_to(map_dict[session['Map']].maps)
 
                 df_borders, type_t = get_districts_or_regions(districts_list, region_list)
-                map_dict[session['Map']].feature_group_choropleth = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, 'schools in hex', type_t, 'schools')
+                map_dict[session['Map']].feature_group_choropleth = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, map_dict[session['Map']].feature_group_choropleth_name, type_t, 'schools')
 
                 map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
 
@@ -498,13 +503,14 @@ def run_flask(osm):
                 type_o = category
                 df_objects = get_objects_df(type_o)
                 color = 'red'
+                map_dict[session['Map']].feature_group_choropleth_name = 'Распределение детских садов внутри района'
                 map_dict[session['Map']].feature_group_objects = map_slave.print_objects(map_dict[session['Map']].maps, df_objects, polygons_df, color, 'kindergartens', 'kindergartens',
                                                marker=False, borders=True, circle=False)
 
                 map_dict[session['Map']].feature_group_objects.add_to(map_dict[session['Map']].maps)
 
                 df_borders, type_t = get_districts_or_regions(districts_list, region_list)
-                map_dict[session['Map']].feature_group_choropleth = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, 'kindergartens in hex', type_t, 'kindergartens')
+                map_dict[session['Map']].feature_group_choropleth = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, map_dict[session['Map']].feature_group_choropleth_name, type_t, 'kindergartens')
 
                 map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
 
@@ -514,13 +520,14 @@ def run_flask(osm):
                 type_o = category
                 df_objects = get_objects_df(type_o)
                 color = 'red'
+                map_dict[session['Map']].feature_group_choropleth_name = 'Распределение жителей внутри района'
                 map_dict[session['Map']].feature_group_objects = map_slave.print_objects(map_dict[session['Map']].maps, df_objects, polygons_df, color, 'buildings', 'buildings',
                                                marker=False, borders=True, circle=False)
 
                 map_dict[session['Map']].feature_group_objects.add_to(map_dict[session['Map']].maps)
 
                 df_borders, type_t = get_districts_or_regions(districts_list, region_list)
-                map_dict[session['Map']].feature_group_choropleth = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, 'buildings in hex', type_t, 'buildings')
+                map_dict[session['Map']].feature_group_choropleth = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, map_dict[session['Map']].feature_group_choropleth_name, type_t, 'buildings')
 
                 map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
 
@@ -529,12 +536,13 @@ def run_flask(osm):
                 type_o = category
                 df_objects = get_objects_df(type_o)
                 color = 'red'
+                map_dict[session['Map']].feature_group_choropleth_name = 'Распределение медицины внутри района'
                 map_dict[session['Map']].feature_group_objects = map_slave.print_objects(map_dict[session['Map']].maps, df_objects, polygons_df, color, 'medicine', 'medicine',
                                                marker=False, borders=True, circle=False)
                 map_dict[session['Map']].feature_group_objects.add_to(map_dict[session['Map']].maps)
 
                 df_borders, type_t = get_districts_or_regions(districts_list, region_list)
-                map_dict[session['Map']].feature_group_choropleth = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, 'medicine in hex', type_t, 'medicine')
+                map_dict[session['Map']].feature_group_choropleth = map_slave.print_choropleth(map_dict[session['Map']].maps, df_objects, df_borders, map_dict[session['Map']].feature_group_choropleth_name, type_t, 'medicine')
 
                 map_dict[session['Map']].feature_group_choropleth.add_to(map_dict[session['Map']].maps)
 

@@ -7,11 +7,13 @@
 <body>
 <div class="main_container">
         <ul class="menu-main">
-          <li><a href="{{ url_for('basic_page') }}">Main page</a></li>
+          <li><a href="{{ url_for('basic_page') }}">Главная страница</a></li>
+          <li><a href="{{ url_for('about') }}">О проекте</a></li>
         </ul> 
     </div>
-        {{ iframe|safe }}
-  <form method="post" action="/map_d/">
+{{iframe|safe}}
+<div class="big_box">
+<form method="post" action="/map_d/">
    <p><b>Выберите районы</b></p>
   <div class="multiselect">
     <div class="selectBox" onclick="showCheckboxes()">
@@ -340,10 +342,11 @@
    <input type="radio" name="category" value="medicine">Медицинские объекты</p>
    <p><input type="submit" value="Получить данные"></p>
   </form>
-  <form method="post" action="/stat">
+
+<form method="post" action="/stat">
     <p><input type="button" value="посмотреть статистику" onclick="openStat()"></p>
   </form>
-
+</div>
 <script type="text/javascript">
 var expanded = false;
 

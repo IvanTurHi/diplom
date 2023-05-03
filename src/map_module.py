@@ -466,6 +466,16 @@ class Map_master():
         folium.Circle(location=[location_latitude, location_longitude], radius=radius,
                       color=circle_color, fill_color=fill_color).add_to(feature_group_object)
 
+    def get_feature_group_name_on_russian(self, feature_group_name):
+        if feature_group_name == 'school':
+            return 'Школы'
+        elif feature_group_name == 'kindergartens':
+            return 'Детские сады'
+        elif feature_group_name == 'medicine':
+            return 'Медицинские учреждения'
+        elif feature_group_name == 'buildings':
+            return 'Жилые зданий'
+
     #Функция для нанесения объектов на карту, которые ложатся внуть полигонов, поступающих на вход
     def print_objects(self, maps, df_objects, polygons_df, color, feature_group_name, object_type_name, marker, borders, circle):
         if len(polygons_df) > 0:
@@ -476,7 +486,9 @@ class Map_master():
             #Для отображения года постройки у жилых зданий
             if object_type_name == 'buildings':
                 self.df_inter['year'].fillna('нет данных', inplace=True)
-            feature_group_object = folium.FeatureGroup(feature_group_name)
+
+
+            feature_group_object = folium.FeatureGroup(self.get_feature_group_name_on_russian(feature_group_name))
 
             for i in range(self.df_inter.shape[0]):
                 #Добавление маркера объекта на карту
@@ -519,7 +531,7 @@ class Map_master():
     def color_poly_choropleth(self, maps, data, json, columns, legend_name, feature, bins):
         folium.Choropleth(
             geo_data=json,
-            name="choropleth",
+            name="Распредление по районам",
             data=data,
             columns=columns,
             key_on="feature.id",
@@ -651,16 +663,16 @@ class Map_master():
                 df_objects['total_number_of_people'] = df_objects['kindergartens'].astype(int) + df_objects['Pupils'].astype(int) + df_objects['adults'].astype(int)
                 agg_all = df_objects.groupby([id_column], as_index=False).agg({'total_number_of_people': 'sum'}).rename(
                     columns={'total_number_of_people': 'counts'})
-                legend_name = 'number of residents'
+                legend_name = 'Количество житилей'
             else:
                 agg_all = df_objects.groupby([id_column], as_index=False).agg({'centroid latitude': 'count'}).rename(
                     columns={'centroid latitude': 'counts'})
             if object_type_name == 'schools':
-                legend_name = 'number of schools'
+                legend_name = 'Количество школ'
             if object_type_name == 'medicine':
-                legend_name = 'number of medicine objects'
+                legend_name = 'Количество медицинских учреждений'
             if object_type_name == 'kindergartens':
-                legend_name = 'number of kindergartens'
+                legend_name = 'Количество детских садов'
             agg_all.rename(columns={id_column: 'id'}, inplace=True)
             df_borders.rename(columns={id_column: 'id'}, inplace=True)
             data_geo_1 = gpd.GeoSeries(df_borders.set_index('id')["geometry"]).to_json()
@@ -688,7 +700,7 @@ class Map_master():
         centroid_latitude = list(object['centroid latitude'])[0]
         centroid_longitude = list(object['centroid longitude'])[0]
 
-        feature_group = folium.FeatureGroup(feature_group_name)
+        feature_group = folium.FeatureGroup('Буфер доступности')
 
         df = pd.DataFrame(
             {
