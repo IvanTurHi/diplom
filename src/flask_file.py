@@ -7,6 +7,7 @@ from flask import session
 from json2html import *
 from statistic import Stat_master
 from folium.plugins import Draw
+import branca
 
 people_counter = 0
 map_dict = {}
@@ -89,6 +90,22 @@ def run_flask(osm):
     @app.route('/hello_sasha')
     def hello_sasha():
         return 'Hello, Sasha! This is our diploma. CRY!'
+
+    def get_selected_regions():
+        selected_districts = ''
+        if len(map_dict[session['Map']].districts_list) > 0:
+            for i in map_dict[session['Map']].districts_list:
+                selected_districts += list(districts_df.loc[districts_df['district_id'] == i]['district_name'])[0] + ', '
+            selected_districts = selected_districts.replace('район', '')
+            selected_districts = selected_districts[:-2]
+        elif len(map_dict[session['Map']].regions_list) > 0:
+            for i in map_dict[session['Map']].regions_list:
+                selected_districts += list(regions_df.loc[regions_df['region_id'] == i]['region_name'])[0] + ', '
+            selected_districts = selected_districts[:-2]
+        elif len(map_dict[session['Map']].regions_list) == 0 and len(map_dict[session['Map']].districts_list) == 0:
+            selected_districts = "Районы не выбраны"
+
+        return selected_districts
 
     #Функция для загрузки данных
     def get_objects_df(type_o):
@@ -191,6 +208,7 @@ def run_flask(osm):
         region_id = list(object['region_id'])[0]
         centroid_latitude = float(list(object['centroid latitude'])[0])
         centroid_longitude = float(list(object['centroid longitude'])[0])
+        #ЦАО
         if district_id in distrcit_id_list or region_id in region_id_list:
             if type == 's':
                 radius = 750
@@ -198,6 +216,7 @@ def run_flask(osm):
                 radius = 500
             elif type == 'm':
                 radius = 1500
+        #НЕ ЦАО
         else:
             if type == 's':
                 radius = 500
@@ -327,57 +346,60 @@ def run_flask(osm):
 
     @app.route('/map_redaction_<type_t>_<object_id>')
     def data_redaction(type_t, object_id):
-        new_object_dict = {}
-        for i in request.values.items():
-            new_object_dict[i[0]] = i[1]
-        if type_t == 's':
-            object_id = int(object_id)
-            change_house_free_school_avaliable_flag = False
-            new_object_dict['workload'] = int(int(new_object_dict['students']) / int(new_object_dict['capacity']) * 100)
-            old_workload = list(df_schools.loc[df_schools['id'] == object_id]['workload'])[0]
-            #print(old_workload)
-            if (new_object_dict['workload'] >= 100 and old_workload < 100):
-                change_value = -1
-                change_house_free_school_avaliable_flag = True
-            if (new_object_dict['workload'] < 100 and old_workload >= 100):
-                change_value = 1
-                change_house_free_school_avaliable_flag = True
+        try:
+            new_object_dict = {}
+            for i in request.values.items():
+                new_object_dict[i[0]] = i[1]
+            if type_t == 's':
+                object_id = int(object_id)
+                change_house_free_school_avaliable_flag = False
+                new_object_dict['workload'] = int(int(new_object_dict['students']) / int(new_object_dict['capacity']) * 100)
+                old_workload = list(df_schools.loc[df_schools['id'] == object_id]['workload'])[0]
+                #print(old_workload)
+                if (new_object_dict['workload'] >= 100 and old_workload < 100):
+                    change_value = -1
+                    change_house_free_school_avaliable_flag = True
+                if (new_object_dict['workload'] < 100 and old_workload >= 100):
+                    change_value = 1
+                    change_house_free_school_avaliable_flag = True
 
-            if change_house_free_school_avaliable_flag:
-                change_buildings_avaliable(df_schools.loc[df_schools['id'] == object_id], change_value)
+                if change_house_free_school_avaliable_flag:
+                    change_buildings_avaliable(df_schools.loc[df_schools['id'] == object_id], change_value)
 
-            df_schools.loc[df_schools['id'] == object_id, 'capacity'] = new_object_dict['capacity']
-            df_schools.loc[df_schools['id'] == object_id, 'students'] = new_object_dict['students']
-            df_schools.loc[df_schools['id'] == object_id, 'rating'] = new_object_dict['rating']
-            df_schools.loc[df_schools['id'] == object_id, 'workload'] = new_object_dict['workload']
+                df_schools.loc[df_schools['id'] == object_id, 'capacity'] = new_object_dict['capacity']
+                df_schools.loc[df_schools['id'] == object_id, 'students'] = new_object_dict['students']
+                df_schools.loc[df_schools['id'] == object_id, 'rating'] = new_object_dict['rating']
+                df_schools.loc[df_schools['id'] == object_id, 'workload'] = new_object_dict['workload']
 
-            change_district_statistic_for_schools(list(df_schools.loc[df_schools['id'] == object_id]['district_id'])[0], type_t)
+                change_district_statistic_for_schools(list(df_schools.loc[df_schools['id'] == object_id]['district_id'])[0], type_t)
 
-        if type_t == 'k':
-            object_id = int(object_id)
-            df_kindergartens.loc[df_kindergartens['id'] == object_id, 'capacity'] = new_object_dict['capacity']
-            df_kindergartens.loc[df_kindergartens['id'] == object_id, 'rating'] = new_object_dict['rating']
+            if type_t == 'k':
+                object_id = int(object_id)
+                df_kindergartens.loc[df_kindergartens['id'] == object_id, 'capacity'] = int(new_object_dict['capacity'])
+                df_kindergartens.loc[df_kindergartens['id'] == object_id, 'rating'] = new_object_dict['rating']
 
-            change_district_statistic_for_schools(list(df_kindergartens.loc[df_kindergartens['id'] == object_id]['district_id'])[0], type_t)
+                change_district_statistic_for_schools(list(df_kindergartens.loc[df_kindergartens['id'] == object_id]['district_id'])[0], type_t)
 
-        if type_t == 'b':
-            object_id = object_id.replace('=', '/')
-            print(df_buildings.loc[df_buildings['id'] == object_id]['kindergartens'])
-            df_buildings.loc[df_buildings['id'] == object_id, 'kindergartens'] = new_object_dict['kindergartens']
-            df_buildings.loc[df_buildings['id'] == object_id, 'Pupils'] = new_object_dict['Pupils']
-            df_buildings.loc[df_buildings['id'] == object_id, 'adults'] = new_object_dict['adults']
+            if type_t == 'b':
+                object_id = object_id.replace('=', '/')
+                df_buildings.loc[df_buildings['id'] == object_id, 'kindergartens'] = int(new_object_dict['kindergartens'])
+                df_buildings.loc[df_buildings['id'] == object_id, 'Pupils'] = int(new_object_dict['Pupils'])
+                df_buildings.loc[df_buildings['id'] == object_id, 'adults'] = int(new_object_dict['adults'])
 
-            print(df_buildings.loc[df_buildings['id'] == object_id]['kindergartens'])
+                change_district_statistic_for_schools(list(df_buildings.loc[df_buildings['id'] == object_id]['district_id'])[0], 's')
+                change_district_statistic_for_schools(list(df_buildings.loc[df_buildings['id'] == object_id]['district_id'])[0], 'k')
 
-            change_district_statistic_for_schools(list(df_buildings.loc[df_buildings['id'] == object_id]['district_id'])[0], 's')
-            change_district_statistic_for_schools(list(df_buildings.loc[df_buildings['id'] == object_id]['district_id'])[0], 'k')
+            return basic_map(True, map_dict[session['Map']].districts_list, map_dict[session['Map']].regions_list, map_dict[session['Map']].category)
 
+        except BaseException:
+            if type_t == 'b':
+                object_id = object_id.replace('/', '=')
+            return data_update(type_t, object_id)
 
-
-        return basic_map(True, map_dict[session['Map']].districts_list, map_dict[session['Map']].region_list, map_dict[session['Map']].category)
 
     @app.route('/data_update<type>_<object_id>')
     def data_update(type, object_id):
+        print('ttttttttttttttt', type, object_id)
         object, type_o = return_object_for_buffer_and_update(type, object_id)
         total_map = {}
         total_map['id'] = object_id
@@ -423,7 +445,8 @@ def run_flask(osm):
         map_dict[session['Map']].feature_group_buffer.add_to(map_dict[session['Map']].maps)
         map_dict[session['Map']].control.add_to(map_dict[session['Map']].maps)
         map_dict[session['Map']].repr()
-        return render_template('map_page.html', iframe=map_dict[session['Map']].html_map)
+        selected_districts = get_selected_regions()
+        return render_template('map_page.html', selected_districts=selected_districts, iframe=map_dict[session['Map']].html_map)
 
     @app.route('/map_add')
     def map_add():
@@ -446,11 +469,13 @@ def run_flask(osm):
         print(session)
         map_slave.big_polygons_hex_list_regions = []
         map_slave.big_polygons_hex_list_district = []
+        colormap = ''
+        colormap_school = ''
         #maps = folium.Map(width=1000, height=500, left='11%', location=[55.4424, 37.3636], zoom_start=9)
         #Map = map_class()
         map_dict[session['Map']].initiation()
         map_dict[session['Map']].districts_list = districts_list
-        map_dict[session['Map']].region_list = region_list
+        map_dict[session['Map']].regions_list = region_list
         if data_flag == True:
             #districts_list = ['relation/181288', 'relation/364551', 'relation/2092928', 'relation/240229']
             #region_list = ['relation/226149', 'relation/1320234']
@@ -556,13 +581,46 @@ def run_flask(osm):
 
         #html_map = Map.maps._repr_html_()
         map_dict[session['Map']].repr()
+
+        selected_districts = get_selected_regions()
 #
-        return render_template('map_page.html', iframe=map_dict[session['Map']].html_map)
+        return render_template('map_page.html', selected_districts=selected_districts, iframe=map_dict[session['Map']].html_map)
+
+    @app.route('/sort')
+    def sort_stat():
+        sort_type = ''
+        for i in request.values.items():
+            sort_type= i[1]
+
+        return stat(sort_type=sort_type)
+
+    def get_sorted_key(sort_type):
+        if sort_type == "schools":
+            return 'Количество школ'
+        elif sort_type == 'kinder':
+            return 'Количество детских садов'
+        elif sort_type == 'medicine':
+            return 'Количество мед учреждений'
+        elif sort_type == 'residents':
+            return 'Количество жителей'
+        elif sort_type == 'year':
+            return 'Средний год постройки зданий'
+        elif sort_type == 'area':
+            return 'Площадь (м2)'
+        elif sort_type == 'school_index':
+            return 'Процент домов,находящихся вне установленной зоны пешей доступности от школ'
+        elif sort_type == 'kinder_index':
+            return 'Процент домов,находящихся вне установленной зоны пешей доступности от детских садов'
+        elif sort_type == 'medicine_index':
+            return 'Процент домов,находящихся вне установленной зоны пешей доступности от медицинских учреждений'
+        elif sort_type == 'workload':
+            return 'Средняя загруженность школ(в процентах)'
 
     #Преобразование данных по районам и округам в папке additional_code ноутбук preparation_for_statistic
     @app.route('/stat', methods=['POST', 'GET'])
-    def stat():
+    def stat(sort_type=''):
         models = {}
+        map_for_sorting = {}
         if len(map_dict[session['Map']].districts_list) > 0:
             territories = map_dict[session['Map']].stat_slave.get_districts(map_dict[session['Map']].districts_list, districts_df)
             for i in range(len(territories)):
@@ -608,8 +666,12 @@ def run_flask(osm):
                                           'Количество мест в детских садах (на 1000 человек)': kinder_index,
                                           'Удовлетворяет ли количество мест детских садах нормативам': is_kinder_obespech}
 
-        elif len(map_dict[session['Map']].region_list) > 0:
-            territories = map_dict[session['Map']].stat_slave.get_regions(map_dict[session['Map']].region_list, regions_df)
+                if sort_type != '':
+                    sorted_key = get_sorted_key(sort_type)
+                    map_for_sorting[territories[i]] = models[territories[i]][sorted_key]
+
+        elif len(map_dict[session['Map']].regions_list) > 0:
+            territories = map_dict[session['Map']].stat_slave.get_regions(map_dict[session['Map']].regions_list, regions_df)
             for i in range(len(territories)):
                 area = map_dict[session['Map']].stat_slave.get_area(territories[i], 'region')
                 schools_number = map_dict[session['Map']].stat_slave.get_data(territories[i], 'region',
@@ -643,8 +705,19 @@ def run_flask(osm):
                                           'Процент домов,находящихся вне установленной зоны пешей доступности от детских садов': without_kindergartens,
                                           'Процент домов,находящихся вне установленной зоны пешей доступности от медицинских учреждений': without_medicine}
 
+                if sort_type != '':
+                    sorted_key = get_sorted_key(sort_type)
+                    map_for_sorting[territories[i]] = models[territories[i]][sorted_key]
+
         else:
             models['Список выбранных территорий'] = 'Территории не выбраны'
+
+        if sort_type != '':
+            sorted_models = {}
+            map_for_sorting = dict(sorted(map_for_sorting.items(), key=lambda x: x[1]))
+            for i in map_for_sorting:
+                sorted_models[i] = models[i]
+            models = sorted_models
 
         models = json2html.convert(json=models)
 

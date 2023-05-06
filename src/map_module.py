@@ -194,8 +194,8 @@ class Map_master():
     def get_table_row(self, left_column_value, right_column_value, left_col_color, right_col_color):
         table_row = """
         <tr>
-        <td style="background-color: """ + left_col_color + """;"><span style="color: #ffffff;"> <big>""" + left_column_value + """</big></span></td>
-        <td style="width: 150px;background-color: """ + right_col_color + """;"><big>{}</big></td>""".format(
+        <td style="background-color: """ + left_col_color + """;"><big>""" + left_column_value + """</big></span></td>
+        <td style="background-color: """ + right_col_color + """;"><big>{}</big></td>""".format(
             right_column_value) + """
         </tr>
         """
@@ -208,12 +208,32 @@ class Map_master():
                     <html>
         <head>
         <h4 style="margin-bottom:10"; width="200px">{}</h4>""".format(header) + """
+          <style type="text/css">
+   TABLE {
+    width: 300px; /* Ширина таблицы */
+    border-collapse: collapse; /* Убираем двойные линии между ячейками */
+   }
+   TD, TH {
+    padding: 3px; /* Поля вокруг содержимого таблицы */
+    border: 1px solid black; /* Параметры рамки */
+   }
+   TH {
+    background: #b0e0e6; /* Цвет фона */
+   }
+  </style>
         </head>
         <table style="height: 150px; width: 300px; border: 8px">
         <tbody> """
-
+        left_col_color_second = "#19a7bd"
+        right_col_color_second = "#f2f0d3"
+        right_col_color = "#FFD700"
+        row_counter = 0
         for i in fields_map:
-            static_text += self.get_table_row(i, fields_map[i], left_col_color, right_col_color)
+            if row_counter % 2 == 0:
+                static_text += self.get_table_row(i, fields_map[i], right_col_color, right_col_color)
+            else:
+                static_text += self.get_table_row(i, fields_map[i], right_col_color_second, right_col_color_second)
+            row_counter += 1
 
         static_text += """
         </tbody>
@@ -230,8 +250,8 @@ class Map_master():
             #<i>Количество жилых зданий в радиусе доступности: {} <Br> Количество детей школьного возраста, проживающих в радиусе доступности: {}
             #<Br> Общее количество человек, проживающих в радиусе доступности: {} <Br></i>
             #""".format(total_buildings_number, students_number, kinder_number + students_number + adults_number)
-            left_col_color = "#19a7bd"
-            right_col_color = "#f2f0d3"
+            left_col_color = "#00008b"
+            right_col_color = "#ffff00"
             header = list(object['short_name'])[0]
             total_buildings_number_text = 'Количество жилых зданий в радиусе доступности'
             total_buildings_number = total_buildings_number
@@ -252,8 +272,8 @@ class Map_master():
                           tooltip=folium.Tooltip(tooltip_text), icon=folium.Icon(color=color)).add_to(feature_group_object)
 
         if feature_group_name == 'kindergartens':
-            left_col_color = "#19a7bd"
-            right_col_color = "#f2f0d3"
+            left_col_color = "#00008b"
+            right_col_color = "#ffff00"
             header = 'Детский сад при школе ' + list(object['short_name'])[0]
             total_buildings_number_text = 'Количество жилых зданий в радиусе доступности'
             total_buildings_number = total_buildings_number
@@ -275,8 +295,8 @@ class Map_master():
                           tooltip=folium.Tooltip(tooltip_text), icon=folium.Icon(color=color)).add_to(feature_group_object)
 
         if feature_group_name == 'medicine':
-            left_col_color = "#19a7bd"
-            right_col_color = "#f2f0d3"
+            left_col_color = "#00008b"
+            right_col_color = "#ffff00"
             header = 'Медицинское учреждение'
             total_buildings_number_text = 'Количество жилых зданий в радиусе доступности'
             total_buildings_number = total_buildings_number
@@ -339,8 +359,8 @@ class Map_master():
             rating_text = 'Рейтинг'
             website_text = 'Сайт школы'
             header = object['short_name']
-            left_col_color = "#19a7bd"
-            right_col_color = "#f2f0d3"
+            left_col_color = "#00008b"
+            right_col_color = "#ffff00"
 
             fields_map = {}
             fields_map[name_text] = object['short_name']
@@ -370,8 +390,8 @@ class Map_master():
             rating_text = 'Рейтинг'
             website_text = 'Сайт школы'
             header = 'Детский сад при школе ' + object['short_name']
-            left_col_color = "#19a7bd"
-            right_col_color = "#f2f0d3"
+            left_col_color = "#00008b"
+            right_col_color = "#ffff00"
 
             fields_map = {}
             fields_map[name_text] = object['short_name']
@@ -429,8 +449,8 @@ class Map_master():
 
             header = '<i>{}, {}</i>'.format(object['addr:street'],
                                                            object['addr:housenumber'])
-            left_col_color = "#19a7bd"
-            right_col_color = "#f2f0d3"
+            left_col_color = "#00008b"
+            right_col_color = "#ffff00"
             fields_map[kinder_text] = object['kindergartens']
             fields_map[student_text] = object['Pupils']
             fields_map[adult_text] = object['adults']
@@ -590,11 +610,13 @@ class Map_master():
         else:
             alias = ['miss: ']
 
-        colormap = branca.colormap.LinearColormap(vmin=avg_1, vmax=avg_2, colors=color_list)
+        colormap = branca.colormap.LinearColormap(vmin=avg_1, vmax=avg_2, colors=color_list, caption='Распределение внутри района')
         self.is_hex_colored.clear()
         self.first_flag = True
 
         feature_group_object = folium.FeatureGroup(feature_group_name)
+        colormap.add_to(maps)
+        #colormap._repr_html_()
 
         folium.GeoJson(
             df_intersection_for_choro,
@@ -663,16 +685,16 @@ class Map_master():
                 df_objects['total_number_of_people'] = df_objects['kindergartens'].astype(int) + df_objects['Pupils'].astype(int) + df_objects['adults'].astype(int)
                 agg_all = df_objects.groupby([id_column], as_index=False).agg({'total_number_of_people': 'sum'}).rename(
                     columns={'total_number_of_people': 'counts'})
-                legend_name = 'Количество житилей'
+                legend_name = 'Количество житилей в пределах района'
             else:
                 agg_all = df_objects.groupby([id_column], as_index=False).agg({'centroid latitude': 'count'}).rename(
                     columns={'centroid latitude': 'counts'})
             if object_type_name == 'schools':
-                legend_name = 'Количество школ'
+                legend_name = 'Количество школ в пределах района'
             if object_type_name == 'medicine':
-                legend_name = 'Количество медицинских учреждений'
+                legend_name = 'Количество медицинских учреждений в пределах района'
             if object_type_name == 'kindergartens':
-                legend_name = 'Количество детских садов'
+                legend_name = 'Количество детских садов в пределах района'
             agg_all.rename(columns={id_column: 'id'}, inplace=True)
             df_borders.rename(columns={id_column: 'id'}, inplace=True)
             data_geo_1 = gpd.GeoSeries(df_borders.set_index('id')["geometry"]).to_json()

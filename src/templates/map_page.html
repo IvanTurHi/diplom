@@ -11,6 +11,9 @@
           <li><a href="{{ url_for('about') }}">О проекте</a></li>
         </ul> 
     </div>
+<div class="selected_regions">
+<label>Выбранные районы: {{selected_districts|safe}}</label>
+</div>
 {{iframe|safe}}
 <div class="big_box">
 <form method="post" action="/map_d/">

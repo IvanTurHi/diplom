@@ -1,8 +1,59 @@
 <!DOCTYPE html>
 <html>
-<head></head>
+<head>
+<title>Статистика по районам</title>
+<link href="{{ url_for('static', filename='stat_style.css') }}"  rel="stylesheet" />
+</head>
 <body>
-		<div class="about" style="height: unset;">
+<form action="/sort">
+  <div class="multiselect">
+    <div class="selectBox" onclick="showCheckboxes()">
+      <select>
+        <option>Сортировать по</option>
+      </select>
+      <div class="overSelect"></div>
+    </div>
+    <div id="checkboxes">
+      <label for="1">
+        <input type="radio" name="sort_rad" id="1" value="schools"/>Количеству школ</label>
+      <label for="2">
+        <input type="radio" name="sort_rad" id="2" value="kinder"/>Количеству детских садов</label>
+      <label for="3">
+        <input type="radio" name="sort_rad" id="3" value="medicine"/>Количество мед учреждений</label>
+      <label for="4">
+        <input type="radio" name="sort_rad" id="4" value="residents"/>Количеству жителей</label>
+      <label for="5">
+        <input type="radio" name="sort_rad" id="5" value="year"/>Году постройки зданий</label>
+      <label for="6">
+        <input type="radio" name="sort_rad" id="6" value="area"/>Площади</label>
+      <label for="7">
+        <input type="radio" name="sort_rad" id="7" value="school_index"/>Проценту домов вне зоны доступности от школ</label>
+      <label for="8">
+        <input type="radio" name="sort_rad" id="8" value="kinder_index"/>Проценту домов вне зоны доступности от детских садов</label>
+      <label for="9">
+        <input type="radio" name="sort_rad" id="9" value="medicine_index"/>Проценту домов вне зоны доступности от мед учреждений</label>
+      <label for="10">
+        <input type="radio" name="sort_rad" id="10" value="workload"/>Средней загрузке школ</label>
+    </div>
+     <p><input type="submit" value="Сортировать"></p>
+  </div>
+</form>
+
+<script type="text/javascript">
+var expanded = false;
+function showCheckboxes() {
+  var checkboxes = document.getElementById("checkboxes");
+  if (!expanded) {
+    checkboxes.style.display = "block";
+    expanded = true;
+  } else {
+    checkboxes.style.display = "none";
+    expanded = false;
+  }
+}
+</script>
+		
+<div class="about" style="height: unset;">
 			<span class="t5">Результат запроса:</span>
 			{% block body %}
 			{{json_obj|safe}}

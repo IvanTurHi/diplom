@@ -44,3 +44,69 @@ a:hover {
 .about_class {
   text-align: center
 }
+
+.color_values {
+  text-align: center
+}
+
+.green_picture {
+  width: 30px;
+  height: 30px;
+  background: url("images/green_color.png");
+  opacity: 1;
+  position: absolute;
+  left: 338px;
+  overflow: hidden;
+}
+
+.yellow_picture {
+  width: 30px;
+  height: 30px;
+  background: url("images/yellow_color.png");
+  opacity: 1;
+  position: absolute;
+  left: 338px;
+  overflow: hidden;
+}
+
+.red_picture {
+  width: 30px;
+  height: 30px;
+  background: url("images/red_color.png");
+  opacity: 1;
+  position: absolute;
+  left: 338px;
+  overflow: hidden;
+}
+
+.orange_picture {
+  width: 30px;
+  height: 30px;
+  background: url("images/orange_color.png");
+  opacity: 1;
+  position: absolute;
+  left: 338px;
+  overflow: hidden;
+}
+
+.blue_picture {
+  width: 30px;
+  height: 30px;
+  background: url("images/blue_color.png");
+  opacity: 1;
+  position: absolute;
+  left: 338px;
+  overflow: hidden;
+}
+
+.distance_values {
+  text-align: center
+}
+
+.index_values {
+  text-align: center
+}
+
+table, th, td {
+  border: 1px solid;
+}

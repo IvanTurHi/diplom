@@ -50,13 +50,13 @@ a:hover {
 }
 .down_menu {
   width: 100%;
-  height: 284px;
+  height: 184px;
   background-repeat: no-repeat;
   background-position: center center;
   background-size: cover;
   opacity: 1;
   position: absolute;
-  top: 2111px;
+  top: 2611px;
   left: 0px;
   overflow: hidden;
 }
@@ -75,7 +75,7 @@ a:hover {
   color: rgba(230,232,239,1);
   position: absolute;
   top: 36px;
-  left: 1000px;
+  left: 900px;
   font-family: Comfortaa;
   font-weight: Regular;
   opacity: 1;
@@ -86,7 +86,7 @@ a:hover {
   color: rgba(230,232,239,1);
   position: absolute;
   top: 36px;
-  left: 625px;
+  left: 525px;
   font-family: Comfortaa;
   font-weight: Regular;
   opacity: 1;
@@ -97,7 +97,7 @@ a:hover {
   color: rgba(230,232,239,1);
   position: absolute;
   top: 36px;
-  left: 250px;
+  left: 150px;
   font-family: Comfortaa;
   font-weight: Regular;
   opacity: 1;
@@ -108,7 +108,7 @@ a:hover {
   opacity: 1;
   position: absolute;
   top: 20px;
-  left: 975px;
+  left: 875px;
   border: 1px solid rgba(161,186,165,1);
 }
 .v11_7 {
@@ -116,19 +116,19 @@ a:hover {
   opacity: 1;
   position: absolute;
   top: 20px;
-  left: 612px;
+  left: 512px;
   border: 1px solid rgba(161,186,165,1);
 }
 .statistics {
   width: 100%;
-  height: 801px;
+  height: 601px;
   background-repeat: no-repeat;
   background-position: center center;
   background-size: cover;
   opacity: 1;
   position: absolute;
-  top: 1247px;
-  left: 250px;
+  top: 1211px;
+  left: 10%;
   overflow: hidden;
 }
 .t9 {
@@ -136,21 +136,21 @@ a:hover {
   color: rgba(240,189,106,1);
   position: absolute;
   top: 101px;
-  left: 0px;
+  left: 540px;
   font-family: Comfortaa;
   font-weight: Light;
   font-size: 36px;
   opacity: 1;
   text-align: left;
 }
-.picture_sample2 {
+.moscow_stat {
   width: 500px;
-  height: 700px;
-  background: url("main_images/stat.png");
+  height: 500px;
+  background: url("images/moscow_stat.png");
   opacity: 1;
   position: absolute;
   top: 101px;
-  left: 600px;
+  left: 0px;
   overflow: hidden;
 }
 .button2_backgraund {
@@ -167,18 +167,39 @@ a:hover {
   border-bottom-right-radius: 20px;
   overflow: hidden;
 }
-.t10 {
-  width: 400px;
-  color: rgba(52,54,51,1);
+.about_class {
+  width: 100%;
+  height: 601px;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  opacity: 1;
   position: absolute;
-  top: 720px;
-  left: 51px;
-  text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  top: 1847px;
+  left: 10%;
+  overflow: hidden;
+}
+.t10 {
+  width: 550px;
+  color: rgba(240,189,106,1);
+  position: absolute;
+  top: 101px;
+  left: 540px;
   font-family: Comfortaa;
-  font-weight: Regular;
+  font-weight: Light;
   font-size: 36px;
   opacity: 1;
-  text-align: center;
+  text-align: left;
+}
+.moscow_about {
+  width: 500px;
+  height: 500px;
+  background: url("images/moscow_about.jpg");
+  opacity: 1;
+  position: absolute;
+  top: 101px;
+  left: 0px;
+  overflow: hidden;
 }
 .arrow_B1 {
   width: 30px;
@@ -210,26 +231,26 @@ a:hover {
   background-size: cover;
   opacity: 1;
   position: absolute;
-  top: 429px;
-  left: 250px;
+  top: 529px;
+  left: 10%;
   overflow: hidden;
 }
 .t6 {
   width: 550px;
   color: rgba(240,189,106,1);
   position: absolute;
-  top: 195px;
-  left: 550px;
+  top: 55px;
+  left: 540px;
   font-family: Comfortaa;
   font-weight: Light;
   font-size: 36px;
   opacity: 1;
   text-align: left;
 }
-.picture_sample1 {
+.moscow_map {
   width: 500px;
-  height: 700px;
-  background: url("main_images/map.png");
+  height: 600px;
+  background: url("images/moscow_map.png");
   opacity: 1;
   position: absolute;
   top: 96px;
@@ -293,7 +314,7 @@ a:hover {
   background-size: cover;
   opacity: 1;
   position: absolute;
-  top: 183px;
+  top: 153px;
   left: 50px;
   overflow: hidden;
 }
