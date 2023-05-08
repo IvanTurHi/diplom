@@ -1,0 +1,15 @@
+<html>
+    <head>
+      <meta charset="utf-8">
+      <title>Test</title>
+      {% block head %}{% endblock %}
+    </head>
+    <body>
+        <div><a href="/main_page">Главная страница</a></div>
+        <div><a href="/map">Карта</a></div>
+        <div><a href="/statistics">Общая статистика</a></div>
+        <hr>
+        {% block content %}{% endblock %}
+        {% block scripts %}{% endblock %}
+    </body>
+</html>

@@ -1,5 +1,5 @@
 version: "3"
-
+#docker-compose up -d --no-deps --build flask
 services:
     postgres:
         image: postgres:12.3-alpine
@@ -51,3 +51,10 @@ services:
         depends_on:
             - postgres
             - mongodb
+    flask:
+        image: flask:latest
+        ports:
+            - 5000:5000
+        command: python app.py
+        depends_on:
+            - connector

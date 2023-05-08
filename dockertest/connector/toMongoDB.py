@@ -4,10 +4,10 @@ import os
 class MongoDB(object):
     def __init__(self):
         self.__client = MongoClient('mongodb',
-            username=os.environ['MONGO_LOGIN'],
-            password=os.environ['MONGO_PASSWORD'])
-            #username='admin-user',
-            #password='admin-password')
+            #username=os.environ['MONGO_LOGIN'],
+            #password=os.environ['MONGO_PASSWORD'])
+            username='admin-user',
+            password='admin-password')
     
     def getAllCollections(self):
         d = dict((db, [collection for collection in self.__client[db].list_collection_names()])
@@ -47,7 +47,7 @@ class MongoDB(object):
                 "$geometry" : poly,
                 "$maxDistance" : distance
                 }
-        }}, { "_id": 0}))
+        }}, { "_id": 0}).sort("idSpatial", 1))
         return responselist
     
     def getnearcoordinateswithdistance(self, poly, distance, collection):
@@ -63,3 +63,4 @@ class MongoDB(object):
             }
             },{ "$project" : { "_id" : 0, "geometry": 0} }]))
         return responselist
+    

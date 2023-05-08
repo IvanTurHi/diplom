@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+</head>
+<body>
+<ul id="test">
+    <li>
+      <input type="checkbox" name="tall" id="tall">
+      <label class="custom-unchecked">Tall Things (можно развернуть)</label>
+      <ul id="Tall Things" hidden="hidden">
+        <li class="inner">
+          <input type="checkbox" name="short-1" id="short-1">
+          <label for="short-1" class="custom-unchecked">Smurfs</label>
+        </li>
+        <li class="inner">
+          <input type="checkbox" name="short-2" id="short-2">
+          <label for="short-2" class="custom-unchecked">Mushrooms</label>
+        </li>
+        <li class="inner">
+          <input type="checkbox" name="short-3" id="short-3">
+          <label for="short-3" class="custom-unchecked">One Sandwich</label>
+        </li>
+      </ul>
+    </li>
+      <li>
+      <input type="checkbox" name="short" id="short">
+      <label class="custom-unchecked">Округ1 (можно развернуть)</label>
+      <ul id="Округ1" hidden="hidden">
+        <li class="inner">
+          <input type="checkbox" name="short-1" id="short-12">
+          <label for="short-12" class="custom-unchecked">1</label>
+        </li>
+        <li class="inner">
+          <input type="checkbox" name="short-2" id="short-22">
+          <label for="short-22" class="custom-unchecked">2</label>
+        </li>
+        <li class="inner">
+          <input type="checkbox" name="short-3" id="short-32">
+          <label for="short-32" class="custom-unchecked">3</label>
+        </li>
+      </ul>
+    </li>
+  </ul>
+  
+  <br />
+  <button onclick="toggle(this);">Hide list</button>
+  
+  <script>
+    function getEventTarget(e) {
+    e = e || window.event;
+    return e.target || e.srcElement; 
+    }
+  
+    var ul = document.getElementById('test');
+    ul.onclick = function(event) {
+    var target = getEventTarget(event);
+    let elemID = target.innerText
+    let cleanID = elemID.substring(0, elemID.length - 19)
+    //alert(cleanID)
+    let element = document.getElementById(cleanID);
+    let hidden = element.getAttribute("hidden");
+  
+    if (hidden) {
+    element.removeAttribute("hidden");
+    button.innerText = "Hide list";
+    } else {
+    element.setAttribute("hidden", "hidden");
+    button.innerText = "Show list";
+    }
+    //alert(target.innerText);
+    };
+  </script>
+  <script>
+    let toggle = button => {
+    let element = document.getElementById("Short Things");
+    let hidden = element.getAttribute("hidden");
+  
+    if (hidden) {
+    element.removeAttribute("hidden");
+    button.innerText = "Hide list";
+    } else {
+    element.setAttribute("hidden", "hidden");
+    button.innerText = "Show list";
+    }
+    };
+  
+  </script>
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+ <script src="../static/main.js"></script>
+</body>
+ </html>
+          

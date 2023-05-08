@@ -4,37 +4,79 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from toPostgresDB import db_start
 from toMongoDB import MongoDB
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+origins = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 dictDatabases = {
-    0: 'eduBuildings',
+    0: 'eduBuildings', #Школы
     1: 'medBuildings',
-    2: 'livingBuildings'
+    2: 'livingBuildings',
+    3: 'eduBuildings' #Детские сады
 }
 #id 1531 - жилой, удалить из обоих баз --удалено
 def makeArrayIDspatial(data):
     return [i['idspatial'] for i in data]
 
+def schooltype():
+    return " and t.nameType = 'Школа' "
+
+def kindergartentype():
+    return " and t.nameType = 'Детский сад' "
+
 @app.get("/counts")
-async def read_root():
+async def counts():
     t = db_start()
     return JSONResponse(content=t.getCounts(), status_code=200)
 
+@app.get("/countsname")
+async def countssname():
+    t = db_start()
+    return [x['namecount'] for x in t.getCounts()]
+
 @app.get("/districts")
-async def read_root():
+async def districts():
     t = db_start()
     return t.getDistricts()
+
+@app.get("/districtsname")
+async def districtsname():
+    t = db_start()
+    return {x['namedistrict']:x['namedistrict'] for x in t.getDistricts()}
+
+@app.get("/districtcountname")
+async def districtcountname():
+    t = db_start()
+    result = {}
+    for i in t.getDistricts():
+        if i['namecount'] not in result.keys():
+            result[i['namecount']] = [i['namedistrict']]
+        else:
+            result[i['namecount']].append(i['namedistrict'])
+    return result
 
 @app.post("/buildingin")
 async def schoolsin(request: Request):
     jsonbody = await request.json()
+    selecttype = ''
+    if jsonbody['database'] == 0:
+        selecttype = schooltype()
+    elif jsonbody['database'] == 3:
+        selecttype = kindergartentype()
     database = dictDatabases[jsonbody['database']]
     t = db_start()
     if jsonbody['isCount']:
-        return JSONResponse(content=t.getInCount(jsonbody['IDsource'], database), status_code=200)
+        return JSONResponse(content=t.getInCount(jsonbody['IDsource'], database, selecttype), status_code=200)
     else:
-        return JSONResponse(content=t.getInDistrict(jsonbody['IDsource'], database), status_code=200)
+        return JSONResponse(content=t.getInDistrict(jsonbody['IDsource'], database, selecttype), status_code=200)
 '''
 {
     "IDsource": "relation/1299013",
@@ -58,12 +100,17 @@ async def schoolsin(request: Request):
 @app.post("/buildingfullinfo")
 async def schoolsfull(request: Request):
     jsonbody = await request.json()
+    selecttype = ''
+    if jsonbody['database'] == 0:
+        selecttype = schooltype()
+    elif jsonbody['database'] == 3:
+        selecttype = kindergartentype()
     database = dictDatabases[jsonbody['database']]
     t = db_start()
     if jsonbody['isCount']:
-        table = t.getInCount(jsonbody['IDsource'], database)
+        table = t.getInCount(jsonbody['IDsource'], database, selecttype)
     else:
-        table = t.getInDistrict(jsonbody['IDsource'], database)
+        table = t.getInDistrict(jsonbody['IDsource'], database, selecttype)
     listID = makeArrayIDspatial(table)
     t = MongoDB()
     tableMongo = t.getCentroidAndDAtaByID(listID, database)
@@ -71,14 +118,28 @@ async def schoolsfull(request: Request):
     for p, m in zip(table, tableMongo):
         res = dict(p, **m)
         result.append(res)
-    return JSONResponse(content=result, status_code=200)
+    return JSONResponse(content=result, status_code=200, headers={"Access-Control-Allow-Origin": "*"})
 '''
 {
-    "IDsource": "relation/1299013",
+    "IDsource": ["Район Ивановское"],
   	"isCount": false,
   	"database": 1
 }
 '''
+
+@app.post("/districtsfullinfo")
+async def schoolsfull(request: Request):
+    jsonbody = await request.json()
+    t = db_start()
+    table = t.getCountsByID(jsonbody['IDsource'])
+    listID = makeArrayIDspatial(table)
+    t = MongoDB()
+    tableMongo = t.getCentroidAndDAtaByID(listID, 'districts')
+    result = []
+    for p, m in zip(table, tableMongo):
+        res = dict(p, **m)
+        result.append(res)
+    return JSONResponse(content=result, status_code=200)
 
 @app.post("/mongolist")
 async def mongolist(request: Request):
@@ -163,3 +224,22 @@ async def nearcoordinatesdistance(request: Request):
 }
 distance is optional and equal to 1000 m dy default
 '''
+
+@app.post("/nearcoordinatesfullinfo")
+async def nearcoordinates(request: Request):
+    jsonbody = await request.json()
+    database = dictDatabases[jsonbody['database']]
+    lat = jsonbody['lat']
+    lon = jsonbody['lon']
+    distance = jsonbody['distance']
+    poly = { "type" : "Point", "coordinates" : [lon, lat] }
+    t = MongoDB()
+    spatialInfo = t.getnearcoordinates(poly, distance, database)
+    arrayID = [i['idSpatial'] for i in spatialInfo]
+    db = db_start()
+    table = db.getByID(arrayID, database)
+    result = []
+    for p, m in zip(table, spatialInfo):
+        res = dict(p, **m)
+        result.append(res)
+    return JSONResponse(content=result, status_code=200)

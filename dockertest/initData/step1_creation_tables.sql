@@ -16,6 +16,7 @@ CREATE TABLE counts
 (
     idCount CHARACTER VARYING(100) PRIMARY KEY,
     nameCount CHARACTER VARYING(100),
+    idSpatial INTEGER,
     area REAL,
     schoolNumber INTEGER,
     schoolLoad REAL,
@@ -26,13 +27,14 @@ CREATE TABLE counts
     avgYear INTEGER,
     withoutSchools INTEGER,
     withoutKindergartens INTEGER,
-    withoutMdicine INTEGER
+    withoutMedicine INTEGER
 );
 
 CREATE TABLE districts
 (
     idDistrict CHARACTER VARYING(100) PRIMARY KEY,
     nameDistrict CHARACTER VARYING(100),
+    idSpatial INTEGER,
     idCount CHARACTER VARYING(100) REFERENCES counts (idCount),
     area REAL,
     schoolNumber INTEGER,
@@ -44,7 +46,7 @@ CREATE TABLE districts
     avgYear INTEGER,
     withoutSchools INTEGER,
     withoutKindergartens INTEGER,
-    withoutMdicine INTEGER,
+    withoutMedicine INTEGER,
     schoolProvisionIndex INTEGER,
     kindergartenProvisionIndex INTEGER,
     schoolProvision BOOLEAN,

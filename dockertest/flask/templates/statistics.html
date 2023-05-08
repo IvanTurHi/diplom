@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Hi, {{user}}</h1>
+    <table>
+        <thead>
+            <tr>
+            {% for key in keyscounts %}
+                <th>{{key}}</th>
+            {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for count in counts %}
+            <tr>
+                {% for _, countValue in count.items() %} 
+                <td>{{countValue}}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table>
+        <thead>
+            <tr>
+            {% for key in keysdistricts %}
+                <th>{{key}}</th>
+            {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for district in datadistricts %}
+            <tr>
+                {% for _, districtValue in district.items() %} 
+                <td>{{districtValue}}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
