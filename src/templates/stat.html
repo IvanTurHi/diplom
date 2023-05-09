@@ -5,11 +5,12 @@
 <link href="{{ url_for('static', filename='stat_style.css') }}"  rel="stylesheet" />
 </head>
 <body>
+<div class="big_box">
 <form action="/sort">
   <div class="multiselect">
     <div class="selectBox" onclick="showCheckboxes()">
       <select>
-        <option>Сортировать по</option>
+        <option align="center">Сортировать по</option>
       </select>
       <div class="overSelect"></div>
     </div>
@@ -35,9 +36,10 @@
       <label for="10">
         <input type="radio" name="sort_rad" id="10" value="workload"/>Средней загрузке школ</label>
     </div>
-     <p><input type="submit" value="Сортировать"></p>
+     <p align="center"><input type="submit" value="Сортировать"></p>
   </div>
 </form>
+</div>
 
 <script type="text/javascript">
 var expanded = false;
@@ -55,9 +57,9 @@ function showCheckboxes() {
 		
 <div class="about" style="height: unset;">
 			<span class="t5">Результат запроса:</span>
-			{% block body %}
+<div class="about_1">
 			{{json_obj|safe}}
-			{% endblock %}
+</div>
 		</div>
 </body>
 </html>

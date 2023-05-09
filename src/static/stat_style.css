@@ -34,12 +34,31 @@ background-color: #FFFFFF;
 }
 
 .about {
+width: 100%;
+align: center;
 text-align: center;
-background-color: rgba(91,140,90,1);
+  background: #5F4E3F;
+color: #FFFFFF;
+font-size: 15px;
 }
 
 body{
-  background-color: rgba(52,54,51,1);
+background-color: #5F4E3F;
   margin: 0;
   overflow-x: hidden;
+}
+
+.about_1 {
+width: 80%;
+left: 100px;
+}
+
+.t5 {
+font-size: 40px;
+}
+
+.big_box {
+width: 100%;
+text-align: left;
+background-color: rgba(224,180,14,1);
 }

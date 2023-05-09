@@ -5,11 +5,12 @@
 body{
   margin: 0;
   overflow-x: hidden;
+background-color: #5F4E3F;
 }
 .menu-main {
   display: table;
   width: 97.5%;
-  background: rgba(91,140,90,1);
+  background: rgba(224,180,14,1);
   margin: 0;
 }
 
@@ -42,11 +43,15 @@ a:hover {
 }
 
 .about_class {
-  text-align: center
+  text-align: center;
+color: #FFFFFF;
+font-size: 15;
 }
 
 .color_values {
-  text-align: center
+  text-align: center;
+color: #FFFFFF;
+font-size: 15;
 }
 
 .green_picture {
@@ -100,11 +105,15 @@ a:hover {
 }
 
 .distance_values {
-  text-align: center
+  text-align: center;
+color: #FFFFFF;
+font-size: 15;
 }
 
 .index_values {
-  text-align: center
+  text-align: center;
+color: #FFFFFF;
+font-size: 15;
 }
 
 table, th, td {

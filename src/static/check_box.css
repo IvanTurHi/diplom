@@ -4,9 +4,12 @@
 
 .big_box {
   width: 26%;
-  background-color: rgba(91,140,90,1);
+  background-color: rgba(224,180,14,1);
     position: absolute;
     left: 37%;
+color: #FFFFFF;
+text-align: left;
+font-size: 20px;
 }
 
 .selectBox {
@@ -30,6 +33,7 @@
   display: none;
   border: 1px #dadada solid;
   background-color: #FFFFFF;
+color: #000000;
 }
 
 #checkboxes label {
@@ -42,7 +46,7 @@
 .menu-main {
   display: table;
   width: 100%;
-  background: rgba(91,140,90,1);
+  background: rgba(224,180,14,1);
   margin: 0;
 }
 
@@ -89,5 +93,5 @@
 body{
   margin: 0;
   overflow-x: hidden;
-  background-color: rgba(52,54,51,1);
+background-color: #5F4E3F;
 }
