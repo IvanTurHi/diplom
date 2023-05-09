@@ -58,12 +58,12 @@ def run_flask(osm):
     app = Flask(__name__)
     app.secret_key = '1234567890'
     map_slave = Map_master()
-    df_schools = osm.read_data(osm.school_data_name_mos_transform)
-    df_buildings = osm.read_data(osm.building_data_name_transform)
-    df_medicine = osm.read_data(osm.medicine_data_name_transform)
-    df_kindergartens = osm.read_data(osm.kindergartens_data_name_mos_transform)
-    districts_df = osm.read_data(osm.borders_data_name_transform)
-    regions_df = osm.read_data(osm.regions_borders_data_name_transform)
+    #df_schools = osm.read_data(osm.school_data_name_mos_transform)
+    #df_buildings = osm.read_data(osm.building_data_name_transform)
+    #df_medicine = osm.read_data(osm.medicine_data_name_transform)
+    #df_kindergartens = osm.read_data(osm.kindergartens_data_name_mos_transform)
+    #districts_df = osm.read_data(osm.borders_data_name_transform)
+    #regions_df = osm.read_data(osm.regions_borders_data_name_transform)
     #Map = map_class()
 
 
@@ -81,7 +81,9 @@ def run_flask(osm):
             map_dict[session['Map']] = Mapp
             people_counter += 1
         #return "Total visits: {}".format(session.get('visits'))
-        return render_template('main_page.html')
+        #return render_template('main_page.html')
+
+        return render_template('mainn.html')
 
     @app.route('/about')
     def about():
