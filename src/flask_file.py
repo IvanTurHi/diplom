@@ -7,7 +7,7 @@ from flask import session
 from json2html import *
 from statistic import Stat_master
 from folium.plugins import Draw
-import branca
+from datetime import datetime
 
 people_counter = 0
 map_dict = {}
@@ -482,6 +482,7 @@ def run_flask(osm):
             #districts_list = ['relation/181288', 'relation/364551', 'relation/2092928', 'relation/240229']
             #region_list = ['relation/226149', 'relation/1320234']
 
+
             if len(districts_list) > 0:
                 #Отрисовка гексагонов на уровне районов
                 type_t = 'district'
@@ -652,6 +653,11 @@ def run_flask(osm):
                 elif is_kinder_obespech == 1:
                     is_kinder_obespech = 'Да'
 
+                min_school_obespech = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district',
+                                                                             'P_schools_norma')
+                current_school_obespech = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district',
+                                                                             'P_schools_current')
+
                 models[territories[i]] = {'Площадь (м2)': area,
                                           'Количество школ': schools_number,
                                           'Средняя загруженность школ(в процентах)': schools_workload,
@@ -666,7 +672,9 @@ def run_flask(osm):
                                           'Количество мест в школах (на 1000 человек)': schools_index,
                                           'Удовлетворяет ли количество мест в школах нормативам': is_schools_obespech,
                                           'Количество мест в детских садах (на 1000 человек)': kinder_index,
-                                          'Удовлетворяет ли количество мест детских садах нормативам': is_kinder_obespech}
+                                          'Удовлетворяет ли количество мест детских садах нормативам': is_kinder_obespech,
+                                          'Целевой показатель минимально допустимого уровня обеспеченности населения школами': min_school_obespech,
+                                          'Фактический показатель минимально допустимого уровня обеспеченности населения школами': current_school_obespech}
 
                 if sort_type != '':
                     sorted_key = get_sorted_key(sort_type)

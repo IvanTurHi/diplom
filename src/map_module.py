@@ -8,6 +8,7 @@ import geopandas as gpd
 import json
 import branca
 from shapely.geometry import Point
+from datetime import datetime
 
 class Map_master():
 
@@ -509,6 +510,7 @@ class Map_master():
 
 
             feature_group_object = folium.FeatureGroup(self.get_feature_group_name_on_russian(feature_group_name))
+
 
             for i in range(self.df_inter.shape[0]):
                 #Добавление маркера объекта на карту
