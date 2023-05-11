@@ -288,6 +288,8 @@ def run_flask(osm):
 
         if type_t == 's':
             sub_df = df_schools.loc[df_schools['district_id'] == districi_id]
+            total_capacity_students = sub_df['capacity'].astype(int).sum()
+            total_students_students = sub_df['students'].astype(int).sum()
         elif type_t == 'k':
             sub_df = df_kindergartens.loc[df_kindergartens['district_id'] == districi_id]
 
@@ -342,6 +344,11 @@ def run_flask(osm):
         if type_t == 's':
             districts_df.loc[districts_df['district_id'] == districi_id, 'obespech_schools_index'] = min_ob_index
             districts_df.loc[districts_df['district_id'] == districi_id, 'is_obespech_schools'] = is_min_ob
+            N = total_number_of_people
+            Q = int(districts_df.loc[districts_df['district_id'] == districi_id]['obespech_schools_index'])
+            D = total_students_students - total_capacity_students
+            P = (N * Q) / 1000 + D
+            districts_df.loc[districts_df['district_id'] == districi_id, 'P_schools_current'] = P
         if type_t == 'k':
             districts_df.loc[districts_df['district_id'] == districi_id, 'obespech_kinder_index'] = min_ob_index
             districts_df.loc[districts_df['district_id'] == districi_id, 'is_obespech_kinder'] = is_min_ob
@@ -394,6 +401,7 @@ def run_flask(osm):
             return basic_map(True, map_dict[session['Map']].districts_list, map_dict[session['Map']].regions_list, map_dict[session['Map']].category)
 
         except BaseException:
+            print('EXXXXXXXCEPTION')
             if type_t == 'b':
                 object_id = object_id.replace('/', '=')
             return data_update(type_t, object_id)

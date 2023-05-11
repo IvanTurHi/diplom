@@ -3,9 +3,12 @@
  <head>
   <meta charset="utf-8">
   <title>Редактирование данных по школам</title>
+<link href="{{ url_for('static', filename='data_update_buildings_style.css') }}"  rel="stylesheet" />
  </head>
  <body>
-  <label>После обновления данных, изменения будут автоматически применены к окружающим домам и району</label>
+ <div class="big_box">
+  <p align="center"><label font-size="30px">Изменения данных будут автоматически учтены в статистике для района</label></p>
+  <p></p>
   <form action="/map_redaction_{{total_map['type']}}_{{total_map['id']}}">
   <label for="name">Номинальная вместимость</label>
   <input type="text" id="capacity" name="capacity" value={{ total_map['capacity']|safe }}><Br>
@@ -13,7 +16,12 @@
     <input type="text" id="students" name="students" value={{total_map['students_number']|safe }}><br>
     <label for="age">Рейтинг</label>
     <input type="text" id="rating" name="rating" value={{total_map['rating']|safe }}><br>
-<input type="submit" value="Сохранить изменения">
+<p align="center"><input type="submit" value="Сохранить изменения"></p>
   </form>
+ </div>
+  <div class="horizontal_line_1"></div>
+<div class="horizontal_line_2"></div>
+	<div class="vertical_line1"></div>
+	<div class="vertical_line2"></div>
  </body>
 </html>

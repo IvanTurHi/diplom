@@ -90,6 +90,31 @@ color: #000000;
   text-align: left;
 }
 
+.tttt{
+background-color: rgba(94,78,62,1);
+ height: 15px;
+}
+
+.submit_get_data {
+background-color: rgba(224,180,14,1);
+color: #FFFFFF;
+font-size: 15px;
+}
+
+.map_picture {
+  width: 300px;
+  height: 250px;
+  background: url("images/map_picture.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  opacity: 1;
+  position: absolute;
+  top: 850px;
+  left: 61%;
+  overflow: hidden;
+}
+
 body{
   margin: 0;
   overflow-x: hidden;
