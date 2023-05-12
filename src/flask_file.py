@@ -665,6 +665,8 @@ def run_flask(osm):
                                                                              'P_schools_norma')
                 current_school_obespech = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district',
                                                                              'P_schools_current')
+                density = map_dict[session['Map']].stat_slave.get_data(territories[i], 'district',
+                                                                                       'density')
 
                 models[territories[i]] = {'Площадь (м2)': area,
                                           'Количество школ': schools_number,
@@ -682,7 +684,8 @@ def run_flask(osm):
                                           'Количество мест в детских садах (на 1000 человек)': kinder_index,
                                           'Удовлетворяет ли количество мест детских садах нормативам': is_kinder_obespech,
                                           'Целевой показатель минимально допустимого уровня обеспеченности населения школами': min_school_obespech,
-                                          'Фактический показатель минимально допустимого уровня обеспеченности населения школами': current_school_obespech}
+                                          'Фактический показатель минимально допустимого уровня обеспеченности населения школами': current_school_obespech,
+                                          'Плотность жилой застройки': density}
 
                 if sort_type != '':
                     sorted_key = get_sorted_key(sort_type)

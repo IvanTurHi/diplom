@@ -14,10 +14,14 @@ class Stat_master():
         return regions_names
 
     def get_data(self, name, type_o, target):
-        if type_o == 'district':
-            data = round(float(list(self.districts_df.loc[self.districts_df['district_name'] == name][target])[0]), 0)
+        if target == 'density':
+            round_value = 4
         else:
-            data = round(float(list(self.regions_df.loc[self.regions_df['region_name'] == name][target])[0]), 0)
+            round_value = 0
+        if type_o == 'district':
+            data = round(float(list(self.districts_df.loc[self.districts_df['district_name'] == name][target])[0]), round_value)
+        else:
+            data = round(float(list(self.regions_df.loc[self.regions_df['region_name'] == name][target])[0]), round_value)
         return data
 
     def get_area(self, name, type_o):
