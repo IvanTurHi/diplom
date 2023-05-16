@@ -13,7 +13,7 @@ services:
             #- ./postgres:/var/lib/postgresql/data
 
     pgadmin:
-        image: dpage/pgadmin4:4.23
+        image: dpage/pgadmin4:7.1
         environment:
             PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
             PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
@@ -26,12 +26,12 @@ services:
             - postgres
 
     mongodb:
-        image: mongo:latest
+        image: mongodb/mongodb-enterprise-server:6.0.3-ubi8
         container_name: mongodb
         restart: always
         environment:
-            MONGO_INITDB_ROOT_USERNAME: ${MONGO_LOGIN}
-            MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+            MONGODB_INITDB_ROOT_USERNAME: ${MONGO_LOGIN}
+            MONGODB_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
         ports:
             - 27017:27017
         volumes:
@@ -54,7 +54,7 @@ services:
     flask:
         image: flask:latest
         ports:
-            - 5000:5000
+            - 80:5000
         command: python app.py
         depends_on:
             - connector

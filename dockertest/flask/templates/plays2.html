@@ -10,6 +10,7 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
     integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
     crossorigin=""></script>
+    
     <style>
         body {
             margin: 0;
@@ -123,8 +124,38 @@ var osm = L.tileLayer ('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 var Basemaps = {
     "OSM": osm
 }
-
+</script>
+<script src="https://unpkg.com/h3-js"></script>
+<script type="module">
+//import { h3, h } from "../static/h3.js";
+//import {h3, h} from "../static/h3.js";
+//const h3 = require("h3-js");
 L.control.layers (Basemaps).addTo (map_init);
+
+           const boundsPolygon =[
+                [ 55.755820, 37.617633 ],
+                [ 55.767373, 37.832696 ],
+                [ 55.871248, 37.637388 ],
+                [ 55.823620, 37.755838 ],
+            ];
+            const coords = [
+                [55.871248, 37.617633],
+                [55.755820, 37.617633],
+                [55.755820, 37.832696],
+                [55.871248, 37.832696],
+            ];
+
+            //const h3s = h3.polyfill(coords, 7, false);
+            const h3s = h3.polygonToCells(coords, 7, false);
+
+            for (const h3id of h3s) {
+                const h3Bounds = h3.cellToBoundary(h3id);
+                const h3Polygon = L.polygon(h3.cellsToMultiPolygon(h3id))
+                    .bindTooltip('dd')
+                    .addTo(map_init);
+            }
+</script>
+<script type="module">
 
 let toggle = button => {
     var resp = httpGet();

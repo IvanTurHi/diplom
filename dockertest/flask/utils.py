@@ -29,19 +29,25 @@ dictfromdatabase = {
     'longitude': 'Долгота',
     'freeschools': 'Количество свободных школ',
     'fullname': 'Название',
-    'calculatedworkload': 'Номинальная вместимость',
-    'currentworkload': 'Загруженность (в процентах от номинальной)',
+    'calculatedworkload': 'Загруженность (в процентах от номинальной)',
+    'currentworkload': 'Количество учеников',
+    'stnumber': 'Номинальная вместимость',
     'website': 'Сайт',
-    'rating': 'Рейтинг'
+    'rating': 'Рейтинг',
+    'buildid': 'Идентификатор',
+    'idSpatial': 'ГеоИдентификатор'
 }
 
 notUsedTypes = [
     'geometry',
-    'buildid',
     'flats',
-    'idSpatial',
     'idspatial', 
-    'iddistrict',
     'eoid',
     'storey',
     'totalarea']
+
+def schooltype():
+    return " and t.nameType = 'Школа' "
+
+def kindergartentype():
+    return " and t.nameType = 'Детский сад' "

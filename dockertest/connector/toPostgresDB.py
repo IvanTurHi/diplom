@@ -1,6 +1,8 @@
 import psycopg2
 import psycopg2.extras
 import os
+def schooltype():
+    return " and t.nameType = 'Школа' "
 
 class MyError(Exception):
     def __init___(self, args):
@@ -24,39 +26,43 @@ class db_start(object):
             raise MyError("no data in DB")
         
 
-    def getCounts(self):
-        self.__cur.execute("""SELECT namecount, area, schoolnumber, schoolload,
+    def getCounties(self):
+        self.__cur.execute("""SELECT namecounty, area, schoolnumber, schoolload,
             kindergartennumber, medicinenumber, livingnumber, residentsnumber, avgyear, withoutschools,
-            withoutkindergartens, withoutmedicine from counts ORDER BY namecount""")
+            withoutkindergartens, withoutmedicine from counties ORDER BY namecounty""")
         return self._returnDict()
        
     def getDistricts(self):
-        self.__cur.execute("""SELECT d.namedistrict, c.namecount, d.area, d.schoolnumber, d.schoolload,
+        self.__cur.execute("""SELECT d.namedistrict, c.namecounty, d.area, d.schoolnumber, d.schoolload,
             d.kindergartennumber, d.medicinenumber, d.livingnumber, d.residentsnumber, d.avgyear, d.withoutschools,
             d.withoutkindergartens, d.withoutmedicine, d.schoolProvisionIndex, 
-            d.kindergartenProvisionIndex, d.schoolProvision, d.kindergartenProvision from counts c, districts d where c.idCount = d.idCount
-            order by c.namecount, d.namedistrict""")
+            d.kindergartenProvisionIndex, d.schoolProvision, d.kindergartenProvision from counties c, districts d where c.idCount = d.idCount
+            order by c.namecounty, d.namedistrict""")
         return self._returnDict()
         
-    def getInCount(self, count, database, selecttype = ''):
+    def getInCounty(self, county, database, selecttype = ''):
         SQLquery = """SELECT t.* from """ + database + """ t, districts d
             where d.iddistrict = t.iddistrict and d.idcount = %s """ + selecttype + """ ORDER BY idSpatial"""
-        self.__cur.execute(SQLquery, (count, ))
+        self.__cur.execute(SQLquery, (county, ))
         return self._returnDict()
         
     def getInDistrict(self, district, database, selecttype = ''):
-        SQLquery = """SELECT t.* from """ + database + """ t, districts d
-            where d.iddistrict = t.iddistrict and d.nameDistrict in %s """ + selecttype + """ ORDER BY idSpatial"""
+        if database == 'eduBuildings' and selecttype == schooltype():
+            SQLquery = """SELECT t.*, round(currentworkload::float/calculatedworkload*100) stnumber from """ + database + """ t, districts d
+                where d.iddistrict = t.iddistrict and d.nameDistrict in %s """ + selecttype + """ ORDER BY idSpatial"""
+        else:
+            SQLquery = """SELECT t.* from """ + database + """ t, districts d
+                where d.iddistrict = t.iddistrict and d.nameDistrict in %s """ + selecttype + """ ORDER BY idSpatial"""
         self.__cur.execute(SQLquery, (tuple(district), ))
         return self._returnDict()
         
-    def getByID(self, arrayID, database):
+    def getBySpatialID(self, arrayID, database):
         SQLquery = """SELECT t.* from """ + database + """ t
             where t.buildid in %s ORDER BY idSpatial"""
         self.__cur.execute(SQLquery, (tuple(arrayID), ))
         return self._returnDict()
     
-    def getCountsByID(self, nameID):
+    def getCountiesByID(self, nameID):
         SQLquery = """SELECT namedistrict, area, idspatial,schoolnumber, schoolload,
             kindergartennumber, medicinenumber, livingnumber, residentsnumber, avgyear, withoutschools,
             withoutkindergartens, withoutmedicine, schoolProvisionIndex, 

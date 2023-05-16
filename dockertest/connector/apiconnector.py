@@ -22,6 +22,13 @@ dictDatabases = {
     2: 'livingBuildings',
     3: 'eduBuildings' #Детские сады
 }
+dictfields = {
+    0: 'schoolnumber', #Школы
+    1: 'medicineNumber',
+    2: 'livingNumber',
+    3: 'kindergartenNumber' #Детские сады
+}
+
 #id 1531 - жилой, удалить из обоих баз --удалено
 def makeArrayIDspatial(data):
     return [i['idspatial'] for i in data]
@@ -32,15 +39,15 @@ def schooltype():
 def kindergartentype():
     return " and t.nameType = 'Детский сад' "
 
-@app.get("/counts")
-async def counts():
+@app.get("/counties")
+async def counties():
     t = db_start()
-    return JSONResponse(content=t.getCounts(), status_code=200)
+    return JSONResponse(content=t.getCounties(), status_code=200)
 
-@app.get("/countsname")
-async def countssname():
+@app.get("/countiesname")
+async def countiesname():
     t = db_start()
-    return [x['namecount'] for x in t.getCounts()]
+    return [x['namecounty'] for x in t.getCounties()]
 
 @app.get("/districts")
 async def districts():
@@ -52,15 +59,15 @@ async def districtsname():
     t = db_start()
     return {x['namedistrict']:x['namedistrict'] for x in t.getDistricts()}
 
-@app.get("/districtcountname")
-async def districtcountname():
+@app.get("/districtcountyname")
+async def districtcountyname():
     t = db_start()
     result = {}
     for i in t.getDistricts():
-        if i['namecount'] not in result.keys():
-            result[i['namecount']] = [i['namedistrict']]
+        if i['namecounty'] not in result.keys():
+            result[i['namecounty']] = [i['namedistrict']]
         else:
-            result[i['namecount']].append(i['namedistrict'])
+            result[i['namecounty']].append(i['namedistrict'])
     return result
 
 @app.post("/buildingin")
@@ -73,14 +80,14 @@ async def schoolsin(request: Request):
         selecttype = kindergartentype()
     database = dictDatabases[jsonbody['database']]
     t = db_start()
-    if jsonbody['isCount']:
-        return JSONResponse(content=t.getInCount(jsonbody['IDsource'], database, selecttype), status_code=200)
+    if jsonbody['isCounty']:
+        return JSONResponse(content=t.getInCounty(jsonbody['IDsource'], database, selecttype), status_code=200)
     else:
         return JSONResponse(content=t.getInDistrict(jsonbody['IDsource'], database, selecttype), status_code=200)
 '''
 {
     "IDsource": "relation/1299013",
-  	"isCount": false,
+  	"isCounty": false,
   	"database": 1
 }
 '''
@@ -107,8 +114,8 @@ async def schoolsfull(request: Request):
         selecttype = kindergartentype()
     database = dictDatabases[jsonbody['database']]
     t = db_start()
-    if jsonbody['isCount']:
-        table = t.getInCount(jsonbody['IDsource'], database, selecttype)
+    if jsonbody['isCounty']:
+        table = t.getInCounty(jsonbody['IDsource'], database, selecttype)
     else:
         table = t.getInDistrict(jsonbody['IDsource'], database, selecttype)
     listID = makeArrayIDspatial(table)
@@ -118,11 +125,12 @@ async def schoolsfull(request: Request):
     for p, m in zip(table, tableMongo):
         res = dict(p, **m)
         result.append(res)
-    return JSONResponse(content=result, status_code=200, headers={"Access-Control-Allow-Origin": "*"})
+    
+    return JSONResponse(content=result, status_code=200)
 '''
 {
-    "IDsource": ["Район Ивановское"],
-  	"isCount": false,
+    "IDsource": ["район Ивановское"],
+  	"isCounty": false,
   	"database": 1
 }
 '''
@@ -131,7 +139,7 @@ async def schoolsfull(request: Request):
 async def schoolsfull(request: Request):
     jsonbody = await request.json()
     t = db_start()
-    table = t.getCountsByID(jsonbody['IDsource'])
+    table = t.getCountiesByID(jsonbody['IDsource'])
     listID = makeArrayIDspatial(table)
     t = MongoDB()
     tableMongo = t.getCentroidAndDAtaByID(listID, 'districts')
@@ -237,7 +245,7 @@ async def nearcoordinates(request: Request):
     spatialInfo = t.getnearcoordinates(poly, distance, database)
     arrayID = [i['idSpatial'] for i in spatialInfo]
     db = db_start()
-    table = db.getByID(arrayID, database)
+    table = db.getBySpatialID(arrayID, database)
     result = []
     for p, m in zip(table, spatialInfo):
         res = dict(p, **m)

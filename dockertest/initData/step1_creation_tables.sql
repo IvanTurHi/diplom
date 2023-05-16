@@ -12,10 +12,10 @@ CREATE TABLE medTypes
 
 --basic tables
 
-CREATE TABLE counts
+CREATE TABLE counties
 (
     idCount CHARACTER VARYING(100) PRIMARY KEY,
-    nameCount CHARACTER VARYING(100),
+    nameCounty CHARACTER VARYING(100),
     idSpatial INTEGER,
     area REAL,
     schoolNumber INTEGER,
@@ -35,7 +35,7 @@ CREATE TABLE districts
     idDistrict CHARACTER VARYING(100) PRIMARY KEY,
     nameDistrict CHARACTER VARYING(100),
     idSpatial INTEGER,
-    idCount CHARACTER VARYING(100) REFERENCES counts (idCount),
+    idCount CHARACTER VARYING(100) REFERENCES counties (idCount),
     area REAL,
     schoolNumber INTEGER,
     schoolLoad REAL,

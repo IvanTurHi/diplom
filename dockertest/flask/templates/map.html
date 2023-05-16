@@ -9,6 +9,7 @@ crossorigin=""/>
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
 integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
 crossorigin=""></script>
+<script src="https://unpkg.com/h3-js"></script>
 <style>
     body {
         margin: 0;
@@ -17,8 +18,55 @@ crossorigin=""></script>
 
     #map {
         width: 100%;
-        height: 70%;
+        height: 100%;
     }
+    .legend {
+  padding: 6px 8px;
+  font: 14px Arial, Helvetica, sans-serif;
+  background: white;
+  background: rgba(255, 255, 255, 0.8);
+  /*box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);*/
+  /*border-radius: 5px;*/
+  line-height: 24px;
+  color: #555;
+}
+.legend h4 {
+  text-align: center;
+  font-size: 16px;
+  margin: 2px 12px 8px;
+  color: #777;
+}
+
+.legend span {
+  position: relative;
+  bottom: 3px;
+}
+
+.legend i {
+  width: 18px;
+  height: 18px;
+  float: left;
+  margin: 0 8px 0 0;
+  opacity: 0.7;
+}
+
+.legend i.icon {
+  background-size: 18px;
+  background-color: rgba(255, 255, 255, 1);
+}
+.parent {
+  display: flex;
+  height: 75%;
+}
+.child {
+  display: block;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+/* Растягиваем второй блок на максимальнуцю ширину */
+.child.max {
+  flex: 1;
+}
 </style>
 {% endblock %}
 
@@ -29,19 +77,19 @@ crossorigin=""></script>
   }
   </style>
 
-<fieldset >
-  <div>
-    <legend>Choose your interests</legend>
-    <ul id="test">
-    {% for countValue, districtarray in datadistricts.items() %} 
+<fieldset class="parent">
+  <div class="child">
+    <legend>Выберите районы и тип зданий для анализа</legend>
+    <ul id="listofdistricts">
+    {% for countyValue, districtarray in datadistricts.items() %} 
     <li>
       <input type="checkbox">
-      <label class="custom-unchecked">{{countValue}} (можно развернуть)</label>
-      <ul id="{{countValue}}" hidden="hidden">
+      <label class="custom-unchecked">{{countyValue}} (можно развернуть)</label>
+      <ul id="{{countyValue}}" hidden="hidden">
       {% for district in districtarray %} 
       <li class="inner">
         <input type="checkbox" class="inner" id="{{district}}">
-        <label for="{{countValue}}-{{loop.index}}" class="custom-unchecked">{{district}}</label>
+        <label for="{{countyValue}}-{{loop.index}}" class="custom-unchecked">{{district}}</label>
       </li>
       {% endfor %}
       </ul>
@@ -63,30 +111,26 @@ crossorigin=""></script>
           </div>
         </fieldset>
       </form>
-    <button onclick="getstatistics();" name="button" id="newButton" >Press me</button>
-  </div>
-  <div>
+    <button onclick="getstatistics();" name="button" id="newButton" >Анализ по районам</button>
+    <button onclick="gethexagones();" name="button" id="newButton1" >Гексагональный анализ</button>
+    <button onclick="getbuildings();" name="button" id="newButton2" >Вывести только объекты</button>
+    </div>
+    <div class="child max">
     <div id="map" ></div>
-    <button onclick="toggle(this);">Hide list</button>
-    <button onclick="clearLayer(this);">Clear</button>
-    <input type="text" id="lon" placeholder="lon">
-    <input type="text" id="lat" placeholder="lat">
-    <button onclick="radius(this);">Радиус доступности</button>
-  </div>
+    </div>
   </fieldset>
+  <ul id="listOfChanges"></ul>
+  <button onclick="clearLayer(this);">Я все сломал, очистить карту</button>
   {% endblock %}
 
   {% block scripts %}
-  <h1>Bye, {{user}}</h1>
-  
-  <p></p>
   <script>
     function getEventTarget(e) {
     e = e || window.event;
     return e.target || e.srcElement; 
     }
   
-    var ul = document.getElementById('test');
+    var ul = document.getElementById('listofdistricts');
     ul.onclick = function(event) {
     var target = getEventTarget(event);
     let elemID = target.innerText;
@@ -108,7 +152,7 @@ crossorigin=""></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
 <script src="{{url_for('static', filename='main.js')}}"></script>
 <script>
-  function getstatistics(){
+  function readData(){
     let cusid_ele = document.getElementsByClassName('inner');
     let districtsArray = [];
     for (var i = 0; i < cusid_ele.length; ++i) {
@@ -119,72 +163,255 @@ crossorigin=""></script>
     }
     if(districtsArray.length == 0){
         alert('Районы не выбраны');
-        return;
+        return 1;
     };
     builddatabaseCheck = document.querySelector('input[name="buldtype"]:checked');
     if (!builddatabaseCheck){
         alert('Тип зданий не выбран');
-        return;
+        return 1;
     };
+    builddatabase = builddatabaseCheck.value;
+    return {
+      districtsArray: districtsArray,
+        builddatabase: builddatabase,
+    }
+  };
+  function getbuildings(){
+    var startTime = performance.now()
+    let data = readData();
+    if (data == 1){
+      return
+    };
+    const {districtsArray, builddatabase} = data;
     clearlayer();
-    //если нет районов - возврат
     let xmlHttp = new XMLHttpRequest();
-    xmlHttp.open( "POST", 'http://127.0.0.1:5000/districtsfullinfo', false ); // false for synchronous request
+    xmlHttp.open( "POST", 'http://127.0.0.1:80/buildingfullinfo', false ); // false for synchronous request
+       body = JSON.stringify({
+          "IDsource": districtsArray,
+          "isCounty": false,
+          "database": parseInt(builddatabase)
+      });
+      xmlHttp.send(body);
+      textJSON = xmlHttp.responseText;
+      let res = JSON.parse(textJSON);
+      drawLiving(res, builddatabase);
+      var endTime = performance.now()
+    console.log(`Вывести всю статистику заняло ${endTime - startTime} мс`)
+  }
+  function gethexagones(){
+    var startTime = performance.now()
+    let data = readData();
+    if (data == 1){
+      return
+    };
+    const {districtsArray, builddatabase} = data;
+    clearlayer();
+    let xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "POST", 'http://127.0.0.1:80/buildingfullinfo', false ); // false for synchronous request
+       body = JSON.stringify({
+          "IDsource": districtsArray,
+          "isCounty": false,
+          "database": parseInt(builddatabase)
+      });
+      xmlHttp.send(body);
+      textJSON = xmlHttp.responseText;
+      let res = JSON.parse(textJSON);
+      drawLiving(res, builddatabase);
+      let pointsArray = []
+    res['features'].forEach((element) =>{
+      pointsArray.push(L.latLng(element.properties['Широта'], element.properties['Долгота'],));
+    });
+      //let xmlHttp = new XMLHttpRequest();
+      xmlHttp.open( "POST", 'http://127.0.0.1:80/hexForDistricts', false ); // false for synchronous request
+       body = JSON.stringify({
+    "IDsource": districtsArray,
+  	"hexagone_size": 8
+      });
+      xmlHttp.send(body);
+      textJSON = xmlHttp.responseText;
+    res = JSON.parse(textJSON);
+    drawHexagones(res, builddatabase, pointsArray)
+    var endTime = performance.now()
+    console.log(`Вывести всю статистику заняло ${endTime - startTime} мс`)
+  };
+  function getstatistics(){
+    var startTime = performance.now()
+    let data = readData();
+    if (data == 1){
+      return
+    };
+    const {districtsArray, builddatabase} = data;
+    clearlayer();
+    let xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "POST", 'http://127.0.0.1:80/districtsfullinfo', false ); // false for synchronous request
     let body = JSON.stringify({
           "IDsource": districtsArray
       });
       xmlHttp.send(body);
       textJSON = xmlHttp.responseText;
-      drawdisricts(textJSON);
-    
-    builddatabase = builddatabaseCheck.value;
-    
-      xmlHttp.open( "POST", 'http://127.0.0.1:5000/buildingfullinfo', false ); // false for synchronous request
+      drawdisricts(textJSON, builddatabase);
+      
+      
+      xmlHttp.open( "POST", 'http://127.0.0.1:80/buildingfullinfo', false ); // false for synchronous request
        body = JSON.stringify({
           "IDsource": districtsArray,
-          "isCount": false,
+          "isCounty": false,
           "database": parseInt(builddatabase)
       });
-      xmlHttp.send(body);
-      textJSON = xmlHttp.responseText;
-      drawLiving(textJSON, builddatabase);
 
+      xmlHttp.send(body);
+      var startTime = performance.now()
+      textJSON = xmlHttp.responseText;
+      console.log(xmlHttp.getAllResponseHeaders())
+      let res = JSON.parse(textJSON);
+      var endTime = performance.now()
+      
+    console.log(`Вывести всю статистику заняло ${endTime - startTime} мс`)
+      
+      drawLiving(res, builddatabase);
+
+      
+    };
+
+  function drawHexagones(res, builddatabase, pointsArray){
     
+    counter = 0;
+    let layerGroupBounds = L.layerGroup();
+    let layerGroupHexs = L.layerGroup();
+    res.forEach((element) => {
+    let h3Bounds = h3.cellToBoundary(element);
+    for (var i = 0; i < h3Bounds.length; i++) {
+      h3Bounds[i] = [h3Bounds[i][1], h3Bounds[i][0]];
+    }
+    counter = 0;
+    var polygon = L.polygon(h3Bounds, {color: 'blue', fillOpacity: 0.0, weight: 1,});
+    
+    polygon.myTag = "myGeoJSON"
+    pointsArray.forEach((point) => {
+    if (polygon.getBounds().contains(point)){
+      counter += 1;
+    };
+    });
+    let dictGrades = {
+      0: [1, 2, 3],
+      1: [1, 2, 3],
+      2: [5, 7, 9],
+      3: [1, 2, 3],
+    };
+    gradesHex = dictGrades[builddatabase];
+    polygon.setStyle(getStyleForHexagone(gradesHex, counter));
+    polygon.addTo(map_init);
+    layerGroupHexs.addLayer(polygon);
+    
+
+    var polygon = L.polygon(h3Bounds, {color: 'black', fillOpacity: 0.0, weight: 1,});
+    polygon.myTag = "myGeoJSON"
+    polygon.addTo(map_init);
+    layerGroupBounds.addLayer(polygon);
+    
+    });
+    
+    controlsLayer.addOverlay(layerGroupBounds,"Гексагональная сетка").expand();
+    map_init.addLayer(layerGroupBounds);
+    overLayers.push(layerGroupBounds);
+    controlsLayer.addOverlay(layerGroupHexs,"Распределение школ внутри района");
+    map_init.addLayer(layerGroupHexs);
+    overLayers.push(layerGroupHexs);
+
+    var legend = L.control({position: 'bottomleft'});
+
+  legend.onAdd = function(map) {
+    var div = L.DomUtil.create("div", "legend");
+    div.innerHTML += "<h4> Раскраска гексагонов </h4>";
+    for (var i = 0; i < gradesHex.length; i++) {
+      div.innerHTML += '<i style="background: ' + getStyleForHexagone(gradesHex, gradesHex[i]).color + '"></i><span>' + parseInt(gradesHex[i]) + '+</span><br>';
+    }
+    return div;
+    };
+    legend.addTo(map_init);
+    legendsOnMap.push(legend);
   };
-  function drawdisricts(textJSON){
+  function drawdisricts(textJSON, builddatabase){
     addBordersToMap(textJSON);
     controlsLayer.addOverlay(GeoJson,"Границы районов").expand();
     map_init.addLayer(GeoJson);
     overLayers.push(GeoJson);
-    addDistrictsToMap(textJSON);
+    addDistrictsToMap(textJSON, builddatabase);
     controlsLayer.addOverlay(GeoJson,"Районы").expand();
     map_init.addLayer(GeoJson);
     overLayers.push(GeoJson);
   };
+  function getStyleForHexagone(grades, d) {
+    return d >= grades[2] ? {color: "#12A328", fillOpacity: 0.5, weight: 0} :
+    d >= grades[1]? {color: '#ffff00', fillOpacity: 0.5, weight: 0} :
+    d >= grades[0] ? {color: '#E82A2A', fillOpacity: 0.5, weight: 0} :
+    {color: '#E82A2A', fillOpacity: 0.0, weight: 0};
+    }
   function getAttrBase(number){
     innerDict = {
-        0: ['Школы', 'Название'],
-        1: ['Медицина', ''],
-        2: ['Жилые здания', 'Адрес'],
-        3: ['Детские сады', 'Название']
+        0: ['Школы', 'Название', 'Количество школ'],
+        1: ['Медицина', '', 'Количество мед. учреждений'],
+        2: ['Жилые здания', 'Адрес', 'Количество жильцов'],
+        3: ['Детские сады', 'Название', 'Количество дс']
     }
     return innerDict[number]
   }
 </script>
 <script>
-function addDistrictsToMap(text){
-      const res = JSON.parse(text);
+//from green to red
+function getColor(grades, d) {
+return d > grades[6] ? "#7a0177" :
+d > grades[5]? '#12A328' :
+d > grades[4]? '#12A318' :
+d > grades[3]? '#7CF18F' :
+d > grades[2] ? '#FED976' :
+d > grades[1] ? '#ffa500' :
+d > grades[0] ? '#E82A2A' :
+'#C91E16';
+};
+
+function addDistrictsToMap(text, builddatabase){
+  const res = JSON.parse(text);
+  field = getAttrBase(builddatabase)[2]
+  maxvalue = 0
+  minvalue = 100000
+      L.geoJson(res, {
+              onEachFeature: function (feature, layer) {
+                  if (feature.properties[field] > maxvalue){
+                    maxvalue = feature.properties[field]
+                  }else{
+                    if (feature.properties[field] < minvalue){
+                      minvalue = feature.properties[field]
+                    }
+                  }
+                }});
+
+      if (minvalue == 100000){
+        maxvalue = 40;
+        minvalue = 10;
+      }
+      grades = [minvalue,minvalue+0.1*(maxvalue-minvalue),minvalue+0.25*(maxvalue-minvalue),minvalue+0.4*(maxvalue-minvalue),minvalue+0.6*(maxvalue-minvalue),minvalue+0.8*(maxvalue-minvalue),maxvalue];
       GeoJson = L.geoJson(res, {
           onEachFeature: function (feature, layer) {
               layer.myTag = "myGeoJSON"
               layer.setStyle({
-                color :'green',
-                opacity: 0.5,
+                color :getColor(grades, feature.properties[field]),
+                fillOpacity: .5,
                 weight: 0,
             })
-      }}).bindPopup(function (layer) {
-          return String(layer.feature.properties.nameDistrict);
-      }).addTo(map_init);
+      }}).addTo(map_init);
+    var legend = L.control({position: 'bottomleft'});
+
+legend.onAdd = function(map) {
+  var div = L.DomUtil.create("div", "legend");
+  div.innerHTML += "<h4>" + field + "</h4>";
+  for (var i = 0; i < grades.length; i++) {
+    div.innerHTML += '<i style="background: ' + getColor(grades, grades[i]) + '"></i><span>' + parseInt(grades[i]) + '+</span><br>';
+  }
+    return div;
+    };
+    legend.addTo(map_init);
+    legendsOnMap.push(legend);
   };
   function addBordersToMap(text){
       const res = JSON.parse(text);
@@ -209,14 +436,20 @@ function addDistrictsToMap(text){
       overLayers.forEach(function(entry) {
         controlsLayer.removeLayer(entry);
     });
+    legendsOnMap.forEach(function(entry) {
+        map_init.removeControl(entry);
+    });
       
   };
   function addInfoAvailRinCard(newlon, newlat){
-      return "<button onclick='availRfromCard(this);'>Clear</button><label id='hiddencoordinates' hidden>" + newlat + ',' + newlon + "</label>"
+      return "<button onclick='availRfromCard(this);'>Построить радиус доступности</button><label id='hiddencoordinates' hidden>" + newlat + ',' + newlon + "</label>"
+  }
+  function addEditinCard(){
+      return "<button onclick='EditInfo(this);'>Изменить информацию о здании</button>"
   }
   
-  function drawLiving(textJSON, builddatabase){
-      const res = JSON.parse(textJSON);
+  function drawLiving(res, builddatabase){
+      
       features = getAttrBase(builddatabase);
       main_feature = features[1];
       let newlon = 0.0
@@ -229,26 +462,26 @@ function addDistrictsToMap(text){
               stringTable = '';
               main_value = '';
               if (feature.properties){
-                  for(key in feature.properties){
-                      if (key != main_feature){
-                          if (key != 'Широта') {
-                              if (key != 'Долгота'){
-                                  stringTable += '<tr><td>' + key + '</td><td>' + feature.properties[key] + '</td></tr>'
-                              }else{
-                                  newlon = feature.properties[key];
-                              }
-                          }else{
-                              newlat = feature.properties[key];
-                          }
-                      
-                  }else{
-                      main_value = feature.properties[key];
-                  }}
+                stringTable += '<tr style="display:none;"><td> type  </td><td>' + builddatabase + '</td></tr>'
+                for(key in feature.properties){
+                  switch(key){
+                    case(main_feature):main_value = feature.properties[key];break;
+                    case('Широта'):newlat = feature.properties[key];break;
+                    case('Долгота'):newlon = feature.properties[key];break;
+                    case('iddistrict'):break;
+                    case('Идентификатор'):break;
+                    case('ГеоИдентификатор'):break;
+                    default:stringTable += '<tr><td>' + key + '</td><td>' + feature.properties[key] + '</td></tr>'
+                  }
+                }
               }
               layer.bindTooltip(main_value);
               popupText = '<h1>' + main_value + "</h1><table border='1' style='width:400px;'>" + stringTable + "</table>"
               if (builddatabase != 2){
                 popupText += addInfoAvailRinCard(newlon, newlat)
+              }
+              if (builddatabase != 1){
+                popupText += addEditinCard()
               }
               layer.bindPopup(popupText, { maxWidth : 410});
       }})//.bindPopup(function (layer) {
@@ -263,7 +496,7 @@ function addDistrictsToMap(text){
   }
   function getnewradius(lon, lat, radius){
       var xmlHttp = new XMLHttpRequest();
-      xmlHttp.open( "POST", 'http://127.0.0.1:5000/nearcoordinates', false ); // false for synchronous request
+      xmlHttp.open( "POST", 'http://127.0.0.1:80/nearcoordinates', false ); // false for synchronous request
       let body = JSON.stringify({
           "lat": lat,
           "lon": lon
@@ -278,7 +511,8 @@ function addDistrictsToMap(text){
       circle.addTo(map_init);
       xmlHttp.send(body);
       resp = xmlHttp.responseText;
-      drawLiving(resp);
+      let res = JSON.parse(resp);
+      drawLiving(res, 2);
   };
   var map_init = L.map('map',{
       center: [55.703598577482609, 37.938057458250945],
@@ -297,12 +531,14 @@ function addDistrictsToMap(text){
   }
   
   let controlsLayer = L.control.layers(Basemaps);
+  let legendsOnMap = [];
   controlsLayer.addTo (map_init);
   let overLayers = [];
   let toggle = button => {
       var resp = httpGet();
       //alert(resp);
-      drawLiving(resp);
+      let res = JSON.parse(resp);
+      drawLiving(res);
   //res.forEach(function(state){
   //    if (state.geometry.type == 'Point') return;
   //    console.log(state.geometry.type)
@@ -321,29 +557,51 @@ function addDistrictsToMap(text){
       clearlayer();
       getnewradius(fValuelon, fValuelat, 500);
   };
-  
-  let radius = button => {
-      var fValuelon = parseFloat(document.getElementById("lon").value.replace(",","."))
-      fValuelon = 37.93
-      var fValuelat = parseFloat(document.getElementById("lat").value.replace(",","."))
-      fValuelat = 55.7
-      getnewradius(fValuelon, fValuelat, 500);
-  }
-  </script>
-    
-  <script>
-      function httpGet(theUrl)
-  {
-      var xmlHttp = new XMLHttpRequest();
-      xmlHttp.open( "POST", 'http://127.0.0.1:5000/buildingfullinfo', false ); // false for synchronous request
-      let body = JSON.stringify({
-          "IDsource": ["район Ивановское"],
-          "isCount": false,
-          "database": 2
-      });
-      xmlHttp.send(body);
-      return xmlHttp.responseText;
+  let EditInfo = button => {
+      var field = document.getElementsByClassName('leaflet-popup-content')[0];
+      table = field.childNodes[1];
+      type = table.rows[0].cells[1].innerText
+      switch (parseInt(type)){
+        case(0):field.innerHTML = editPopupForSchool(table.rows[1].cells[1].innerText,table.rows[3].cells[1].innerText,table.rows[4].cells[1].innerText);break;
+        case(2):field.innerHTML = editPopupForSchool(table.rows[5].cells[0].innerText,table.rows[5].cells[1].innerText);break;
+        case(3):field.innerHTML = editPopupForSchool(table.rows[2].cells[0].innerText,table.rows[3].cells[1].innerText);break;
+        default: alert(type);
+      }
+      //field.innerHTML = '<h1>' + type + '</hi>'
   };
-  </script>
-  
+  function editPopupForSchool(adress, number, load){
+    html  = '<p hidden>Тип здания<input type="text" value="Школа"></p>'
+    html += '<p hidden>Адрес<input type="text" value="' + adress + '"></p>'
+    html += '<p>Количество учеников<input type="text" value=' + number + '></p>'
+    html += '<p>Номинальная вместимость<input type="text" value=' + load + '></p>'
+    html += '<button onclick="savechanges(this);"name="button" id="newButton2" >Сохранить изменения</button>'
+    return html
+  }
+  let savechanges = button => {
+    var ul = document.getElementById("listOfChanges");
+    var field = document.getElementsByClassName('leaflet-popup-content')[0];
+    //не работает
+    for (var i = 0; i < ul.childNodes.length; i++) {
+      let adress = ul.childNodes[i].childNodes[1].childNodes[1].innerText;
+      let clearAdress = adress.substring(6, adress.length);
+      if (clearAdress == field.childNodes[1].childNodes[1].value){
+        alert("Было");
+        return
+      }
+    }
+    
+    var ulInner = document.createElement("ul");
+    for (var i = 0; i < field.childNodes.length - 1; i++) {
+      var tableChild = field.childNodes[i];
+      var li = document.createElement("li");
+      li.appendChild(document.createTextNode(tableChild.innerText + ':' + tableChild.childNodes[1].value));
+      ulInner.appendChild(li);
+    }
+    var li = document.createElement("li");
+    li.appendChild(document.createTextNode("Измененный элемент"));
+    li.appendChild(ulInner);
+    ul.appendChild(li);
+      //field.innerHTML = '<h1>' + type + '</hi>'
+  };
+  </script>  
 {% endblock %}
