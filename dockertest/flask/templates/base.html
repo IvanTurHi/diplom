@@ -5,9 +5,13 @@
       {% block head %}{% endblock %}
     </head>
     <body>
-        <div><a href="/main_page">Главная страница</a></div>
-        <div><a href="/map">Карта</a></div>
-        <div><a href="/statistics">Общая статистика</a></div>
+<div class="main_container">
+        <ul class="menu-main">
+          <li><a href="{{ url_for('basic_page') }}">Главная страница</a></li>
+          <li><a href="{{ url_for('about') }}">О проекте</a></li>
+          <li><a href="{{ url_for('main_page') }}">Статистика</a></li>
+        </ul> 
+    </div>
         <hr>
         {% block content %}{% endblock %}
         {% block scripts %}{% endblock %}

@@ -18,6 +18,14 @@ def hello_vanya():
 def hello_world():
     return render_template('main_page.html', user="test")
 
+@app.route('/')
+def basic_page():
+    return render_template('mainn.html')
+
+@app.route('/about')
+def about():
+    return render_template('about_page.html')
+
 @app.route('/statistics')
 def main_page():
     r = requests.get("http://connector:8000/counties")
@@ -41,7 +49,7 @@ def map_page():
     r = requests.get("http://connector:8000/districtcountyname")
     datadistricts = json.loads(r.text)
     #return datadistricts
-    return render_template('map.html', user="test2",datadistricts=datadistricts)
+    return render_template('map.html', user="test2", datadistricts=datadistricts)
 
 def without_keys(d, listThrow):
     if listThrow == []:

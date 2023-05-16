@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
 integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
 crossorigin=""/>
+<link href="{{ url_for('static', filename='check_box.css') }}"  rel="stylesheet" />
 <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
 integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
 crossorigin=""></script>
@@ -114,16 +115,27 @@ crossorigin=""></script>
     <button onclick="getstatistics();" name="button" id="newButton" >Анализ по районам</button>
     <button onclick="gethexagones();" name="button" id="newButton1" >Гексагональный анализ</button>
     <button onclick="getbuildings();" name="button" id="newButton2" >Вывести только объекты</button>
+    <p></p>
+    <button onclick="clearLayer(this);">Очистить карту</button>
+    <button onclick="openStat();">Посмотреть статистику</button>
     </div>
     <div class="child max">
     <div id="map" ></div>
     </div>
   </fieldset>
+  <font color="#FFFFFF">
   <ul id="listOfChanges"></ul>
-  <button onclick="clearLayer(this);">Я все сломал, очистить карту</button>
+  </font>
   {% endblock %}
 
   {% block scripts %}
+<script language="JavaScript">
+	<!-- hide
+	function openStat() {
+	  myWin= open("/statistics");
+	}
+	// -->
+	</script>
   <script>
     function getEventTarget(e) {
     e = e || window.event;
