@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+</head>
+<style>
+  input.button-add {
+    background-image: url(../static/images/buttons/remove_icon.png); /* 16px x 16px */
+    background-color: transparent; /* make the button transparent */
+    background-repeat: no-repeat;  /* make the background image appear only once */
+      /* equivalent to 'top left' */
+    border: none;           /* assuming we don't want any borders */
+    cursor: pointer;        /* make the cursor like hovering over an <a> element */
+    height: 32px;           /* make this the size of your image */
+    padding-left: 32px;     /* make text start to the right of the image */
+    vertical-align: middle; /* align the text vertically centered */
+    display: inline-block;	
+    justify-content: center;
+  }
+  div.insideeditlist {
+    display: table-cell
+  }
+  ul.editlist{
+    list-style-type: none;
+    display: inline-block;
+  }
+</style>
+<body>
+<ul id="test" class="editlist">
+    
+    <li>
+        Измененный элемент
+        <ul class="editlist">
+          <li>Тип здания:Школа</li>
+          <li>Номинальная вместимость:348</li>
+          <li>Nt</li>
+          <li>nsd</li>
+        </ul>
+        <input type="button" value="" class="button-add"/>
+
+    </li>
+
+
+      <li>
+      <input type="checkbox" name="short" id="short">
+      <label class="custom-unchecked">Округ1 (можно развернуть)</label>
+      <ul id="Округ1" >
+        <li class="inner">
+          <input type="checkbox" name="short-1" id="short-12">
+          <label for="short-12" class="custom-unchecked">1</label>
+        </li>
+        <li class="inner">
+          <input type="checkbox" name="short-2" id="short-22">
+          <label for="short-22" class="custom-unchecked">2</label>
+        </li>
+        <li class="inner">
+          <input type="checkbox" name="short-3" id="short-32">
+          <label for="short-32" class="custom-unchecked">3</label>
+        </li>
+      </ul>
+    </li>
+  </ul>
+
+
+  
+  </script>
+</body>
+ </html>
+          

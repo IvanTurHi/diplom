@@ -14,13 +14,14 @@ def hello_sasha():
 def hello_vanya():
     return 'Hello, Vanya! The server is working. The reason you here is not I have dropped the server'
 
+#тестовая
 @app.route('/main_page')
 def hello_world():
     return render_template('main_page.html', user="test")
 
 @app.route('/')
 def basic_page():
-    return render_template('mainn.html')
+    return render_template('main_page.html')
 
 @app.route('/about')
 def about():

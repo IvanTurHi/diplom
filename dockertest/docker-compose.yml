@@ -27,6 +27,7 @@ services:
 
     mongodb:
         image: mongodb/mongodb-enterprise-server:6.0.3-ubi8
+        #image: mongo:latest
         container_name: mongodb
         restart: always
         environment:
