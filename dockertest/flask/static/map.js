@@ -347,14 +347,17 @@ function drawLiving(res, builddatabase) {
             stringTable = '';
             main_value = '';
             if (feature.properties) {
-                stringTable += '<tr style="display:none;"><td> type  </td><td>' + builddatabase + '</td></tr>'
+                stringTable += '<tr style="display:none;"><td>objectid</td><td>' + feature.properties['Идентификатор'] + '</td></tr>';
+                stringTable += '<tr style="display:none;"><td>type</td><td>' + builddatabase + '</td></tr>'
                 for (key in feature.properties) {
                     switch (key) {
                         case (main_feature): main_value = feature.properties[key]; break;
                         case ('Широта'): newlat = feature.properties[key]; break;
                         case ('Долгота'): newlon = feature.properties[key]; break;
                         case ('iddistrict'): break;
-                        case ('Идентификатор'): break;
+                        case ('Идентификатор'):
+                            layer.objectid = feature.properties[key];
+                            break;
                         case ('ГеоИдентификатор'): break;
                         default: stringTable += '<tr><td>' + key + '</td><td>' + feature.properties[key] + '</td></tr>'
                     }
@@ -455,32 +458,40 @@ let availRfromCard = button => {
 let EditInfo = button => {
     var field = document.getElementsByClassName('leaflet-popup-content')[0];
     table = field.childNodes[1];
-    type = table.rows[0].cells[1].innerText
+    type = table.rows[1].cells[1].innerText
     switch (parseInt(type)) {
-        case (0): field.innerHTML = editPopupForSchool(table.rows[1].cells[1].innerText, table.rows[3].cells[1].innerText, table.rows[4].cells[1].innerText); break;
-        case (2): field.innerHTML = editPopupForLiving(field.childNodes[0].innerText, table.rows[5].cells[1].innerText); break;
-        case (3): field.innerHTML = editPopupForKindergarten(table.rows[1].cells[1].innerText, table.rows[2].cells[1].innerText); break;
+        case (0): field.innerHTML = editPopupForSchool(table.rows[0].cells[1].innerText, table.rows[2].cells[1].innerText, table.rows[4].cells[1].innerText, table.rows[5].cells[1].innerText); break;
+        case (2): field.innerHTML = editPopupForLiving(table.rows[0].cells[1].innerText, field.childNodes[0].innerText, table.rows[6].cells[1].innerText); break;
+        case (3): field.innerHTML = editPopupForKindergarten(table.rows[0].cells[1].innerText, table.rows[2].cells[1].innerText, table.rows[3].cells[1].innerText); break;
         default: alert(type);
     }
 };
-function editPopupForSchool(adress, number, load) {
-    html = '<p hidden>Тип здания<input type="text" value="Школа"></p>'
+
+function editPopupForSchool(objectid, adress, number, load) {
+    html = '<p hidden>Идентификатор<input type="text" value="' + objectid + '"></p>'
+    html += '<p hidden>Тип здания<input type="text" value="Школа"></p>'
     html += '<p hidden>Адрес<input type="text" value="' + adress + '"></p>'
+    html += '<p hidden class="oldInfo">Количество учеников<input type="text" value=' + number + '></p>'
     html += '<p>Количество учеников<input type="text" value=' + number + '></p>'
+    html += '<p hidden class="oldInfo">Номинальная вместимость<input type="text" value=' + load + '></p>'
     html += '<p>Номинальная вместимость<input type="text" value=' + load + '></p>'
     html += '<button onclick="savechanges(this);"name="button" id="newButton2" >Сохранить изменения</button>'
     return html
 };
-function editPopupForLiving(adress, numberResidents) {
-    html = '<p hidden>Тип здания<input type="text" value="Жилое"></p>'
+function editPopupForLiving(objectid, adress, numberResidents) {
+    html = '<p hidden>Идентификатор<input type="text" value="' + objectid + '"></p>'
+    html += '<p hidden>Тип здания<input type="text" value="Жилое"></p>'
     html += '<p hidden>Адрес<input type="text" value="' + adress + '"></p>'
-    html += '<p>Количество жителей<input type="text" value=' + numberResidents + '></p>'
+    html += '<p hidden class="oldInfo">Количество взрослых<input type="text" value=' + numberResidents + '></p>'
+    html += '<p>Количество взрослых<input type="text" value=' + numberResidents + '></p>'
     html += '<button onclick="savechanges(this);"name="button" id="newButton2" >Сохранить изменения</button>'
     return html
 };
-function editPopupForKindergarten(adress, load) {
-    html = '<p hidden>Тип здания<input type="text" value="Детский сад"></p>'
+function editPopupForKindergarten(objectid, adress, load) {
+    html = '<p hidden>Идентификатор<input type="text" value="' + objectid + '"></p>'
+    html += '<p hidden>Тип здания<input type="text" value="Детский сад"></p>'
     html += '<p hidden>Адрес<input type="text" value="' + adress + '"></p>'
+    html += '<p  hidden class="oldInfo">Номинальная вместимость<input type="text" value=' + load + '></p>'
     html += '<p>Номинальная вместимость<input type="text" value=' + load + '></p>'
     html += '<button onclick="savechanges(this);"name="button" id="newButton2" >Сохранить изменения</button>'
     return html
@@ -490,17 +501,26 @@ let savechanges = button => {
     var field = document.getElementsByClassName('leaflet-popup-content')[0];
 
     var ulInner = document.createElement("ul");
+    flagOFchanged = false;
     for (var i = 0; i < field.childNodes.length - 1; i++) {
         var tableChild = field.childNodes[i];
         var li = document.createElement("li");
-        li.appendChild(document.createTextNode(tableChild.innerText + ':' + tableChild.childNodes[1].value));
+        if (tableChild.className == "oldInfo") {
+            li.appendChild(document.createTextNode(`${tableChild.innerText}:${tableChild.childNodes[1].value}->${field.childNodes[i + 1].childNodes[1].value}`));
+            i++;
+        } else {
+            li.appendChild(document.createTextNode(`${tableChild.innerText}:${tableChild.childNodes[1].value}`));
+        };
         ulInner.appendChild(li);
+        if (tableChild.innerText == "Идентификатор") {
+            li.style.display = "none"
+        }
     }
 
     for (var i = 0; i < ul.childNodes.length; i++) {
-        let adress = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[1].innerText;
+        let adress = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[2].innerText;
         let clearAdress = adress.substring(6, adress.length);
-        if (clearAdress == field.childNodes[1].childNodes[1].value) {
+        if (clearAdress == field.childNodes[2].childNodes[1].value) {
             alert("Было");
             for (var j = 0; j < ul.childNodes[i].childNodes[1].childNodes[0].children.length; j++) {
                 ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText = ulInner.childNodes[j].innerText;
@@ -510,14 +530,12 @@ let savechanges = button => {
         }
     }
 
-
     var li = document.createElement("li");
     li.appendChild(document.createTextNode("Измененный элемент"));
 
     var divList = document.createElement("div");
     divList.setAttribute('class', 'insideeditlist');
 
-    divList.setAttribute('style', 'min-width: 20%;max-width: 30%;')
     divList.appendChild(ulInner);
 
     var buttonElement = document.createElement("input");
@@ -537,4 +555,72 @@ let savechanges = button => {
 };
 let delElem = button => {
     button.parentElement.parentElement.remove()
+};
+
+function applychanges() {
+    var ul = document.getElementById("listOfChanges");
+    changesArray = []
+    for (var i = 0; i < ul.childNodes.length; i++) {
+        let dictElem = {data: {}, service: {}}
+        let listOfCharacteristics = ul.childNodes[i].childNodes[1].childNodes[0]
+        let oldCurrentWorkload;
+        let oldNormalWorkload;
+        for (var j = 2; j < listOfCharacteristics.childNodes.length; j++) {
+            let characteristics = listOfCharacteristics.childNodes[j].innerText.split(':')[0];
+            let oldAndNewValue = listOfCharacteristics.childNodes[j].innerText.split(':')[1];
+            if (~oldAndNewValue.indexOf("->")) {
+                oldValue = oldAndNewValue.split('->')[0];
+                newValue = oldAndNewValue.split('->')[1];
+                if (newValue != oldValue) {
+                    dictElem.data[characteristics] = newValue - oldValue;
+                }
+                switch (characteristics) {
+                    case 'Количество учеников':
+                        oldCurrentWorkload = oldValue;
+                        break;
+                    case 'Номинальная вместимость':
+                        oldNormalWorkload = oldValue;
+                        break;
+                    default:
+                        break;
+                }
+
+            }
+        }
+        if (Object.keys(dictElem.data).length != 0) {
+            dictElem.service.objectid = listOfCharacteristics.childNodes[0].innerText.split(':')[1];
+            dictElem.service.type = listOfCharacteristics.childNodes[1].innerText.split(':')[1];
+            dictElem.service.adress = listOfCharacteristics.childNodes[2].innerText.split(':')[1];
+
+            //дополнительная проверка для школ, для изменения количества доступных школ
+            if (dictElem.service.type == 'Школа') {
+                oldPercentage = oldCurrentWorkload / oldNormalWorkload;
+                newPercentage = (oldCurrentWorkload + (dictElem.data['Количество учеников'] || 0)) / (oldNormalWorkload + (dictElem.data['Номинальная вместимость'] || 0));
+                if (oldPercentage > 1 && newPercentage < 1) {
+                    dictElem.service.spec = true;
+                };
+                if (oldPercentage < 1 && newPercentage > 1) {
+                    dictElem.service.spec = false;
+                };
+            };
+            changesArray.push(dictElem);
+        };
+    };
+    map_init.eachLayer(function(layer){
+        changesArray.forEach(function(elem){
+            if (layer.objectid == elem.service.objectid){
+                let popup = layer.getPopup()._content;
+                for (let k in elem.data) {
+                    console.log(k + ' is ' + elem.data[k])
+                    let startPosition = popup.indexOf(k) + k.length + 9
+                    let endPosition = popup.indexOf("td", startPosition) - 2
+                    let oldValue = popup.slice(startPosition, endPosition)
+                    let newValue = parseInt(oldValue) + elem.data[k]
+                    popup = popup.substring(0, startPosition) + newValue + popup.substring(endPosition);
+                    alert(parseInt(oldValue))
+                }
+                layer.bindPopup(popup);
+            }
+        });
+    });
 };

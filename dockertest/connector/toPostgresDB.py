@@ -48,7 +48,7 @@ class db_start(object):
         
     def getInDistrict(self, district, database, selecttype = ''):
         if database == 'eduBuildings' and selecttype == schooltype():
-            SQLquery = """SELECT t.*, round(currentworkload::float/calculatedworkload) stnumber from """ + database + """ t, districts d
+            SQLquery = """SELECT t.*, round(currentworkload::float/calculatedworkload * 100) stnumber from """ + database + """ t, districts d
                 where d.iddistrict = t.iddistrict and d.nameDistrict in %s """ + selecttype + """ ORDER BY idSpatial"""
         else:
             SQLquery = """SELECT t.* from """ + database + """ t, districts d

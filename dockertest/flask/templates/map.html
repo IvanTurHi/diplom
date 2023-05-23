@@ -254,6 +254,7 @@
 </fieldset>
 <p>Измененные элементы будут отображаться здесь, но не будут видны на карте</p>
 <ul id="listOfChanges"></ul>
+<button onclick="applychanges();" name="button">Применить изменения</button>
 <button onclick="clearLayer(this);">Я все сломал, очистить карту</button>
 
 {% endblock %}
@@ -284,5 +285,6 @@
   let legendsOnMap = [];
   controlsLayer.addTo(map_init);
   let overLayers = [];
+  let changesArray = []
 </script>
 {% endblock %}

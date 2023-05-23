@@ -156,5 +156,37 @@ def hexForDistricts():
 }
 '''
 
+@app.route('/changes', methods=['POST'])
+def changes():
+    input_json = request.get_json(force=True)
+    counter = 0
+    for i in input_json:
+        if i.get('spec', None):
+            counter += 1
+    #r = requests.post("http://connector:8000/districtsfullinfo", json=input_json)
+    #datadistricts = json.loads(r.text)
+    #geojson = makegeojson(data=datadistricts)
+    #return print_hexagones(geojson, hexagone_size=input_json['hexagone_size'])
+    return [counter]
+
+'''
+[
+  {"adress":"Российская Федерация, город Москва, внутригородская территория муниципальный округ Зябликово, улица Мусы Джалиля, дом 29, корпус 2",
+   "spec": true,
+   "type": "Школа",
+	"Номинальная вместимость": 7696
+ },
+ {"adress":"Российская Федерация, город Москва, внутригородская территория муниципальный округ Зябликово, улица Мусы Джалиля, дом 6, корпус 3",
+ "spec": false,
+ "type":"Школа",
+ "Количество учеников":3934},
+ {
+ "adress":"Российская Федерация, город Москва, внутригородская территория муниципальный округ Орехово-Борисово Северное, Борисовский проезд, дом 13",
+ "type":"Школа",
+"Номинальная вместимость":-1
+ }
+ ]
+'''
+
 if __name__ == '__main__':
     app.run(debug=True,host='0.0.0.0')
