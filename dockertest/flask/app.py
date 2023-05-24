@@ -1,7 +1,7 @@
 from flask import Flask
 from flask import render_template, request
 import requests
-from utils import dictfromdatabase, notUsedTypes
+from utils import dictfromdatabase, notUsedTypes, centralDistricts
 import json
 import h3
 app = Flask(__name__)
@@ -95,14 +95,36 @@ def districtsfullinfo():
 @app.route('/nearcoordinates', methods=['POST'])
 def nearcoordinates():
     input_json = request.get_json(force=True)
-    input_json["distance"] = 500
+    r = requests.post("http://connector:8000/pointInDistrict", json=input_json)
+    datadistrict = json.loads(r.text)
+    districtID = datadistrict[0]["idSpatial"]
+
+    if districtID in centralDistricts:
+        if input_json['database'] == 0:
+            distance = 750
+        elif input_json['database'] == 1:
+            distance = 1500
+        elif input_json['database'] == 3:
+            distance = 500
+        else:
+            distance = 500
+    else:
+        if input_json['database'] == 0:
+            distance = 500
+        elif input_json['database'] == 1:
+            distance = 1500
+        elif input_json['database'] == 3:
+            distance = 300
+        else:
+            distance = 500
+    input_json["distance"] = distance
     input_json["database"] = 2
     r = requests.post("http://connector:8000/nearcoordinatesfullinfo", json=input_json)
     if r.text == '[]':
         return '[]' 
     datadistricts = json.loads(r.text)
     #return datadistricts
-    return makegeojson(data=datadistricts)
+    return {"data":makegeojson(data=datadistricts), "radius": distance}
 
 
 def create_hexagons(data, hexagone_size):
@@ -156,7 +178,7 @@ def hexForDistricts():
 }
 '''
 
-@app.route('/changes', methods=['POST'])
+@app.route('/checkchanges', methods=['POST'])
 def changes():
     input_json = request.get_json(force=True)
     counter = 0
@@ -171,19 +193,26 @@ def changes():
 
 '''
 [
-  {"adress":"Российская Федерация, город Москва, внутригородская территория муниципальный округ Зябликово, улица Мусы Джалиля, дом 29, корпус 2",
-   "spec": true,
-   "type": "Школа",
-	"Номинальная вместимость": 7696
+{
+    "adress":"Российская Федерация, город Москва, внутригородская территория муниципальный округ Зябликово, улица Мусы Джалиля, дом 29, корпус 2",
+    "spec": true,
+    "type": "Школа",
+    "Номинальная вместимость": 7696
  },
- {"adress":"Российская Федерация, город Москва, внутригородская территория муниципальный округ Зябликово, улица Мусы Джалиля, дом 6, корпус 3",
- "spec": false,
- "type":"Школа",
- "Количество учеников":3934},
  {
- "adress":"Российская Федерация, город Москва, внутригородская территория муниципальный округ Орехово-Борисово Северное, Борисовский проезд, дом 13",
- "type":"Школа",
-"Номинальная вместимость":-1
+    "adress": "Российская Федерация, город Москва, внутригородская территория муниципальный округ Зябликово, улица Мусы Джалиля, дом 6, корпус 3",
+    "spec": false,
+    "type":"Школа",
+    "Количество учеников":3934},
+ {
+    "adress": "Российская Федерация, город Москва, внутригородская территория муниципальный округ Орехово-Борисово Северное, Борисовский проезд, дом 13",
+    "type":"Школа",
+    "Номинальная вместимость":-1
+ }
+  {
+    "adress": "Российская Федерация, город Москва, внутригородская территория муниципальный округ Орехово-Борисово Северное, Борисовский проезд, дом 13",
+    "type":"Жилое",
+    "Свободных школ в радиусе доступности":-1
  }
  ]
 '''

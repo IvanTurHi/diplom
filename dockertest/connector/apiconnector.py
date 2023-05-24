@@ -54,6 +54,17 @@ async def districts():
     t = db_start()
     return t.getDistricts()
 
+@app.post("/districts")
+async def districts(request: Request):
+    t = db_start()
+    jsonbody = await request.json()
+    return t.getDistrictsByID(jsonbody['arrayID'])
+'''
+{
+ 	"arrayID": [1,2] 
+}
+'''
+
 @app.get("/districtsname")
 async def districtsname():
     t = db_start()
@@ -99,8 +110,8 @@ async def schoolsin(request: Request):
     return JSONResponse(content=t.getByID(jsonbody['arrayID'], database), status_code=200)
 '''
 {
-  	"database": 1,
-  	"arrayID" : [1,2,3]
+    "database": 1,
+    "arrayID" : [1,2,3]
 }
 '''
 
@@ -185,6 +196,17 @@ async def incoordinates(request: Request):
     t = MongoDB()
     return JSONResponse(content=t.getwithincoordinates(poly, database), status_code=200)
 
+
+@app.post("/pointInDistrict")
+async def incoordinates(request: Request):
+    jsonbody = await request.json()
+    database = "districts"
+    lat = jsonbody['lat']
+    lon = jsonbody['lon']
+    poly = { "type" : "Point", "coordinates" : 
+        [lon, lat] }
+    t = MongoDB()
+    return JSONResponse(content=t.getwithincoordinates(poly, database), status_code=200)
 '''
 {
     "Wlon": 37.93,

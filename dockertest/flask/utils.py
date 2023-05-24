@@ -46,6 +46,19 @@ notUsedTypes = [
     'storey',
     'totalarea']
 
+centralDistricts = [
+    105,
+    13,
+    103,
+    106,
+    108,
+    102,
+    9,
+    107,
+    51,
+    104
+]
+
 def schooltype():
     return " and t.nameType = 'Школа' "
 

@@ -39,6 +39,17 @@ class db_start(object):
             d.kindergartenProvisionIndex, d.schoolProvision, d.kindergartenProvision from counties c, districts d where c.idCount = d.idCount
             order by c.namecounty, d.namedistrict""")
         return self._returnDict()
+    
+    def getDistrictsByID(self, arrayID):
+        SQLquery = """SELECT d.namedistrict, c.namecounty, d.area, d.schoolnumber, d.schoolload,
+            d.kindergartennumber, d.medicinenumber, d.livingnumber, d.residentsnumber, d.avgyear, d.withoutschools,
+            d.withoutkindergartens, d.withoutmedicine, d.schoolProvisionIndex, 
+            d.kindergartenProvisionIndex, d.schoolProvision, d.kindergartenProvision from counties c, districts d
+            where c.idCount = d.idCount
+            and d.idSpatial in %s
+            order by c.namecounty, d.namedistrict"""
+        self.__cur.execute(SQLquery, (tuple(arrayID), ))
+        return self._returnDict()
         
     def getInCounty(self, county, database, selecttype = ''):
         SQLquery = """SELECT t.* from """ + database + """ t, districts d

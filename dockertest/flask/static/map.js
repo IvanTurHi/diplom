@@ -17,6 +17,7 @@ function readData() {
         return 1;
     };
     builddatabase = builddatabaseCheck.value;
+    
     return {
         districtsArray: districtsArray,
         builddatabase: builddatabase,
@@ -57,6 +58,12 @@ function gethexagones() {
         return
     };
     const { districtsArray, builddatabase } = data;
+    const hexsize = document.querySelector('input[name="hexsize"]:checked');
+    if (!hexsize) {
+        alert('Размер гексагона не задан');
+        return 1;
+    };
+    const hexsizevalue = hexsize.value;
     clearlayer();
     if (builddatabase == 2) {
         document.getElementById('loadingImg').style.display = '';
@@ -95,7 +102,7 @@ function gethexagones() {
                 xmlHttp1.open("POST", 'http://127.0.0.1:80/hexForDistricts', false); // false for synchronous request
                 body = JSON.stringify({
                     "IDsource": districtsArray,
-                    "hexagone_size": 8
+                    "hexagone_size": parseInt(hexsizevalue)
                 });
                 xmlHttp1.send(body);
                 textJSON1 = xmlHttp1.responseText;
@@ -123,7 +130,7 @@ function getstatistics() {
     });
     xmlHttp.send(body);
     textJSON_districts = xmlHttp.responseText;
-    drawdisricts(textJSON_districts, builddatabase);
+    //было тут
 
 
     if (builddatabase == 2) {
@@ -143,7 +150,7 @@ function getstatistics() {
                 textJSON = xmlHttp.responseText;
                 let res = JSON.parse(textJSON);
                 drawLiving(res, builddatabase);
-
+                drawdisricts(textJSON_districts, builddatabase);
             }
         }
     };
@@ -416,28 +423,33 @@ function getColorForSchool(currentworkload, calculatedworkload) {
         value >= 1 ? 'yellow' :
             'green';
 };
-function getnewradius(lon, lat, radius) {
+function getnewradius(lon, lat) {
+    var field = document.getElementsByClassName('leaflet-popup-content')[0];
+    table = field.childNodes[1];
+    type = parseInt(table.rows[1].cells[1].innerText)
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.open("POST", 'http://127.0.0.1:80/nearcoordinates', false); // false for synchronous request
     let body = JSON.stringify({
         "lat": lat,
-        "lon": lon
-    });
-    var circle = L.circle([lat, lon], {
-        color: "red",
-        fillColor: "#f03",
-        fillOpacity: 0.5,
-        radius: radius
+        "lon": lon,
+        "database": type
     });
     marker = L.marker([lat, lon])
     marker.myTag = "myGeoJSON";
     marker.addTo(map_init);
-    circle.myTag = "myGeoJSON";
-    circle.addTo(map_init);
+    
     xmlHttp.send(body);
     resp = xmlHttp.responseText;
     let res = JSON.parse(resp);
-    drawLiving(res, 2);
+    drawLiving(res.data, 2);
+    var circle = L.circle([lat, lon], {
+        color: "red",
+        fillColor: "#f03",
+        fillOpacity: 0.5,
+        radius: res.radius
+    });
+    circle.myTag = "myGeoJSON";
+    circle.addTo(map_init);
 };
 let toggle = button => {
     var resp = httpGet();
@@ -453,7 +465,7 @@ let availRfromCard = button => {
     var fValuelat = parseFloat(fields[0]);
     var fValuelon = parseFloat(fields[1]);
     clearlayer();
-    getnewradius(fValuelon, fValuelat, 500);
+    getnewradius(fValuelon, fValuelat);
 };
 let EditInfo = button => {
     var field = document.getElementsByClassName('leaflet-popup-content')[0];
@@ -491,15 +503,23 @@ function editPopupForKindergarten(objectid, adress, load) {
     html = '<p hidden>Идентификатор<input type="text" value="' + objectid + '"></p>'
     html += '<p hidden>Тип здания<input type="text" value="Детский сад"></p>'
     html += '<p hidden>Адрес<input type="text" value="' + adress + '"></p>'
-    html += '<p  hidden class="oldInfo">Номинальная вместимость<input type="text" value=' + load + '></p>'
+    html += '<p hidden class="oldInfo">Номинальная вместимость<input type="text" value=' + load + '></p>'
     html += '<p>Номинальная вместимость<input type="text" value=' + load + '></p>'
     html += '<button onclick="savechanges(this);"name="button" id="newButton2" >Сохранить изменения</button>'
     return html
 };
 let savechanges = button => {
+    
     var ul = document.getElementById("listOfChanges");
     var field = document.getElementsByClassName('leaflet-popup-content')[0];
 
+    for (var i = 0; i < field.childNodes.length - 1; i++) {
+        var tableChild = field.childNodes[i];
+        if (tableChild.childNodes[1].value == 0){
+            alert("Хорошая попытка проверки крайнего случая, но... нет");
+            return;
+        }
+    }
     var ulInner = document.createElement("ul");
     flagOFchanged = false;
     for (var i = 0; i < field.childNodes.length - 1; i++) {
@@ -526,6 +546,7 @@ let savechanges = button => {
                 ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText = ulInner.childNodes[j].innerText;
             }
             ul.childNodes[i] = ulInner;
+            ul.childNodes[0].childNodes[0].textContent = "Измененный элемент";
             return
         }
     }
@@ -553,16 +574,17 @@ let savechanges = button => {
     ul.appendChild(li);
     //field.innerHTML = '<h1>' + type + '</hi>'
 };
+
 let delElem = button => {
     button.parentElement.parentElement.remove()
 };
 
 function applychanges() {
     var ul = document.getElementById("listOfChanges");
-    changesArray = []
     for (var i = 0; i < ul.childNodes.length; i++) {
-        let dictElem = {data: {}, service: {}}
+        let dictElem = { data: {}, service: {} }
         let listOfCharacteristics = ul.childNodes[i].childNodes[1].childNodes[0]
+        ul.childNodes[i].childNodes[0].textContent = "Изменения применены"
         let oldCurrentWorkload;
         let oldNormalWorkload;
         for (var j = 2; j < listOfCharacteristics.childNodes.length; j++) {
@@ -572,8 +594,9 @@ function applychanges() {
                 oldValue = oldAndNewValue.split('->')[0];
                 newValue = oldAndNewValue.split('->')[1];
                 if (newValue != oldValue) {
-                    dictElem.data[characteristics] = newValue - oldValue;
-                }
+                    //dictElem.data[characteristics] = newValue - oldValue;
+                    dictElem.data[characteristics] = newValue;
+                };
                 switch (characteristics) {
                     case 'Количество учеников':
                         oldCurrentWorkload = oldValue;
@@ -583,10 +606,10 @@ function applychanges() {
                         break;
                     default:
                         break;
-                }
+                };
 
-            }
-        }
+            };
+        };
         if (Object.keys(dictElem.data).length != 0) {
             dictElem.service.objectid = listOfCharacteristics.childNodes[0].innerText.split(':')[1];
             dictElem.service.type = listOfCharacteristics.childNodes[1].innerText.split(':')[1];
@@ -595,32 +618,69 @@ function applychanges() {
             //дополнительная проверка для школ, для изменения количества доступных школ
             if (dictElem.service.type == 'Школа') {
                 oldPercentage = oldCurrentWorkload / oldNormalWorkload;
-                newPercentage = (oldCurrentWorkload + (dictElem.data['Количество учеников'] || 0)) / (oldNormalWorkload + (dictElem.data['Номинальная вместимость'] || 0));
+                //newPercentage = (parseInt(oldCurrentWorkload) + (dictElem.data['Количество учеников'] || 0)) / (parseInt(oldNormalWorkload) + (dictElem.data['Номинальная вместимость'] || 0));
+                newPercentage = ((dictElem.data['Количество учеников'] || parseInt(oldCurrentWorkload))) / (dictElem.data['Номинальная вместимость'] || parseInt(oldNormalWorkload));
                 if (oldPercentage > 1 && newPercentage < 1) {
                     dictElem.service.spec = true;
                 };
                 if (oldPercentage < 1 && newPercentage > 1) {
                     dictElem.service.spec = false;
                 };
+                //dictElem.data['Загруженность (в процентах от номинальной)'] = (newPercentage - oldPercentage)*100;
+                dictElem.data['Загруженность (в процентах от номинальной)'] = (newPercentage)*100;
             };
-            changesArray.push(dictElem);
+            insertIntoChanges(dictElem);
         };
     };
-    map_init.eachLayer(function(layer){
-        changesArray.forEach(function(elem){
-            if (layer.objectid == elem.service.objectid){
+    implementChangesOnMap();
+};
+function insertIntoChanges(dictElem) {
+    let flag = false;
+    changesArray.forEach(function (elem) {
+        if (elem.service.objectid == dictElem.service.objectid) {
+            flag = true;
+            for (let k in dictElem.data) {
+                elem.data[k] = dictElem.data[k]
+            }
+        };
+    });
+    if (!flag) {
+        changesArray.push(dictElem);
+    }
+}
+
+function implementChangesOnMap() {
+    map_init.eachLayer(function (layer) {
+        changesArray.forEach(function (elem) {
+            if (layer.objectid == elem.service.objectid) {
                 let popup = layer.getPopup()._content;
+                let percentageForSchool;
                 for (let k in elem.data) {
-                    console.log(k + ' is ' + elem.data[k])
+
+                    //console.log(k + ' is ' + elem.data[k])
                     let startPosition = popup.indexOf(k) + k.length + 9
                     let endPosition = popup.indexOf("td", startPosition) - 2
-                    let oldValue = popup.slice(startPosition, endPosition)
-                    let newValue = parseInt(oldValue) + elem.data[k]
+                    //let oldValue = popup.slice(startPosition, endPosition)
+                    //let newValue = parseInt(parseInt(oldValue) + elem.data[k])
+                    let newValue = parseInt(elem.data[k])
                     popup = popup.substring(0, startPosition) + newValue + popup.substring(endPosition);
-                    alert(parseInt(oldValue))
+                    if (k == 'Загруженность (в процентах от номинальной)') {
+                        percentageForSchool = parseInt(newValue);
+                    }
                 }
                 layer.bindPopup(popup);
+                if (elem.service.type == 'Школа') {
+                    if (percentageForSchool != null) {
+                        color = getColorForSchool(percentageForSchool, 100)
+                        layer.setStyle({
+                            fillColor: color,
+                            fillOpacity: 0.5,
+                            weight: 1,
+                            color: 'black'
+                        })
+                    }
+                }
             }
         });
     });
-};
+}
