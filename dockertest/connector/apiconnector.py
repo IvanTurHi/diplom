@@ -209,11 +209,8 @@ async def incoordinates(request: Request):
     return JSONResponse(content=t.getwithincoordinates(poly, database), status_code=200)
 '''
 {
-    "Wlon": 37.93,
-    "Elon": 37.95,
-    "Nlat": 55.69,
-    "Slat": 55.74,
-    "database": 1
+    "lon": 37.93,
+    "lat": 55.69
 }
 '''
 

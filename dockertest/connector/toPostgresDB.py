@@ -25,7 +25,6 @@ class db_start(object):
         else:
             raise MyError("no data in DB")
         
-
     def getCounties(self):
         self.__cur.execute("""SELECT namecounty, area, schoolnumber, schoolload,
             kindergartennumber, medicinenumber, livingnumber, residentsnumber, avgyear, withoutschools,
@@ -68,6 +67,12 @@ class db_start(object):
         return self._returnDict()
         
     def getBySpatialID(self, arrayID, database):
+        SQLquery = """SELECT t.* from """ + database + """ t
+            where t.idSpatial in %s ORDER BY idSpatial"""
+        self.__cur.execute(SQLquery, (tuple(arrayID), ))
+        return self._returnDict()
+    
+    def getByID(self, arrayID, database):
         SQLquery = """SELECT t.* from """ + database + """ t
             where t.buildid in %s ORDER BY idSpatial"""
         self.__cur.execute(SQLquery, (tuple(arrayID), ))
