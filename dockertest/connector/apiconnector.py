@@ -104,6 +104,7 @@ async def schoolsin(request: Request):
 '''
 @app.post("/buildingID")
 async def schoolsin(request: Request):
+    print(11111111111111111111111111111111111111111111)
     jsonbody = await request.json()
     database = dictDatabases[jsonbody['database']]
     t = db_start()
@@ -114,6 +115,12 @@ async def schoolsin(request: Request):
     "arrayID" : [1,2,3]
 }
 '''
+@app.post("/districtsID")
+async def schoolsfull(request: Request):
+    jsonbody = await request.json()
+    t = db_start()
+    table = t.getDistrictsByID(jsonbody['IDsource'])
+    return JSONResponse(content=table, status_code=200)
 
 @app.post("/buildingfullinfo")
 async def schoolsfull(request: Request):

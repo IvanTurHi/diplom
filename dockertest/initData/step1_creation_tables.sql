@@ -50,8 +50,10 @@ CREATE TABLE districts
     schoolProvisionIndex INTEGER,
     kindergartenProvisionIndex INTEGER,
     schoolProvision BOOLEAN,
-    kindergartenProvision BOOLEAN
-
+    kindergartenProvision BOOLEAN,
+    targetProvisionIndicator REAL,
+    actualProvisionIndicator REAL,
+    density REAL
 );
 
 CREATE TABLE eduBuildings

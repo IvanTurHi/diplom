@@ -85,3 +85,12 @@ class db_start(object):
             kindergartenProvisionIndex, schoolProvision, kindergartenProvision from districts where nameDistrict in %s ORDER BY idSpatial"""
         self.__cur.execute(SQLquery, (tuple(nameID), ))
         return self._returnDict()
+
+    def getDistrictsByID(self, nameID):
+        SQLquery = """SELECT namedistrict, area, idspatial,schoolnumber, schoolload,
+kindergartennumber, medicinenumber, livingnumber, residentsnumber, avgyear, withoutschools,
+withoutkindergartens, withoutmedicine, schoolProvisionIndex,
+kindergartenProvisionIndex, schoolProvision, kindergartenProvision, targetProvisionIndicator, 
+actualProvisionIndicator, density from districts where idDistrict in %s ORDER BY idSpatial"""
+        self.__cur.execute(SQLquery, (tuple(nameID), ))
+        return self._returnDict()
