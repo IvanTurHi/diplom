@@ -115,8 +115,7 @@ function gethexagones() {
     };
     xmlHttp.send(body);
 };
-function getstatistics() {
-    var startTime = performance.now()
+function getanalysis() {
     let data = readData();
     if (data == 1) {
         return
@@ -473,14 +472,14 @@ let EditInfo = button => {
     table = field.childNodes[1];
     type = table.rows[1].cells[1].innerText
     switch (parseInt(type)) {
-        case (0): field.innerHTML = editPopupForSchool(table.rows[0].cells[1].innerText, table.rows[2].cells[1].innerText, table.rows[4].cells[1].innerText, table.rows[5].cells[1].innerText); break;
+        case (0): field.innerHTML = editPopupForSchool(table.rows[0].cells[1].innerText, table.rows[2].cells[1].innerText, table.rows[4].cells[1].innerText, table.rows[5].cells[1].innerText, table.rows[7].cells[1].innerText); break;
         case (2): field.innerHTML = editPopupForLiving(table.rows[0].cells[1].innerText, field.childNodes[0].innerText, table.rows[6].cells[1].innerText); break;
         case (3): field.innerHTML = editPopupForKindergarten(table.rows[0].cells[1].innerText, table.rows[2].cells[1].innerText, table.rows[3].cells[1].innerText); break;
         default: alert(type);
     }
 };
 
-function editPopupForSchool(objectid, adress, number, load) {
+function editPopupForSchool(objectid, adress, number, load, rating) {
     html = '<p hidden>Идентификатор<input type="text" value="' + objectid + '"></p>'
     html += '<p hidden>Тип здания<input type="text" value="Школа"></p>'
     html += '<p hidden>Адрес<input type="text" value="' + adress + '"></p>'
@@ -488,6 +487,8 @@ function editPopupForSchool(objectid, adress, number, load) {
     html += '<p>Количество учеников<input type="text" value=' + number + '></p>'
     html += '<p hidden class="oldInfo">Номинальная вместимость<input type="text" value=' + load + '></p>'
     html += '<p>Номинальная вместимость<input type="text" value=' + load + '></p>'
+    html += '<p hidden class="oldInfo">Рейтинг<input type="text" value=' + rating + '></p>'
+    html += '<p>Рейтинг<input type="text" value=' + rating + '></p>'
     html += '<button onclick="savechanges(this);"name="button" id="newButton2" >Сохранить изменения</button>'
     return html
 };
@@ -714,7 +715,7 @@ function implementChangesOnMap() {
         });
     });
 };
-function getanalysis(){
+function getstatistics(){
     let data = readData();
     if (data == 1) {
         return
@@ -735,7 +736,7 @@ function getanalysis(){
     });
     xmlHttp.send(body);
     resp = xmlHttp.responseText;
-    var tab = window.open('about:blank', '_blank');
-    tab.document.write(resp); // where 'html' is a variable containing your HTML
+    var tab = window.open('Статистика по выбранным районам', '_blank');
+    tab.document.write(resp);
     tab.document.close();
 }

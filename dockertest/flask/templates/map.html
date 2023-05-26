@@ -255,18 +255,20 @@
         <label for="contactChoice2">1400 м</label>
       </div>
     </fieldset>
-    <button onclick="getstatistics();" name="button" id="newButton">Анализ по районам</button>
+    <button onclick="getanalysis();" name="button" id="newButton">Анализ по районам</button>
     <button onclick="gethexagones();" name="button" id="newButton1">Гексагональный анализ</button>
     <button onclick="getbuildings();" name="button" id="newButton2">Вывести только объекты</button>
-    <button onclick="getanalysis();" name="button" id="newButton2">Статистика по районам</button>
+    <button onclick="getstatistics();" name="button" id="newButton3">Статистика по районам</button>
   </div>
   <div class="child max">
     <div id="map"></div>
   </div>
 </fieldset>
-<p>Измененные элементы будут отображаться здесь, но не будут видны на карте пока их не сохранить</p>
+<font color="white">
+<p>Измененные элементы будут отображаться здесь, но не будут видны на карте пока их не применить</p>
 <ul id="listOfChanges"></ul>
 <button onclick="applychanges();" name="button">Применить изменения</button>
+</font>
 <button onclick="clearLayer(this);">Я все сломал, очистить карту</button>
 
 {% endblock %}
