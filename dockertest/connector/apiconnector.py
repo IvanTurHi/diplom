@@ -54,6 +54,17 @@ async def districts():
     t = db_start()
     return t.getDistricts()
 
+@app.post("/districts")
+async def districts(request: Request):
+    t = db_start()
+    jsonbody = await request.json()
+    return t.getDistrictsWithCounyNameByID(jsonbody['arrayID'])
+'''
+{
+ 	"arrayID": [1,2] 
+}
+'''
+
 @app.get("/districtsname")
 async def districtsname():
     t = db_start()
@@ -95,12 +106,14 @@ async def schoolsin(request: Request):
 async def schoolsin(request: Request):
     jsonbody = await request.json()
     database = dictDatabases[jsonbody['database']]
+    if jsonbody['arrayID'] == []:
+        return []
     t = db_start()
     return JSONResponse(content=t.getByID(jsonbody['arrayID'], database), status_code=200)
 '''
 {
-  	"database": 1,
-  	"arrayID" : [1,2,3]
+    "database": 1,
+    "arrayID" : [1,2,3]
 }
 '''
 
@@ -134,12 +147,18 @@ async def schoolsfull(request: Request):
   	"database": 1
 }
 '''
+@app.post("/districtsID")
+async def schoolsfull(request: Request):
+    jsonbody = await request.json()
+    t = db_start()
+    table = t.getDistrictsByID(jsonbody['IDsource'])
+    return JSONResponse(content=table, status_code=200)
 
 @app.post("/districtsfullinfo")
 async def schoolsfull(request: Request):
     jsonbody = await request.json()
     t = db_start()
-    table = t.getCountiesByID(jsonbody['IDsource'])
+    table = t.getDistrictsByName(jsonbody['IDsource'])
     listID = makeArrayIDspatial(table)
     t = MongoDB()
     tableMongo = t.getCentroidAndDAtaByID(listID, 'districts')
@@ -181,17 +200,25 @@ async def incoordinates(request: Request):
         [Elon, Nlat],
         [Wlon, Nlat],
         [Wlon, Slat],
-        [Elon, Slat]]] }
+        [Elon, Slat]]]}
     t = MongoDB()
     return JSONResponse(content=t.getwithincoordinates(poly, database), status_code=200)
 
+
+@app.post("/pointInDistrict")
+async def incoordinates(request: Request):
+    jsonbody = await request.json()
+    database = "districts"
+    lat = jsonbody['lat']
+    lon = jsonbody['lon']
+    poly = { "type" : "Point", "coordinates" : 
+        [lon, lat] }
+    t = MongoDB()
+    return JSONResponse(content=t.getwithincoordinates(poly, database), status_code=200)
 '''
 {
-    "Wlon": 37.93,
-    "Elon": 37.95,
-    "Nlat": 55.69,
-    "Slat": 55.74,
-    "database": 1
+    "lon": 37.93,
+    "lat": 55.69
 }
 '''
 
@@ -251,3 +278,81 @@ async def nearcoordinates(request: Request):
         res = dict(p, **m)
         result.append(res)
     return JSONResponse(content=result, status_code=200)
+
+@app.post("/changesforschool")
+async def changesforschool(request: Request):
+    databaseSchool = dictDatabases[0]
+    databaseLiving = dictDatabases[2]
+
+    jsonbody = await request.json()
+    arraySchoolID = jsonbody.keys()
+    t1 = db_start()
+    table = t1.getByID(arraySchoolID, databaseSchool)
+    #dictData = {str(i['idspatial']):(-1, 11)[jsonbody[str(i['buildid'])]] for i in table}
+    dictData = {}
+    for i in table:
+        value = (-1, 1)[jsonbody[str(i['buildid'])]]
+        data = str(i['idspatial'])
+        dictData[data] = value
+    t = MongoDB()
+    array1 = [int(a) for a, _ in dictData.items()]
+    tableMongo = t.getCentroidAndDAtaByID(array1, databaseSchool)
+    
+    listOfContent = []
+    for i in tableMongo:
+        poly = { "type" : "Point", "coordinates" : [i['longitude'], i['latitude']] }
+        #узнать район - зависит же от района
+        datadistrict = t.getwithincoordinates(poly, "districts")
+        districtID = datadistrict[0]["idSpatial"]
+        if districtID in centralDistricts:
+            distance = 750
+        else:
+            distance = 500
+        spatialInfo=t.getnearcoordinates(poly, distance, databaseLiving)
+        for j in spatialInfo:
+            flag = True
+            for z in range(len(listOfContent)):
+                if j['idSpatial'] == listOfContent[z]['idSpatial']:
+                    listOfContent[z]['freeschools'] += dictData[str(i['idSpatial'])]
+                    flag = False
+                    break
+            if flag:
+                listOfContent.append({'idSpatial':j['idSpatial'], "freeschools": dictData[str(i['idSpatial'])]})
+    arrayIDbuildings = [i['idSpatial'] for i in listOfContent]
+    fullDataAboutBuildings = t1.getBySpatialID(arrayIDbuildings, databaseLiving)
+    reslist = []
+    for item in listOfContent:
+        if item['freeschools'] != 0:
+            for j in fullDataAboutBuildings:
+                if item['idSpatial'] == j['idspatial']:
+                    resdict = {
+                        'service':
+                        {'objectid': j['buildid'],
+                         'type': 'Жилое'},
+                        'data':{
+                        'Количество свободных школ': item['freeschools']},
+                        'olddata':{
+                        'Количество свободных школ': j['freeschools']},
+                    }
+                    reslist.append(resdict)
+                    break
+    return reslist
+
+centralDistricts = [
+    105,
+    13,
+    103,
+    106,
+    108,
+    102,
+    9,
+    107,
+    51,
+    104
+]
+@app.post("/districtsinfobyname")
+async def schoolsfull(request: Request):
+    jsonbody = await request.json()
+    t = db_start()
+    table = t.getDistrictsByName(jsonbody['IDsource'])
+    return table 

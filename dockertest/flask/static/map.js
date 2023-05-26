@@ -17,6 +17,7 @@ function readData() {
         return 1;
     };
     builddatabase = builddatabaseCheck.value;
+
     return {
         districtsArray: districtsArray,
         builddatabase: builddatabase,
@@ -57,6 +58,12 @@ function gethexagones() {
         return
     };
     const { districtsArray, builddatabase } = data;
+    const hexsize = document.querySelector('input[name="hexsize"]:checked');
+    if (!hexsize) {
+        alert('Размер гексагона не задан');
+        return 1;
+    };
+    const hexsizevalue = hexsize.value;
     clearlayer();
     if (builddatabase == 2) {
         document.getElementById('loadingImg').style.display = '';
@@ -95,7 +102,7 @@ function gethexagones() {
                 xmlHttp1.open("POST", 'http://127.0.0.1:80/hexForDistricts', false); // false for synchronous request
                 body = JSON.stringify({
                     "IDsource": districtsArray,
-                    "hexagone_size": 8
+                    "hexagone_size": parseInt(hexsizevalue)
                 });
                 xmlHttp1.send(body);
                 textJSON1 = xmlHttp1.responseText;
@@ -123,7 +130,7 @@ function getstatistics() {
     });
     xmlHttp.send(body);
     textJSON_districts = xmlHttp.responseText;
-    drawdisricts(textJSON_districts, builddatabase);
+    //было тут
 
 
     if (builddatabase == 2) {
@@ -143,7 +150,7 @@ function getstatistics() {
                 textJSON = xmlHttp.responseText;
                 let res = JSON.parse(textJSON);
                 drawLiving(res, builddatabase);
-
+                drawdisricts(textJSON_districts, builddatabase);
             }
         }
     };
@@ -339,22 +346,26 @@ function drawLiving(res, builddatabase) {
     main_feature = features[1];
     let newlon = 0.0
     let newlat = 0.0
-
+    dictType = {0:"Школа",1:"Мед",2:"Жилое",3:"Детский сад"}
 
     var GeoJson = L.geoJson(res, {
         onEachFeature: function (feature, layer) {
             layer.myTag = "myGeoJSON";
+            layer.type = dictType[builddatabase]
             stringTable = '';
             main_value = '';
             if (feature.properties) {
-                stringTable += '<tr style="display:none;"><td> type  </td><td>' + builddatabase + '</td></tr>'
+                stringTable += '<tr style="display:none;"><td>objectid</td><td>' + feature.properties['Идентификатор'] + '</td></tr>';
+                stringTable += '<tr style="display:none;"><td>type</td><td>' + builddatabase + '</td></tr>'
                 for (key in feature.properties) {
                     switch (key) {
                         case (main_feature): main_value = feature.properties[key]; break;
                         case ('Широта'): newlat = feature.properties[key]; break;
                         case ('Долгота'): newlon = feature.properties[key]; break;
                         case ('iddistrict'): break;
-                        case ('Идентификатор'): break;
+                        case ('Идентификатор'):
+                            layer.objectid = feature.properties[key];
+                            break;
                         case ('ГеоИдентификатор'): break;
                         default: stringTable += '<tr><td>' + key + '</td><td>' + feature.properties[key] + '</td></tr>'
                     }
@@ -398,7 +409,7 @@ function drawLiving(res, builddatabase) {
     map_init.addLayer(GeoJson);
     controlsLayer._update();
     overLayers.push(GeoJson);
-
+    implementChangesOnMap();
 };
 function getColorForLiving(buildyear) {
     return buildyear >= 2000 ? 'green' :
@@ -413,28 +424,33 @@ function getColorForSchool(currentworkload, calculatedworkload) {
         value >= 1 ? 'yellow' :
             'green';
 };
-function getnewradius(lon, lat, radius) {
+function getnewradius(lon, lat) {
+    var field = document.getElementsByClassName('leaflet-popup-content')[0];
+    table = field.childNodes[1];
+    type = parseInt(table.rows[1].cells[1].innerText)
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.open("POST", 'http://127.0.0.1:80/nearcoordinates', false); // false for synchronous request
     let body = JSON.stringify({
         "lat": lat,
-        "lon": lon
-    });
-    var circle = L.circle([lat, lon], {
-        color: "red",
-        fillColor: "#f03",
-        fillOpacity: 0.5,
-        radius: radius
+        "lon": lon,
+        "database": type
     });
     marker = L.marker([lat, lon])
     marker.myTag = "myGeoJSON";
     marker.addTo(map_init);
-    circle.myTag = "myGeoJSON";
-    circle.addTo(map_init);
+
     xmlHttp.send(body);
     resp = xmlHttp.responseText;
     let res = JSON.parse(resp);
-    drawLiving(res, 2);
+    drawLiving(res.data, 2);
+    var circle = L.circle([lat, lon], {
+        color: "red",
+        fillColor: "#f03",
+        fillOpacity: 0.5,
+        radius: res.radius
+    });
+    circle.myTag = "myGeoJSON";
+    circle.addTo(map_init);
 };
 let toggle = button => {
     var resp = httpGet();
@@ -450,66 +466,97 @@ let availRfromCard = button => {
     var fValuelat = parseFloat(fields[0]);
     var fValuelon = parseFloat(fields[1]);
     clearlayer();
-    getnewradius(fValuelon, fValuelat, 500);
+    getnewradius(fValuelon, fValuelat);
 };
 let EditInfo = button => {
     var field = document.getElementsByClassName('leaflet-popup-content')[0];
     table = field.childNodes[1];
-    type = table.rows[0].cells[1].innerText
+    type = table.rows[1].cells[1].innerText
     switch (parseInt(type)) {
-        case (0): field.innerHTML = editPopupForSchool(table.rows[1].cells[1].innerText, table.rows[3].cells[1].innerText, table.rows[4].cells[1].innerText); break;
-        case (2): field.innerHTML = editPopupForLiving(field.childNodes[0].innerText, table.rows[5].cells[1].innerText); break;
-        case (3): field.innerHTML = editPopupForKindergarten(table.rows[1].cells[1].innerText, table.rows[2].cells[1].innerText); break;
+        case (0): field.innerHTML = editPopupForSchool(table.rows[0].cells[1].innerText, table.rows[2].cells[1].innerText, table.rows[4].cells[1].innerText, table.rows[5].cells[1].innerText); break;
+        case (2): field.innerHTML = editPopupForLiving(table.rows[0].cells[1].innerText, field.childNodes[0].innerText, table.rows[6].cells[1].innerText); break;
+        case (3): field.innerHTML = editPopupForKindergarten(table.rows[0].cells[1].innerText, table.rows[2].cells[1].innerText, table.rows[3].cells[1].innerText); break;
         default: alert(type);
     }
 };
-function editPopupForSchool(adress, number, load) {
-    html = '<p hidden>Тип здания<input type="text" value="Школа"></p>'
+
+function editPopupForSchool(objectid, adress, number, load) {
+    html = '<p hidden>Идентификатор<input type="text" value="' + objectid + '"></p>'
+    html += '<p hidden>Тип здания<input type="text" value="Школа"></p>'
     html += '<p hidden>Адрес<input type="text" value="' + adress + '"></p>'
+    html += '<p hidden class="oldInfo">Количество учеников<input type="text" value=' + number + '></p>'
     html += '<p>Количество учеников<input type="text" value=' + number + '></p>'
+    html += '<p hidden class="oldInfo">Номинальная вместимость<input type="text" value=' + load + '></p>'
     html += '<p>Номинальная вместимость<input type="text" value=' + load + '></p>'
     html += '<button onclick="savechanges(this);"name="button" id="newButton2" >Сохранить изменения</button>'
     return html
 };
-function editPopupForLiving(adress, numberResidents) {
-    html = '<p hidden>Тип здания<input type="text" value="Жилое"></p>'
+function editPopupForLiving(objectid, adress, numberResidents) {
+    html = '<p hidden>Идентификатор<input type="text" value="' + objectid + '"></p>'
+    html += '<p hidden>Тип здания<input type="text" value="Жилое"></p>'
     html += '<p hidden>Адрес<input type="text" value="' + adress + '"></p>'
-    html += '<p>Количество жителей<input type="text" value=' + numberResidents + '></p>'
+    html += '<p hidden class="oldInfo">Количество взрослых<input type="text" value=' + numberResidents + '></p>'
+    html += '<p>Количество взрослых<input type="text" value=' + numberResidents + '></p>'
     html += '<button onclick="savechanges(this);"name="button" id="newButton2" >Сохранить изменения</button>'
     return html
 };
-function editPopupForKindergarten(adress, load) {
-    html = '<p hidden>Тип здания<input type="text" value="Детский сад"></p>'
+function editPopupForKindergarten(objectid, adress, load) {
+    html = '<p hidden>Идентификатор<input type="text" value="' + objectid + '"></p>'
+    html += '<p hidden>Тип здания<input type="text" value="Детский сад"></p>'
     html += '<p hidden>Адрес<input type="text" value="' + adress + '"></p>'
+    html += '<p hidden class="oldInfo">Номинальная вместимость<input type="text" value=' + load + '></p>'
     html += '<p>Номинальная вместимость<input type="text" value=' + load + '></p>'
     html += '<button onclick="savechanges(this);"name="button" id="newButton2" >Сохранить изменения</button>'
     return html
 };
 let savechanges = button => {
+
     var ul = document.getElementById("listOfChanges");
     var field = document.getElementsByClassName('leaflet-popup-content')[0];
 
+    for (var i = 0; i < field.childNodes.length - 1; i++) {
+        var tableChild = field.childNodes[i];
+        if (tableChild.childNodes[1].value == 0) {
+            alert("Хорошая попытка проверки крайнего случая, но... нет");
+            return;
+        }
+    }
     var ulInner = document.createElement("ul");
+    flagOFchanged = false;
     for (var i = 0; i < field.childNodes.length - 1; i++) {
         var tableChild = field.childNodes[i];
         var li = document.createElement("li");
-        li.appendChild(document.createTextNode(tableChild.innerText + ':' + tableChild.childNodes[1].value));
+        if (tableChild.className == "oldInfo") {
+            li.appendChild(document.createTextNode(`${tableChild.innerText}:${tableChild.childNodes[1].value}->${field.childNodes[i + 1].childNodes[1].value}`));
+            i++;
+        } else {
+            li.appendChild(document.createTextNode(`${tableChild.innerText}:${tableChild.childNodes[1].value}`));
+        };
         ulInner.appendChild(li);
-    }
-
-    for (var i = 0; i < ul.childNodes.length; i++) {
-        let adress = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[1].innerText;
-        let clearAdress = adress.substring(6, adress.length);
-        if (clearAdress == field.childNodes[1].childNodes[1].value) {
-            alert("Было");
-            for (var j = 0; j < ul.childNodes[i].childNodes[1].childNodes[0].children.length; j++) {
-                ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText = ulInner.childNodes[j].innerText;
-            }
-            ul.childNodes[i] = ulInner;
-            return
+        if (tableChild.innerText == "Идентификатор") {
+            li.style.display = "none"
         }
     }
 
+    for (var i = 0; i < ul.childNodes.length; i++) {
+        let adress = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[2].innerText;
+        let clearAdress = adress.substring(6, adress.length);
+        if (clearAdress == field.childNodes[2].childNodes[1].value) {
+            alert("Было");
+            for (var j = 0; j < ul.childNodes[i].childNodes[1].childNodes[0].children.length; j++) {
+                let oldAndNewValue = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText.split(':')[1];
+                if (~oldAndNewValue.indexOf("->")) {
+                    oldValue = oldAndNewValue.split('->')[0];
+                    newValue = ulInner.childNodes[j].innerText.split('->')[1]
+                    olddata = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText.split('->')[0] 
+                    ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText = olddata + '->' + newValue;
+                }
+            }
+            //ul.childNodes[i] = ulInner;
+            ul.childNodes[0].childNodes[0].textContent = "Измененный элемент";
+            return
+        }
+    }
 
     var li = document.createElement("li");
     li.appendChild(document.createTextNode("Измененный элемент"));
@@ -517,7 +564,6 @@ let savechanges = button => {
     var divList = document.createElement("div");
     divList.setAttribute('class', 'insideeditlist');
 
-    divList.setAttribute('style', 'min-width: 20%;max-width: 30%;')
     divList.appendChild(ulInner);
 
     var buttonElement = document.createElement("input");
@@ -535,6 +581,161 @@ let savechanges = button => {
     ul.appendChild(li);
     //field.innerHTML = '<h1>' + type + '</hi>'
 };
+
 let delElem = button => {
     button.parentElement.parentElement.remove()
 };
+
+function applychanges() {
+    var ul = document.getElementById("listOfChanges");
+    for (var i = 0; i < ul.childNodes.length; i++) {
+        let dictElem = { data: {}, service: {} , olddata: {}}
+        let listOfCharacteristics = ul.childNodes[i].childNodes[1].childNodes[0]
+        ul.childNodes[i].childNodes[0].textContent = "Изменения применены"
+        let oldCurrentWorkload;
+        let oldNormalWorkload;
+        for (var j = 2; j < listOfCharacteristics.childNodes.length; j++) {
+            let characteristics = listOfCharacteristics.childNodes[j].innerText.split(':')[0];
+            let oldAndNewValue = listOfCharacteristics.childNodes[j].innerText.split(':')[1];
+            if (~oldAndNewValue.indexOf("->")) {
+                oldValue = oldAndNewValue.split('->')[0];
+                newValue = oldAndNewValue.split('->')[1];
+                if (newValue != oldValue) {
+                    dictElem.data[characteristics] = newValue - oldValue;
+                    dictElem.olddata[characteristics] = oldValue;
+                    //dictElem.data[characteristics] = newValue;
+                };
+                switch (characteristics) {
+                    case 'Количество учеников':
+                        oldCurrentWorkload = oldValue;
+                        break;
+                    case 'Номинальная вместимость':
+                        oldNormalWorkload = oldValue;
+                        break;
+                    default:
+                        break;
+                };
+
+            };
+        };
+        if (Object.keys(dictElem.data).length != 0) {
+            dictElem.service.objectid = listOfCharacteristics.childNodes[0].innerText.split(':')[1];
+            dictElem.service.type = listOfCharacteristics.childNodes[1].innerText.split(':')[1];
+            dictElem.service.adress = listOfCharacteristics.childNodes[2].innerText.split(':')[1];
+
+            //дополнительная проверка для школ, для изменения количества доступных школ
+            if (dictElem.service.type == 'Школа') {
+                oldPercentage = oldCurrentWorkload / oldNormalWorkload;
+                newPercentage = (parseInt(oldCurrentWorkload) + (dictElem.data['Количество учеников'] || 0)) / (parseInt(oldNormalWorkload) + (dictElem.data['Номинальная вместимость'] || 0));
+                //newPercentage = ((dictElem.data['Количество учеников'] || parseInt(oldCurrentWorkload))) / (dictElem.data['Номинальная вместимость'] || parseInt(oldNormalWorkload));
+                if (oldPercentage > 1 && newPercentage < 1) {
+                    dictElem.service.spec = true;
+                };
+                if (oldPercentage < 1 && newPercentage > 1) {
+                    dictElem.service.spec = false;
+                };
+                dictElem.data['Загруженность (в процентах от номинальной)'] = (newPercentage - oldPercentage) * 100;
+                dictElem.olddata['Загруженность (в процентах от номинальной)'] = oldPercentage * 100;
+                //dictElem.data['Загруженность (в процентах от номинальной)'] = (newPercentage)*100;
+            };
+            insertIntoChanges(dictElem);
+        };
+    };
+    getchangesForSchool();
+    implementChangesOnMap();
+};
+function getchangesForSchool(dictElem) {
+    let changedSchool = {}
+    changesArray.forEach(function (elem) {
+        if (elem.service.type == 'Школа') {
+            if (elem.service.hasOwnProperty('spec')) {
+                changedSchool[elem.service.objectid] = elem.service.spec
+            };
+        };
+    });
+    if (Object.keys(changesArray).length == 0) {return};
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open("POST", 'http://127.0.0.1:80/checkforschool', false); // false for synchronous request
+    let body = JSON.stringify(changedSchool);
+    xmlHttp.send(body);
+    resp = xmlHttp.responseText;
+    let res = JSON.parse(resp);
+    res.forEach(function (elem) {
+        insertIntoChanges(elem);
+    })
+
+};
+function insertIntoChanges(dictElem) {
+    let flag = false;
+    changesArray.forEach(function (elem) {
+        if (elem.service.objectid == dictElem.service.objectid && elem.service.type == dictElem.service.type) {
+            flag = true;
+            for (let k in dictElem.data) {
+                elem.data[k] = dictElem.data[k]
+                elem.olddata[k] = dictElem.olddata[k]
+            }
+        };
+    });
+    if (!flag) {
+        changesArray.push(dictElem);
+    }
+}
+
+function implementChangesOnMap() {
+    map_init.eachLayer(function (layer) {
+        changesArray.forEach(function (elem) {
+            if (layer.objectid == elem.service.objectid && layer.type == elem.service.type) {
+                let popup = layer.getPopup()._content;
+                let percentageForSchool;
+                for (let k in elem.data) {
+                    //console.log(k + ' is ' + elem.data[k])
+                    let startPosition = popup.indexOf(k) + k.length + 9
+                    let endPosition = popup.indexOf("td", startPosition) - 2
+                    let newValue = parseInt(elem.olddata[k]) + parseInt(elem.data[k]);
+                    //let newValue = parseInt(elem.data[k])
+                    popup = popup.substring(0, startPosition) + newValue + popup.substring(endPosition);
+                    if (k == 'Загруженность (в процентах от номинальной)') {
+                        percentageForSchool = parseInt(newValue);
+                    }
+                }
+                layer.bindPopup(popup);
+                if (elem.service.type == 'Школа') {
+                    if (percentageForSchool != null) {
+                        color = getColorForSchool(percentageForSchool, 100)
+                        layer.setStyle({
+                            fillColor: color,
+                            fillOpacity: 0.5,
+                            weight: 1,
+                            color: 'black'
+                        })
+                    }
+                }
+            }
+        });
+    });
+};
+function getanalysis(){
+    let data = readData();
+    if (data == 1) {
+        return
+    };
+    const {districtsArray, builddatabase } = data;
+    let araraywithData = []
+    changesArray.forEach(function (elem) {
+        dictwithdata = elem.data;
+        dictwithdata.id = parseInt(elem.service.objectid);
+        dictwithdata.type = elem.service.type;
+        araraywithData.push(dictwithdata);
+    });
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open("POST", 'http://127.0.0.1:80/checkchanges', false); // false for synchronous request
+    let body = JSON.stringify({
+        data: araraywithData,
+        districts: districtsArray
+    });
+    xmlHttp.send(body);
+    resp = xmlHttp.responseText;
+    var tab = window.open('about:blank', '_blank');
+    tab.document.write(resp); // where 'html' is a variable containing your HTML
+    tab.document.close();
+}

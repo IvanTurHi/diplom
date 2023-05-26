@@ -25,7 +25,6 @@ class db_start(object):
         else:
             raise MyError("no data in DB")
         
-
     def getCounties(self):
         self.__cur.execute("""SELECT namecounty, area, schoolnumber, schoolload,
             kindergartennumber, medicinenumber, livingnumber, residentsnumber, avgyear, withoutschools,
@@ -39,6 +38,18 @@ class db_start(object):
             d.kindergartenProvisionIndex, d.schoolProvision, d.kindergartenProvision from counties c, districts d where c.idCount = d.idCount
             order by c.namecounty, d.namedistrict""")
         return self._returnDict()
+    
+    def getDistrictsWithCounyNameByID(self, arrayID):
+        SQLquery = """SELECT d.namedistrict, c.namecounty, d.area, d.schoolnumber, d.schoolload,
+            d.kindergartennumber, d.medicinenumber, d.livingnumber, d.residentsnumber, d.avgyear, d.withoutschools,
+            d.withoutkindergartens, d.withoutmedicine, d.schoolProvisionIndex, 
+            d.kindergartenProvisionIndex, d.schoolProvision, d.kindergartenProvision, d.targetProvisionIndicator, 
+            d.actualProvisionIndicator, d.density from counties c, districts d
+            where c.idCount = d.idCount
+            and d.idSpatial in %s
+            order by c.namecounty, d.namedistrict"""
+        self.__cur.execute(SQLquery, (tuple(arrayID), ))
+        return self._returnDict()
         
     def getInCounty(self, county, database, selecttype = ''):
         SQLquery = """SELECT t.* from """ + database + """ t, districts d
@@ -48,7 +59,7 @@ class db_start(object):
         
     def getInDistrict(self, district, database, selecttype = ''):
         if database == 'eduBuildings' and selecttype == schooltype():
-            SQLquery = """SELECT t.*, round(currentworkload::float/calculatedworkload) stnumber from """ + database + """ t, districts d
+            SQLquery = """SELECT t.*, round(currentworkload::float/calculatedworkload * 100) stnumber from """ + database + """ t, districts d
                 where d.iddistrict = t.iddistrict and d.nameDistrict in %s """ + selecttype + """ ORDER BY idSpatial"""
         else:
             SQLquery = """SELECT t.* from """ + database + """ t, districts d
@@ -58,14 +69,30 @@ class db_start(object):
         
     def getBySpatialID(self, arrayID, database):
         SQLquery = """SELECT t.* from """ + database + """ t
+            where t.idSpatial in %s ORDER BY idSpatial"""
+        self.__cur.execute(SQLquery, (tuple(arrayID), ))
+        return self._returnDict()
+    
+    def getByID(self, arrayID, database):
+        SQLquery = """SELECT t.* from """ + database + """ t
             where t.buildid in %s ORDER BY idSpatial"""
         self.__cur.execute(SQLquery, (tuple(arrayID), ))
         return self._returnDict()
     
-    def getCountiesByID(self, nameID):
+    def getDistrictsByName(self, nameID):
         SQLquery = """SELECT namedistrict, area, idspatial,schoolnumber, schoolload,
             kindergartennumber, medicinenumber, livingnumber, residentsnumber, avgyear, withoutschools,
             withoutkindergartens, withoutmedicine, schoolProvisionIndex, 
-            kindergartenProvisionIndex, schoolProvision, kindergartenProvision from districts where nameDistrict in %s ORDER BY idSpatial"""
+            kindergartenProvisionIndex, schoolProvision, kindergartenProvision, targetProvisionIndicator, 
+            actualProvisionIndicator, density from districts where nameDistrict in %s ORDER BY idSpatial"""
+        self.__cur.execute(SQLquery, (tuple(nameID), ))
+        return self._returnDict()
+    
+    def getDistrictsByID(self, nameID):
+        SQLquery = """SELECT namedistrict, area, idspatial,schoolnumber, schoolload,
+            kindergartennumber, medicinenumber, livingnumber, residentsnumber, avgyear, withoutschools,
+            withoutkindergartens, withoutmedicine, schoolProvisionIndex, 
+            kindergartenProvisionIndex, schoolProvision, kindergartenProvision, targetProvisionIndicator, 
+            actualProvisionIndicator, density from districts where idDistrict in %s ORDER BY idSpatial"""
         self.__cur.execute(SQLquery, (tuple(nameID), ))
         return self._returnDict()

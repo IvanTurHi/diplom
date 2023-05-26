@@ -244,16 +244,29 @@
         </div>
       </fieldset>
     </form>
+    <fieldset>
+      <legend>Выберите размер гексагона (длина ребра)</legend>
+      <div>
+        <input type="radio" id="contactChoice1" name="hexsize" value="9" />
+        <label for="contactChoice1">201 м</label>
+        <input type="radio" id="contactChoice1" name="hexsize" value="8" />
+        <label for="contactChoice1">530 м</label>
+        <input type="radio" id="contactChoice2" name="hexsize" value="7" />
+        <label for="contactChoice2">1400 м</label>
+      </div>
+    </fieldset>
     <button onclick="getstatistics();" name="button" id="newButton">Анализ по районам</button>
     <button onclick="gethexagones();" name="button" id="newButton1">Гексагональный анализ</button>
     <button onclick="getbuildings();" name="button" id="newButton2">Вывести только объекты</button>
+    <button onclick="getanalysis();" name="button" id="newButton2">Статистика по районам</button>
   </div>
   <div class="child max">
     <div id="map"></div>
   </div>
 </fieldset>
-<p>Измененные элементы будут отображаться здесь, но не будут видны на карте</p>
+<p>Измененные элементы будут отображаться здесь, но не будут видны на карте пока их не сохранить</p>
 <ul id="listOfChanges"></ul>
+<button onclick="applychanges();" name="button">Применить изменения</button>
 <button onclick="clearLayer(this);">Я все сломал, очистить карту</button>
 
 {% endblock %}
@@ -284,5 +297,6 @@
   let legendsOnMap = [];
   controlsLayer.addTo(map_init);
   let overLayers = [];
+  let changesArray = []
 </script>
 {% endblock %}
