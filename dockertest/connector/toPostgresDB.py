@@ -39,11 +39,12 @@ class db_start(object):
             order by c.namecounty, d.namedistrict""")
         return self._returnDict()
     
-    def getDistrictsByID(self, arrayID):
+    def getDistrictsWithCounyNameByID(self, arrayID):
         SQLquery = """SELECT d.namedistrict, c.namecounty, d.area, d.schoolnumber, d.schoolload,
             d.kindergartennumber, d.medicinenumber, d.livingnumber, d.residentsnumber, d.avgyear, d.withoutschools,
             d.withoutkindergartens, d.withoutmedicine, d.schoolProvisionIndex, 
-            d.kindergartenProvisionIndex, d.schoolProvision, d.kindergartenProvision from counties c, districts d
+            d.kindergartenProvisionIndex, d.schoolProvision, d.kindergartenProvision, d.targetProvisionIndicator, 
+            d.actualProvisionIndicator, d.density from counties c, districts d
             where c.idCount = d.idCount
             and d.idSpatial in %s
             order by c.namecounty, d.namedistrict"""
@@ -78,19 +79,20 @@ class db_start(object):
         self.__cur.execute(SQLquery, (tuple(arrayID), ))
         return self._returnDict()
     
-    def getCountiesByID(self, nameID):
+    def getDistrictsByName(self, nameID):
         SQLquery = """SELECT namedistrict, area, idspatial,schoolnumber, schoolload,
             kindergartennumber, medicinenumber, livingnumber, residentsnumber, avgyear, withoutschools,
             withoutkindergartens, withoutmedicine, schoolProvisionIndex, 
-            kindergartenProvisionIndex, schoolProvision, kindergartenProvision from districts where nameDistrict in %s ORDER BY idSpatial"""
+            kindergartenProvisionIndex, schoolProvision, kindergartenProvision, targetProvisionIndicator, 
+            actualProvisionIndicator, density from districts where nameDistrict in %s ORDER BY idSpatial"""
         self.__cur.execute(SQLquery, (tuple(nameID), ))
         return self._returnDict()
-
+    
     def getDistrictsByID(self, nameID):
         SQLquery = """SELECT namedistrict, area, idspatial,schoolnumber, schoolload,
-kindergartennumber, medicinenumber, livingnumber, residentsnumber, avgyear, withoutschools,
-withoutkindergartens, withoutmedicine, schoolProvisionIndex,
-kindergartenProvisionIndex, schoolProvision, kindergartenProvision, targetProvisionIndicator, 
-actualProvisionIndicator, density from districts where idDistrict in %s ORDER BY idSpatial"""
+            kindergartennumber, medicinenumber, livingnumber, residentsnumber, avgyear, withoutschools,
+            withoutkindergartens, withoutmedicine, schoolProvisionIndex, 
+            kindergartenProvisionIndex, schoolProvision, kindergartenProvision, targetProvisionIndicator, 
+            actualProvisionIndicator, density from districts where idDistrict in %s ORDER BY idSpatial"""
         self.__cur.execute(SQLquery, (tuple(nameID), ))
         return self._returnDict()
