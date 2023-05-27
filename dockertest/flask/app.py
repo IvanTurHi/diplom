@@ -369,6 +369,132 @@ def stat(dist_list=[], sort_type=''):
 
     return models
 
+def stat_county(county_list):
+    models = {}
+    if len(county_list) > 0:
+        for i in county_list:
+            territories = i['namecounty']
+            area = i['area']
+            schools_number = i['schoolnumber']
+            schools_workload = i['schoolload']
+            kindergartens_number = i['kindergartennumber']
+            medicine_number = i['medicinenumber']
+            buildings_number = i['livingnumber']
+            residents_number = i['residentsnumber']
+            avg_year = i['avgyear']
+            without_schools = i['withoutschools']
+            without_kindergartens = i['withoutkindergartens']
+            without_medicine = i['withoutmedicine']
+
+            models[territories] = {'Площадь (м2)': round(area, 0),
+                                      'Количество школ': round(schools_number, 0),
+                                      'Средняя загруженность школ(в процентах)': round(schools_workload, 0),
+                                      'Количество детских садов': round(kindergartens_number, 0),
+                                      'Количество мед учреждений': round(medicine_number, 0),
+                                      'Количество жилых домов': round(buildings_number, 0),
+                                      'Количество жителей': round(residents_number, 0),
+                                      'Средний год постройки зданий': round(avg_year, 0),
+                                      'Процент домов,находящихся вне установленной зоны пешей доступности от школ': round(without_schools, 0),
+                                      'Процент домов,находящихся вне установленной зоны пешей доступности от детских садов': round(without_kindergartens, 0),
+                                      'Процент домов,находящихся вне установленной зоны пешей доступности от медицинских учреждений': round(without_medicine, 0)}
+
+    models = json2html.convert(json=models)
+
+    return models
+
+@app.route('/checkchanges_county', methods=['POST'])
+def changes_county():
+    input_json_all = request.get_json(force=True)
+    #input_json_all = {'data': [{'Количество учеников': 3402, 'Загруженность (в процентах от номинальной)': 1206.3829787234042, 'id': 1897, 'type': 'Школа'}, {'Количество взрослых': 1359, 'id': 24732, 'type': 'Жилое'}, {'Номинальная вместимость': 936, 'id': 2865, 'type': 'Детский сад'}],
+    #                  'districts': ['район Богородское', 'район Вешняки', 'район Восточное Измайлово', 'район Гольяново', 'район Ивановское', 'район Измайлово', 'район Косино-Ухтомский', 'район Метрогородок', 'район Новогиреево', 'район Новокосино', 'район Перово', 'район Преображенское', 'район Северное Измайлово', 'район Соколиная Гора', 'район Сокольники']}
+    input_json = input_json_all['data']
+    selected_districts = input_json_all['districts']
+
+    schools_list_id = []
+    schools_json = []
+    buildings_list_id = []
+    buildings_json = []
+    kinder_list_id = []
+    kinder_json = []
+    for i in input_json:
+        if i['type'] == 'Школа':
+            schools_list_id.append(i['id'])
+            schools_json.append(i)
+        if i['type'] == 'Жилое':
+            buildings_list_id.append(i['id'])
+            buildings_json.append(i)
+        if i['type'] == 'Детский сад':
+            kinder_list_id.append(i['id'])
+            kinder_json.append(i)
+    print(schools_list_id, buildings_list_id, kinder_list_id)
+    schools_post_json = {
+    "database": 0,
+    "arrayID" : schools_list_id
+}
+    county_dict = {}
+    #Обрабатываем все школы
+    schools_object = requests.post(docker_net + "buildingID", json=schools_post_json).json()
+    for i in range(len(schools_object)):
+        object_dist_id = schools_object[i]['iddistrict']
+        county_post_json = {'districtID': object_dist_id}
+        county = requests.post(docker_net + "countybydistrict", json=county_post_json).json()[0]
+        county_name = county['namecounty']
+        if county_name in county_dict:
+            object_dist = county_dict[county_name]['dist']
+        else:
+            object_dist = county
+            county_dict[county_name] = {}
+
+        object_dist['schoolload'] = change_schools_workload(object_dist['schoolnumber'], object_dist['schoolload'],
+                                schools_object[i]['currentworkload'], schools_object[i]['calculatedworkload'],
+                                schools_json[i].get("Количество учеников", 0), schools_json[i].get("Номинальная вместимость", 0))
+
+        county_dict[county_name]['dist'] = object_dist
+
+    #Обрабатываем все жилые здания
+    building_post_json = {
+            "database": 2,
+            "arrayID": buildings_list_id
+        }
+    building_object = requests.post(docker_net + "buildingID", json=building_post_json).json()
+    for i in range(len(building_object)):
+        object_dist_id = building_object[i]['iddistrict']
+        county_post_json = {'districtID': object_dist_id}
+        county = requests.post(docker_net + "countybydistrict", json=county_post_json).json()[0]
+        county_name = county['namecounty']
+        if county_name in county_dict:
+            object_dist = county_dict[county_name]['dist']
+        else:
+            object_dist = county
+            county_dict[county_name] = {}
+
+        object_dist['residentsnumber'] += buildings_json[i].get("Количество взрослых", 0)
+        county_dict[county_name]['dist'] = object_dist
+
+    county_list = []
+    for i in county_dict:
+        county_list.append(county_dict[i]['dist'])
+
+
+    full_selected_county = []
+    for i in selected_districts:
+        county_post_json = {'districtName': i}
+        county = requests.post(docker_net + "countybydistrictname", json=county_post_json).json()[0]
+        if county not in full_selected_county:
+            full_selected_county.append(county)
+
+
+    final_county_list = full_selected_county.copy()
+    for i in county_list:
+        name = i['namecounty']
+        for j in range(len(final_county_list)):
+            if name == final_county_list[j]['namecounty']:
+                final_county_list[j] = i
+
+    models = stat_county(final_county_list)
+
+    return render_template('stat.html', json_obj=models)
+
 @app.route('/checkchanges', methods=['POST'])
 def changes():
     input_json_all = request.get_json(force=True)
@@ -382,11 +508,6 @@ def changes():
     kinder_list_id = []
     kinder_json = []
     for i in input_json:
-    #r = requests.post("http://connector:8000/districtsfullinfo", json=input_json)
-    #datadistricts = json.loads(r.text)
-    #geojson = makegeojson(data=datadistricts)
-    #return print_hexagones(geojson, hexagone_size=input_json['hexagone_size'])
-    #return [counter]
         if i['type'] == 'Школа':
             schools_list_id.append(i['id'])
             schools_json.append(i)
@@ -408,8 +529,8 @@ def changes():
         object_dist_id = schools_object[i]['iddistrict']
         if object_dist_id in districts_dict:
             object_dist = districts_dict[object_dist_id]['dist']
-            school_total_capacity_delta = districts_dict[object_dist_id]['school_delta']
-            school_total_students_delta = districts_dict[object_dist_id]['students_delta']
+            school_total_capacity_delta = districts_dict[object_dist_id].get(['school_delta'], 0)
+            school_total_students_delta = districts_dict[object_dist_id].get(['students_delta'],0)
         else:
             post_json_dist = {'IDsource': [object_dist_id]}
             object_dist = requests.post(docker_net + "districtsID", json=post_json_dist).json()[0]
@@ -497,32 +618,6 @@ def changes():
     models = stat(final_dist_list)
 
     return render_template('stat.html', json_obj=models)
-
-'''
-[
-{
-    "adress":"Российская Федерация, город Москва, внутригородская территория муниципальный округ Зябликово, улица Мусы Джалиля, дом 29, корпус 2",
-    "spec": true,
-    "type": "Школа",
-    "Номинальная вместимость": 7696
- },
- {
-    "adress": "Российская Федерация, город Москва, внутригородская территория муниципальный округ Зябликово, улица Мусы Джалиля, дом 6, корпус 3",
-    "spec": false,
-    "type":"Школа",
-    "Количество учеников":3934},
- {
-    "adress": "Российская Федерация, город Москва, внутригородская территория муниципальный округ Орехово-Борисово Северное, Борисовский проезд, дом 13",
-    "type":"Школа",
-    "Номинальная вместимость":-1
- }
-  {
-    "adress": "Российская Федерация, город Москва, внутригородская территория муниципальный округ Орехово-Борисово Северное, Борисовский проезд, дом 13",
-    "type":"Жилое",
-    "Свободных школ в радиусе доступности":-1
- }
- ]
-'''
 
 if __name__ == '__main__':
     app.run(debug=True,host='0.0.0.0')
