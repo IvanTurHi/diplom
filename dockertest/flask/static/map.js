@@ -155,8 +155,6 @@ function getanalysis() {
     };
     xmlHttp.send(body);
 
-
-
 };
 function drawHexagones(res, builddatabase, pointsArrayWithValue) {
 
@@ -484,11 +482,11 @@ function editPopupForSchool(objectid, adress, number, load, rating) {
     html += '<p hidden>Тип здания<input type="text" value="Школа"></p>'
     html += '<p hidden>Адрес<input type="text" value="' + adress + '"></p>'
     html += '<p hidden class="oldInfo">Количество учеников<input type="text" value=' + number + '></p>'
-    html += '<p>Количество учеников<input type="text" value=' + number + '></p>'
+    html += '<p>Количество учеников<input type="number" min="0" step="1" value=' + number + '></p>'
     html += '<p hidden class="oldInfo">Номинальная вместимость<input type="text" value=' + load + '></p>'
-    html += '<p>Номинальная вместимость<input type="text" value=' + load + '></p>'
+    html += '<p>Номинальная вместимость<input type="number" min="0" step="1" value=' + load + '></p>'
     html += '<p hidden class="oldInfo">Рейтинг<input type="text" value=' + rating + '></p>'
-    html += '<p>Рейтинг<input type="text" value=' + rating + '></p>'
+    html += '<p>Рейтинг<input type="number" value=' + rating + '></p>'
     html += '<button onclick="savechanges(this);"name="button" id="newButton2" >Сохранить изменения</button>'
     return html
 };
@@ -497,7 +495,7 @@ function editPopupForLiving(objectid, adress, numberResidents) {
     html += '<p hidden>Тип здания<input type="text" value="Жилое"></p>'
     html += '<p hidden>Адрес<input type="text" value="' + adress + '"></p>'
     html += '<p hidden class="oldInfo">Количество взрослых<input type="text" value=' + numberResidents + '></p>'
-    html += '<p>Количество взрослых<input type="text" value=' + numberResidents + '></p>'
+    html += '<p>Количество взрослых<input type="number" min="0" step="1" value=' + numberResidents + '></p>'
     html += '<button onclick="savechanges(this);"name="button" id="newButton2" >Сохранить изменения</button>'
     return html
 };
@@ -506,7 +504,7 @@ function editPopupForKindergarten(objectid, adress, load) {
     html += '<p hidden>Тип здания<input type="text" value="Детский сад"></p>'
     html += '<p hidden>Адрес<input type="text" value="' + adress + '"></p>'
     html += '<p hidden class="oldInfo">Номинальная вместимость<input type="text" value=' + load + '></p>'
-    html += '<p>Номинальная вместимость<input type="text" value=' + load + '></p>'
+    html += '<p>Номинальная вместимость<input type="number" min="0" step="1" value=' + load + '></p>'
     html += '<button onclick="savechanges(this);"name="button" id="newButton2" >Сохранить изменения</button>'
     return html
 };
@@ -517,10 +515,7 @@ let savechanges = button => {
 
     for (var i = 0; i < field.childNodes.length - 1; i++) {
         var tableChild = field.childNodes[i];
-        if (tableChild.childNodes[1].value == 0) {
-            alert("Хорошая попытка проверки крайнего случая, но... нет");
-            return;
-        }
+        
     }
     var ulInner = document.createElement("ul");
     flagOFchanged = false;
@@ -528,6 +523,9 @@ let savechanges = button => {
         var tableChild = field.childNodes[i];
         var li = document.createElement("li");
         if (tableChild.className == "oldInfo") {
+            if (field.childNodes[i + 1].childNodes[1].value == 0){
+                alert(1)
+            }
             li.appendChild(document.createTextNode(`${tableChild.innerText}:${tableChild.childNodes[1].value}->${field.childNodes[i + 1].childNodes[1].value}`));
             i++;
         } else {
@@ -543,12 +541,16 @@ let savechanges = button => {
         let adress = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[2].innerText;
         let clearAdress = adress.substring(6, adress.length);
         if (clearAdress == field.childNodes[2].childNodes[1].value) {
-            alert("Было");
             for (var j = 0; j < ul.childNodes[i].childNodes[1].childNodes[0].children.length; j++) {
                 let oldAndNewValue = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText.split(':')[1];
                 if (~oldAndNewValue.indexOf("->")) {
                     oldValue = oldAndNewValue.split('->')[0];
                     newValue = ulInner.childNodes[j].innerText.split('->')[1]
+                    if (parseInt(newValue) == 0) {
+                        alert(field.childNodes[i + 1].childNodes[1].value);
+                        alert("Хорошая попытка проверки крайнего случая, но... нет");
+                        return;
+                    }
                     olddata = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText.split('->')[0] 
                     ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText = olddata + '->' + newValue;
                 }
@@ -715,7 +717,7 @@ function implementChangesOnMap() {
         });
     });
 };
-function getstatistics(){
+function getstatisticsdistricts(){
     let data = readData();
     if (data == 1) {
         return
@@ -733,6 +735,39 @@ function getstatistics(){
     let body = JSON.stringify({
         data: araraywithData,
         districts: districtsArray
+    });
+    xmlHttp.send(body);
+    resp = xmlHttp.responseText;
+    var tab = window.open('Статистика по выбранным районам', '_blank');
+    tab.document.write(resp);
+    tab.document.close();
+}
+
+function getstatisticscounties(){
+    let cusid_ele = document.getElementsByClassName('outer');
+    let countiesArray = [];
+    for (var i = 0; i < cusid_ele.length; ++i) {
+        var item = cusid_ele[i];
+        if (item.checked) {
+            countiesArray.push(item.id.slice(0, -1));
+        }
+    }
+    if (countiesArray.length == 0) {
+        alert('Округа не выбраны');
+        return 1;
+    };
+    let araraywithData = []
+    changesArray.forEach(function (elem) {
+        dictwithdata = elem.data;
+        dictwithdata.id = parseInt(elem.service.objectid);
+        dictwithdata.type = elem.service.type;
+        araraywithData.push(dictwithdata);
+    });
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open("POST", 'http://127.0.0.1:80/checkchanges_county', false); // false for synchronous request
+    let body = JSON.stringify({
+        data: araraywithData,
+        counties: countiesArray
     });
     xmlHttp.send(body);
     resp = xmlHttp.responseText;

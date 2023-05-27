@@ -96,7 +96,7 @@ class db_start(object):
             actualProvisionIndicator, density from districts where idDistrict in %s ORDER BY idSpatial"""
         self.__cur.execute(SQLquery, (tuple(nameID), ))
         return self._returnDict()
-
+    
     def getCountybyIDdistrict(self, idDistrict):
         SQLquery = """SELECT c.namecounty, c.area, c.schoolnumber, c.schoolload,
     c.kindergartennumber, c.medicinenumber, c.livingnumber, c.residentsnumber, c.avgyear, c.withoutschools,
@@ -111,4 +111,11 @@ class db_start(object):
     c.withoutkindergartens, c.withoutmedicine from counties c, districts d where d.idcount = c.idcount and d.namedistrict = %s ORDER BY namecounty"""
 
         self.__cur.execute(SQLquery, (NameDistrict,))
+        return self._returnDict()
+    
+    def getCountiesByName(self, arrayName):
+        SQLquery = """SELECT namecounty, area, schoolnumber, schoolload,
+            kindergartennumber, medicinenumber, livingnumber, residentsnumber, avgyear, withoutschools,
+            withoutkindergartens, withoutmedicine from counties where namecounty in %s ORDER BY namecounty"""
+        self.__cur.execute(SQLquery, (tuple(arrayName), ))
         return self._returnDict()

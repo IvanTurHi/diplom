@@ -317,10 +317,10 @@ def stat(dist_list=[], sort_type=''):
             without_medicine = i['withoutmedicine']
             schools_index = i['schoolprovisionindex']
             is_schools_obespech = i['schoolprovision']
-            if is_schools_obespech == False:
-                is_schools_obespech = 'Нет'
-            elif is_schools_obespech == True:
+            if is_schools_obespech:
                 is_schools_obespech = 'Да'
+            else:
+                is_schools_obespech = 'Нет'
             kinder_index = i['kindergartenprovisionindex']
             is_kinder_obespech = i['kindergartenprovision']
             if is_kinder_obespech == False:
@@ -365,9 +365,126 @@ def stat(dist_list=[], sort_type=''):
             sorted_models[i] = models[i]
         models = sorted_models
 
-    models = json2html.convert(json=models)
+    #models = json2html.convert(json=models)
 
     return models
+
+@app.route('/checkchanges', methods=['POST'])
+def changes():
+    input_json_all = request.get_json(force=True)
+    input_json = input_json_all['data']
+    selected_districts = input_json_all['districts']
+
+    schools_list_id = []
+    schools_json = []
+    buildings_list_id = []
+    buildings_json = []
+    kinder_list_id = []
+    kinder_json = []
+    for i in input_json:
+        if i['type'] == 'Школа':
+            schools_list_id.append(i['id'])
+            schools_json.append(i)
+        if i['type'] == 'Жилое':
+            buildings_list_id.append(i['id'])
+            buildings_json.append(i)
+        if i['type'] == 'Детский сад':
+            kinder_list_id.append(i['id'])
+            kinder_json.append(i)
+    print(schools_list_id, buildings_list_id, kinder_list_id)
+    schools_post_json = {
+    "database": 0,
+    "arrayID" : schools_list_id
+    }
+    districts_dict = {}
+    #Обрабатываем все школы
+    schools_object = requests.post(docker_net + "buildingID", json=schools_post_json).json()
+    for i in range(len(schools_object)):
+        object_dist_id = schools_object[i]['iddistrict']
+        if object_dist_id in districts_dict:
+            object_dist = districts_dict[object_dist_id]['dist']
+            school_total_capacity_delta = districts_dict[object_dist_id]['school_delta']
+            school_total_students_delta = districts_dict[object_dist_id]['students_delta']
+        else:
+            post_json_dist = {'IDsource': [object_dist_id]}
+            object_dist = requests.post(docker_net + "districtsID", json=post_json_dist).json()[0]
+            school_total_capacity_delta = 0
+            school_total_students_delta = 0
+            districts_dict[object_dist_id] = {}
+
+        object_dist['schoolload'] = change_schools_workload(object_dist['schoolnumber'], object_dist['schoolload'],
+                                schools_object[i]['currentworkload'], schools_object[i]['calculatedworkload'],
+                                schools_json[i].get("Количество учеников", 0), schools_json[i].get("Номинальная вместимость", 0))
+        school_total_capacity_delta += schools_json[i].get("Номинальная вместимость", 0)
+        school_total_students_delta += schools_json[i].get("Количество учеников", 0)
+
+
+        districts_dict[object_dist_id]['dist'] = object_dist
+        districts_dict[object_dist_id]['school_delta'] = school_total_capacity_delta
+
+    #Обрабатываем все детские сады
+    kinder_post_json = {
+            "database": 3,
+            "arrayID": kinder_list_id
+        }
+    kinder_object = requests.post(docker_net + "buildingID", json=kinder_post_json).json()
+    for i in range(len(kinder_object)):
+        object_dist_id = kinder_object[i]['iddistrict']
+        if object_dist_id in districts_dict:
+            object_dist = districts_dict[object_dist_id]['dist']
+            kinder_total_capacity_delta = districts_dict[object_dist_id].get('kinder_delta', 0)
+        else:
+            post_json_dist = {'IDsource': [object_dist_id]}
+            object_dist = requests.post(docker_net + "districtsID", json=post_json_dist).json()[0]
+            kinder_total_capacity_delta = 0
+            districts_dict[object_dist_id] = {}
+
+        kinder_total_capacity_delta += kinder_json[i].get("Номинальная вместимость", 0)
+        districts_dict[object_dist_id]['dist'] = object_dist
+        districts_dict[object_dist_id]['kinder_delta'] = kinder_total_capacity_delta
+
+    #Обрабатываем все жилые здания
+    building_post_json = {
+            "database": 2,
+            "arrayID": buildings_list_id
+        }
+    building_object = requests.post(docker_net + "buildingID", json=building_post_json).json()
+    for i in range(len(building_object)):
+        object_dist_id = building_object[i]['iddistrict']
+        if object_dist_id in districts_dict:
+            object_dist = districts_dict[object_dist_id]['dist']
+            residents_total_capacity_delta = districts_dict[object_dist_id].get('residents_delta', 0)
+        else:
+            post_json_dist = {'IDsource': [object_dist_id]}
+            object_dist = requests.post(docker_net + "districtsID", json=post_json_dist).json()[0]
+            districts_dict[object_dist_id] = {}
+            residents_total_capacity_delta = 0
+
+        building_object[i]['freeschools'] += buildings_json[i].get('Количество свободных школ', 0)
+        residents_total_capacity_delta += buildings_json[i].get("Количество взрослых", 0)
+        districts_dict[object_dist_id]['dist'] = object_dist
+        districts_dict[object_dist_id]['residents_delta'] = residents_total_capacity_delta
+
+    dist_list = change_district_statistic(districts_dict)
+
+    dist_post_json = {
+    "IDsource": selected_districts,
+    }
+    full_selected_districts = requests.post(docker_net+"districtsinfobyname", json=dist_post_json).json()
+
+    final_dist_list = full_selected_districts.copy()
+    for i in dist_list:
+        name = i['namedistrict']
+        for j in range(len(final_dist_list)):
+            if name == final_dist_list[j]['namedistrict']:
+                final_dist_list[j] = i
+
+    models = stat(final_dist_list)
+    #return models
+    return render_template('statistics_1.html',
+                            models=models,
+                            valuesdict=valuesdict)
+
 
 def stat_county(county_list):
     models = {}
@@ -398,7 +515,7 @@ def stat_county(county_list):
                                       'Процент домов,находящихся вне установленной зоны пешей доступности от детских садов': round(without_kindergartens, 0),
                                       'Процент домов,находящихся вне установленной зоны пешей доступности от медицинских учреждений': round(without_medicine, 0)}
 
-    models = json2html.convert(json=models)
+    #models = json2html.convert(json=models)
 
     return models
 
@@ -406,9 +523,10 @@ def stat_county(county_list):
 def changes_county():
     input_json_all = request.get_json(force=True)
     #input_json_all = {'data': [{'Количество учеников': 3402, 'Загруженность (в процентах от номинальной)': 1206.3829787234042, 'id': 1897, 'type': 'Школа'}, {'Количество взрослых': 1359, 'id': 24732, 'type': 'Жилое'}, {'Номинальная вместимость': 936, 'id': 2865, 'type': 'Детский сад'}],
-    #                  'districts': ['район Богородское', 'район Вешняки', 'район Восточное Измайлово', 'район Гольяново', 'район Ивановское', 'район Измайлово', 'район Косино-Ухтомский', 'район Метрогородок', 'район Новогиреево', 'район Новокосино', 'район Перово', 'район Преображенское', 'район Северное Измайлово', 'район Соколиная Гора', 'район Сокольники']}
+    #                  #'districts': ['район Богородское', 'район Вешняки', 'район Восточное Измайлово', 'район Гольяново', 'район Ивановское', 'район Измайлово', 'район Косино-Ухтомский', 'район Метрогородок', 'район Новогиреево', 'район Новокосино', 'район Перово', 'район Преображенское', 'район Северное Измайлово', 'район Соколиная Гора', 'район Сокольники']
+    #                  'districts': ['Восточный административный округ']}
     input_json = input_json_all['data']
-    selected_districts = input_json_all['districts']
+    selected_districts = input_json_all['counties']
 
     schools_list_id = []
     schools_json = []
@@ -428,9 +546,9 @@ def changes_county():
             kinder_json.append(i)
     print(schools_list_id, buildings_list_id, kinder_list_id)
     schools_post_json = {
-    "database": 0,
-    "arrayID" : schools_list_id
-}
+        "database": 0,
+        "arrayID" : schools_list_id
+    }
     county_dict = {}
     #Обрабатываем все школы
     schools_object = requests.post(docker_net + "buildingID", json=schools_post_json).json()
@@ -476,12 +594,16 @@ def changes_county():
         county_list.append(county_dict[i]['dist'])
 
 
-    full_selected_county = []
-    for i in selected_districts:
-        county_post_json = {'districtName': i}
-        county = requests.post(docker_net + "countybydistrictname", json=county_post_json).json()[0]
-        if county not in full_selected_county:
-            full_selected_county.append(county)
+    #full_selected_county = []
+    #for i in selected_districts:
+    #    county_post_json = {'districtName': i}
+    #    county = requests.post(docker_net + "countybydistrictname", json=county_post_json).json()[0]
+    #    if county not in full_selected_county:
+    #        full_selected_county.append(county)
+    #print(full_selected_county)
+
+    county_post_json = {'countynames': selected_districts}
+    full_selected_county = requests.post(docker_net + "countyinfobynames", json=county_post_json).json()
 
 
     final_county_list = full_selected_county.copy()
@@ -493,131 +615,10 @@ def changes_county():
 
     models = stat_county(final_county_list)
 
-    return render_template('stat.html', json_obj=models)
-
-@app.route('/checkchanges', methods=['POST'])
-def changes():
-    input_json_all = request.get_json(force=True)
-    input_json = input_json_all['data']
-    selected_districts = input_json_all['districts']
-
-    schools_list_id = []
-    schools_json = []
-    buildings_list_id = []
-    buildings_json = []
-    kinder_list_id = []
-    kinder_json = []
-    for i in input_json:
-        if i['type'] == 'Школа':
-            schools_list_id.append(i['id'])
-            schools_json.append(i)
-        if i['type'] == 'Жилое':
-            buildings_list_id.append(i['id'])
-            buildings_json.append(i)
-        if i['type'] == 'Детский сад':
-            kinder_list_id.append(i['id'])
-            kinder_json.append(i)
-    print(schools_list_id, buildings_list_id, kinder_list_id)
-    schools_post_json = {
-    "database": 0,
-    "arrayID" : schools_list_id
-}
-    districts_dict = {}
-    #Обрабатываем все школы
-    schools_object = requests.post(docker_net + "buildingID", json=schools_post_json).json()
-    for i in range(len(schools_object)):
-        object_dist_id = schools_object[i]['iddistrict']
-        if object_dist_id in districts_dict:
-            object_dist = districts_dict[object_dist_id]['dist']
-            school_total_capacity_delta = districts_dict[object_dist_id].get(['school_delta'], 0)
-            school_total_students_delta = districts_dict[object_dist_id].get(['students_delta'],0)
-        else:
-            post_json_dist = {'IDsource': [object_dist_id]}
-            object_dist = requests.post(docker_net + "districtsID", json=post_json_dist).json()[0]
-            school_total_capacity_delta = 0
-            school_total_students_delta = 0
-            districts_dict[object_dist_id] = {}
-
-        object_dist['schoolload'] = change_schools_workload(object_dist['schoolnumber'], object_dist['schoolload'],
-                                schools_object[i]['currentworkload'], schools_object[i]['calculatedworkload'],
-                                schools_json[i].get("Количество учеников", 0), schools_json[i].get("Номинальная вместимость", 0))
-        school_total_capacity_delta += schools_json[i].get("Номинальная вместимость", 0)
-        school_total_students_delta += schools_json[i].get("Количество учеников", 0)
-
-
-        districts_dict[object_dist_id]['dist'] = object_dist
-        districts_dict[object_dist_id]['school_delta'] = school_total_capacity_delta
-
-
-    #Обрабатываем все детские сады
-    kinder_post_json = {
-            "database": 3,
-            "arrayID": kinder_list_id
-        }
-    kinder_object = requests.post(docker_net + "buildingID", json=kinder_post_json).json()
-    for i in range(len(kinder_object)):
-        object_dist_id = kinder_object[i]['iddistrict']
-        if object_dist_id in districts_dict:
-            object_dist = districts_dict[object_dist_id]['dist']
-            kinder_total_capacity_delta = districts_dict[object_dist_id].get('kinder_delta', 0)
-        else:
-            post_json_dist = {'IDsource': [object_dist_id]}
-            object_dist = requests.post(docker_net + "districtsID", json=post_json_dist).json()[0]
-            kinder_total_capacity_delta = 0
-            districts_dict[object_dist_id] = {}
-
-        kinder_total_capacity_delta += kinder_json[i].get("Номинальная вместимость", 0)
-        districts_dict[object_dist_id]['dist'] = object_dist
-        districts_dict[object_dist_id]['kinder_delta'] = kinder_total_capacity_delta
-
-
-
-    #Обрабатываем все жилые здания
-    building_post_json = {
-            "database": 2,
-            "arrayID": buildings_list_id
-        }
-    building_object = requests.post(docker_net + "buildingID", json=building_post_json).json()
-    for i in range(len(building_object)):
-        object_dist_id = building_object[i]['iddistrict']
-        if object_dist_id in districts_dict:
-            object_dist = districts_dict[object_dist_id]['dist']
-            residents_total_capacity_delta = districts_dict[object_dist_id].get('residents_delta', 0)
-        else:
-            post_json_dist = {'IDsource': [object_dist_id]}
-            object_dist = requests.post(docker_net + "districtsID", json=post_json_dist).json()[0]
-            districts_dict[object_dist_id] = {}
-            residents_total_capacity_delta = 0
-
-        building_object[i]['freeschools'] += buildings_json[i].get('Количество свободных школ', 0)
-        residents_total_capacity_delta += buildings_json[i].get("Количество взрослых", 0)
-        districts_dict[object_dist_id]['dist'] = object_dist
-        districts_dict[object_dist_id]['residents_delta'] = residents_total_capacity_delta
-
-    #print(districts_dict)
-    dist_list = change_district_statistic(districts_dict)
-    print(dist_list)
-    print('=============================================================================')
-    #stat(dist_list)
-
-    dist_post_json = {
-    "IDsource": selected_districts,
-    }
-    full_selected_districts = requests.post(docker_net+"districtsinfobyname", json=dist_post_json).json()
-    print(full_selected_districts)
-    print('==============================================================================')
-
-    final_dist_list = full_selected_districts.copy()
-    for i in dist_list:
-        name = i['namedistrict']
-        for j in range(len(final_dist_list)):
-            if name == final_dist_list[j]['namedistrict']:
-                final_dist_list[j] = i
-
-    print(final_dist_list)
-    models = stat(final_dist_list)
-
-    return render_template('stat.html', json_obj=models)
+    #return render_template('stat.html', json_obj=models)
+    return render_template('statistics_1.html',
+            models=models,
+            valuesdict=valuescounty)
 
 if __name__ == '__main__':
     app.run(debug=True,host='0.0.0.0')

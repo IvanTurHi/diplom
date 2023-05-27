@@ -355,7 +355,14 @@ async def schoolsfull(request: Request):
     jsonbody = await request.json()
     t = db_start()
     table = t.getDistrictsByName(jsonbody['IDsource'])
-    return table
+    return table 
+
+@app.post("/countyinfobynames")
+async def schoolsfull(request: Request):
+    jsonbody = await request.json()
+    t = db_start()
+    table = t.getCountiesByName(jsonbody['countynames'])
+    return table 
 
 @app.post("/countybydistrict")
 async def districts(request: Request):
