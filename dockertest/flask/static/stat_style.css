@@ -1,64 +1,24 @@
-.multiselect {
-  width: 400px;
-}
-
-.selectBox {
-  position: relative;
-}
-
-.selectBox select {
-  width: 100%;
-  font-weight: bold;
-}
-
-.overSelect {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-}
-
-#checkboxes {
-  display: none;
-  border: 1px #dadada solid;
-background-color: #FFFFFF;
-}
-
-#checkboxes label {
-  display: block;
-}
-
-#checkboxes label:hover {
-  background-color: #1e90ff;
-}
 
 .about {
-width: 100%;
-align: center;
-text-align: center;
+  width: 100%;
+  align-content: center;
+  text-align: center;
   background: #5F4E3F;
-color: #FFFFFF;
-font-size: 15px;
+
+  font-size: 15px;
 }
 
 body{
-background-color: #5F4E3F;
+  background-color: #5F4E3F;
   margin: 0;
   overflow-x: hidden;
 }
 
-.about_1 {
-width: 80%;
-left: 100px;
+.outertable {
+  text-align: left;
+  background-color: rgba(224,180,14,1);
 }
-
-.t5 {
-font-size: 40px;
-}
-
-.big_box {
-width: 100%;
-text-align: left;
-background-color: rgba(224,180,14,1);
-}
+.innertable {
+  text-align: left;
+  background-color: rgba(224,180,14,1);
+  }

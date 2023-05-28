@@ -6,6 +6,13 @@
     <meta charset="UTF-8">
     <title>CSS Toggle Switch with Flip Button</title>
     <style>
+        tbody tr:nth-child(odd) {
+        background-color: #ff33cc;
+        }
+
+        tbody tr:nth-child(even) {
+        background-color: #e495e4;
+        }
         .toggle {
             --width: 100px;
             --height: calc(var(--width) / 5);
@@ -77,10 +84,62 @@
             transform: rotateY(180deg) scale(-1, 1);
             opacity: 1;
         }
-    </style>
+</style>  
+<style>
+    @import url("https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@500&display=swap");
+.main1,
+.main1::before,
+.main1::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.main1 {
+  width: 170px;
+  height: 70px;
+  font-weight: bold;
+  font-size: 20px;
+  font-family: "Josefin Sans", sans-serif;
+  background-color: #fdcb6e;
+  cursor: pointer;
+  box-shadow: 5px 5px 0 0;
+  transition: 0.3s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 20px;
+}
+a {
+  position: absolute;
+  text-decoration: none;
+  color: #000;
+  z-index: 1000;
+}
+.main1::after {
+  content: "";
+  top: 0;
+  left: 0;
+  width: 170px;
+  height: 70px;
+  background: linear-gradient(to right, #ff7675, #e84393);
+  opacity: 0;
+  transition: 0.3s;
+}
+.main1:hover {
+  box-shadow: -5px -5px 0 0;
+  transform: scale(0.9);
+}
+.main1:hover::after {
+  opacity: 1;
+}
+</style>
 </head>
 
 <body>
+    <button style="background-color: #ff0000">Поставить клоунам 10</button>
+    <div class="main1"><a href="#">Read More</a>
+        </div>
+  <div>
     <fieldset>
         <legend>Настройки сортировки</legend>
         <span style="font-size: 30px">Поле сортировки:</span>

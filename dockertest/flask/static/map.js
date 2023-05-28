@@ -166,6 +166,12 @@ function drawHexagones(res, builddatabase, pointsArrayWithValue) {
         for (var i = 0; i < h3Bounds.length; i++) {
             h3Bounds[i] = [h3Bounds[i][1], h3Bounds[i][0]];
         }
+
+        var polygon = L.polygon(h3Bounds, { color: 'black', fillOpacity: 0.0, weight: 1, });
+        polygon.myTag = "myGeoJSON"
+        polygon.addTo(map_init);
+        layerGroupBounds.addLayer(polygon);
+
         counter = 0;
         var polygon = L.polygon(h3Bounds, { color: 'blue', fillOpacity: 0.0, weight: 1, });
 
@@ -178,20 +184,24 @@ function drawHexagones(res, builddatabase, pointsArrayWithValue) {
         let dictGrades = {
             0: [1, 2, 3],
             1: [1, 2, 3],
-            2: [1000, 2000, 3000],
+            2: [1, 1500, 3000],
             3: [1, 2, 3],
         };
+        
+
         gradesHex = dictGrades[builddatabase];
         polygon.setStyle(getStyleForHexagone(gradesHex, counter));
-        polygon.bindTooltip(counter)
+        let dictTooltip = {
+            0: "Количество школ: ",
+            1: "Количество мед учреждений: ",
+            2: "Количество жителей: ",
+            3: "Количество детских садов: ",
+        };
+        if (counter != 0){
+            polygon.bindTooltip(dictTooltip[builddatabase] + counter)
+        }
         polygon.addTo(map_init);
         layerGroupHexs.addLayer(polygon);
-
-
-        var polygon = L.polygon(h3Bounds, { color: 'black', fillOpacity: 0.0, weight: 1, });
-        polygon.myTag = "myGeoJSON"
-        polygon.addTo(map_init);
-        layerGroupBounds.addLayer(polygon);
 
     });
 
@@ -364,12 +374,14 @@ function drawLiving(res, builddatabase) {
                             layer.objectid = feature.properties[key];
                             break;
                         case ('ГеоИдентификатор'): break;
+                        case ('Сайт'): stringTable += '<tr><td>' + key + '</td><td><a href=http://' + feature.properties[key] + '>' + feature.properties[key] + '</a> </td></tr>'; break;
                         default: stringTable += '<tr><td>' + key + '</td><td>' + feature.properties[key] + '</td></tr>'
                     }
                 }
             }
             layer.bindTooltip(main_value);
-            popupText = '<h2>' + main_value + "</h2><table border='1' style='width:400px;'>" + stringTable + "</table>"
+            style = '<style> tbody tr:nth-child(odd) {background-color: rgba(224,180,14,1);} tbody tr:nth-child(even) {background-color: #eae6ca;}</style>'
+            popupText = style + '<h2>' + main_value + "</h2><table border='1' style='width:400px;'>" + stringTable + "</table>"
             if (builddatabase != 2) {
                 popupText += addInfoAvailRinCard(newlon, newlat)
             }
@@ -467,7 +479,7 @@ let availRfromCard = button => {
 };
 let EditInfo = button => {
     var field = document.getElementsByClassName('leaflet-popup-content')[0];
-    table = field.childNodes[1];
+    table = field.childNodes[2];
     type = table.rows[1].cells[1].innerText
     switch (parseInt(type)) {
         case (0): field.innerHTML = editPopupForSchool(table.rows[0].cells[1].innerText, table.rows[2].cells[1].innerText, table.rows[4].cells[1].innerText, table.rows[5].cells[1].innerText, table.rows[7].cells[1].innerText); break;
@@ -523,9 +535,6 @@ let savechanges = button => {
         var tableChild = field.childNodes[i];
         var li = document.createElement("li");
         if (tableChild.className == "oldInfo") {
-            if (field.childNodes[i + 1].childNodes[1].value == 0){
-                alert(1)
-            }
             li.appendChild(document.createTextNode(`${tableChild.innerText}:${tableChild.childNodes[1].value}->${field.childNodes[i + 1].childNodes[1].value}`));
             i++;
         } else {
@@ -547,8 +556,7 @@ let savechanges = button => {
                     oldValue = oldAndNewValue.split('->')[0];
                     newValue = ulInner.childNodes[j].innerText.split('->')[1]
                     if (parseInt(newValue) == 0) {
-                        alert(field.childNodes[i + 1].childNodes[1].value);
-                        alert("Хорошая попытка проверки крайнего случая, но... нет");
+                        alert("Новые значения не могут быть нулевыми");
                         return;
                     }
                     olddata = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText.split('->')[0] 
@@ -656,7 +664,7 @@ function getchangesForSchool(dictElem) {
             };
         };
     });
-    if (Object.keys(changesArray).length == 0) {return};
+    if (Object.keys(changedSchool).length == 0) {return};
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.open("POST", 'http://127.0.0.1:80/checkforschool', false); // false for synchronous request
     let body = JSON.stringify(changedSchool);
@@ -718,11 +726,18 @@ function implementChangesOnMap() {
     });
 };
 function getstatisticsdistricts(){
-    let data = readData();
-    if (data == 1) {
-        return
+    let cusid_ele = document.getElementsByClassName('inner');
+    let districtsArray = [];
+    for (var i = 0; i < cusid_ele.length; ++i) {
+        var item = cusid_ele[i];
+        if (item.checked) {
+            districtsArray.push(item.id);
+        }
+    }
+    if (districtsArray.length == 0) {
+        alert('Районы не выбраны');
+        return 1;
     };
-    const {districtsArray, builddatabase } = data;
     let araraywithData = []
     changesArray.forEach(function (elem) {
         dictwithdata = elem.data;
@@ -774,4 +789,15 @@ function getstatisticscounties(){
     var tab = window.open('Статистика по выбранным районам', '_blank');
     tab.document.write(resp);
     tab.document.close();
+}
+
+function clearAll(){
+    changesArray = [];
+    clearlayer();
+    ul = document.getElementById("listOfChanges");
+    if (ul) {
+        while (ul.firstChild) {
+          ul.removeChild(ul.firstChild);
+        }
+      }
 }

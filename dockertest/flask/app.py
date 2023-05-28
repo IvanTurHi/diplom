@@ -15,6 +15,10 @@ def hello_sasha():
 def hello_vanya():
     return 'Hello, Vanya! The server is working. The reason you here is not I have dropped the server'
 
+@app.route('/cirk_c_solyami')
+def hello_cirk():
+    return '<button style="background-color:#ff0000">Поставить клоунам 10</button>'
+
 #тестовая
 @app.route('/main_page')
 def hello_world():
