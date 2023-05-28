@@ -34,7 +34,7 @@ function getbuildings() {
         document.getElementById('loadingImg').style.display = '';
     }
     let xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("POST", 'http://127.0.0.1:80/buildingfullinfo', true); // false for synchronous request
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/buildingfullinfo', true); // false for synchronous request
     body = JSON.stringify({
         "IDsource": districtsArray,
         "isCounty": false,
@@ -69,7 +69,7 @@ function gethexagones() {
         document.getElementById('loadingImg').style.display = '';
     }
     let xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("POST", 'http://127.0.0.1:80/buildingfullinfo', true); // false for synchronous request
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/buildingfullinfo', true); // false for synchronous request
     body = JSON.stringify({
         "IDsource": districtsArray,
         "isCounty": false,
@@ -99,7 +99,7 @@ function gethexagones() {
                     });
                 }
                 let xmlHttp1 = new XMLHttpRequest();
-                xmlHttp1.open("POST", 'http://127.0.0.1:80/hexForDistricts', false); // false for synchronous request
+                xmlHttp1.open("POST", 'http://social-infrastructure.ru:80/hexForDistricts', false); // false for synchronous request
                 body = JSON.stringify({
                     "IDsource": districtsArray,
                     "hexagone_size": parseInt(hexsizevalue)
@@ -123,7 +123,7 @@ function getanalysis() {
     const { districtsArray, builddatabase } = data;
     clearlayer();
     let xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("POST", 'http://127.0.0.1:80/districtsfullinfo', false); // false for synchronous request
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/districtsfullinfo', false); // false for synchronous request
     let body = JSON.stringify({
         "IDsource": districtsArray
     });
@@ -136,7 +136,7 @@ function getanalysis() {
         document.getElementById('loadingImg').style.display = '';
     }
 
-    xmlHttp.open("POST", 'http://127.0.0.1:80/buildingfullinfo', true); // false for synchronous request
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/buildingfullinfo', true); // false for synchronous request
     body = JSON.stringify({
         "IDsource": districtsArray,
         "isCounty": false,
@@ -438,7 +438,7 @@ function getnewradius(lon, lat) {
     table = field.childNodes[1];
     type = parseInt(table.rows[1].cells[1].innerText)
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("POST", 'http://127.0.0.1:80/nearcoordinates', false); // false for synchronous request
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/nearcoordinates', false); // false for synchronous request
     let body = JSON.stringify({
         "lat": lat,
         "lon": lon,
@@ -666,7 +666,7 @@ function getchangesForSchool(dictElem) {
     });
     if (Object.keys(changedSchool).length == 0) {return};
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("POST", 'http://127.0.0.1:80/checkforschool', false); // false for synchronous request
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/checkforschool', false); // false for synchronous request
     let body = JSON.stringify(changedSchool);
     xmlHttp.send(body);
     resp = xmlHttp.responseText;
@@ -746,7 +746,7 @@ function getstatisticsdistricts(){
         araraywithData.push(dictwithdata);
     });
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("POST", 'http://127.0.0.1:80/checkchanges', false); // false for synchronous request
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/checkchanges', false); // false for synchronous request
     let body = JSON.stringify({
         data: araraywithData,
         districts: districtsArray
@@ -779,7 +779,7 @@ function getstatisticscounties(){
         araraywithData.push(dictwithdata);
     });
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("POST", 'http://127.0.0.1:80/checkchanges_county', false); // false for synchronous request
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/checkchanges_county', false); // false for synchronous request
     let body = JSON.stringify({
         data: araraywithData,
         counties: countiesArray
