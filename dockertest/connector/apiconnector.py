@@ -356,3 +356,22 @@ async def schoolsfull(request: Request):
     t = db_start()
     table = t.getDistrictsByName(jsonbody['IDsource'])
     return table 
+
+@app.post("/countyinfobynames")
+async def schoolsfull(request: Request):
+    jsonbody = await request.json()
+    t = db_start()
+    table = t.getCountiesByName(jsonbody['countynames'])
+    return table 
+
+@app.post("/countybydistrict")
+async def districts(request: Request):
+    t = db_start()
+    jsonbody = await request.json()
+    return t.getCountybyIDdistrict(jsonbody['districtID'])
+
+@app.post("/countybydistrictname")
+async def districts(request: Request):
+    t = db_start()
+    jsonbody = await request.json()
+    return t.getCountybyNamedistrict(jsonbody['districtName'])

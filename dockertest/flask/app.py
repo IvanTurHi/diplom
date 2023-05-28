@@ -15,6 +15,10 @@ def hello_sasha():
 def hello_vanya():
     return 'Hello, Vanya! The server is working. The reason you here is not I have dropped the server'
 
+@app.route('/cirk_c_solyami')
+def hello_cirk():
+    return '<button style="background-color:#ff0000">Поставить клоунам 10</button>'
+
 #тестовая
 @app.route('/main_page')
 def hello_world():
@@ -317,10 +321,10 @@ def stat(dist_list=[], sort_type=''):
             without_medicine = i['withoutmedicine']
             schools_index = i['schoolprovisionindex']
             is_schools_obespech = i['schoolprovision']
-            if is_schools_obespech == False:
-                is_schools_obespech = 'Нет'
-            elif is_schools_obespech == True:
+            if is_schools_obespech:
                 is_schools_obespech = 'Да'
+            else:
+                is_schools_obespech = 'Нет'
             kinder_index = i['kindergartenprovisionindex']
             is_kinder_obespech = i['kindergartenprovision']
             if is_kinder_obespech == False:
@@ -332,24 +336,24 @@ def stat(dist_list=[], sort_type=''):
             current_school_obespech = i['actualprovisionindicator']
             density = i['density']
 
-            models[territories] = {'Площадь (м2)': area,
-                                      'Количество школ': schools_number,
-                                      'Средняя загруженность школ(в процентах)': schools_workload,
-                                      'Количество детских садов': kindergartens_number,
-                                      'Количество мед учреждений': medicine_number,
-                                      'Количество жилых домов': buildings_number,
-                                      'Количество жителей': residents_number,
-                                      'Средний год постройки зданий': avg_year,
-                                      'Процент домов,находящихся вне установленной зоны пешей доступности от школ': without_schools,
-                                      'Процент домов,находящихся вне установленной зоны пешей доступности от детских садов': without_kindergartens,
-                                      'Процент домов,находящихся вне установленной зоны пешей доступности от медицинских учреждений': without_medicine,
-                                      'Количество мест в школах (на 1000 человек)': schools_index,
+            models[territories] = {'Площадь (м2)': round(area, 0),
+                                      'Количество школ': round(schools_number, 0),
+                                      'Средняя загруженность школ(в процентах)': round(schools_workload, 0),
+                                      'Количество детских садов': round(kindergartens_number, 0),
+                                      'Количество мед учреждений': round(medicine_number, 0),
+                                      'Количество жилых домов': round(buildings_number, 0),
+                                      'Количество жителей': round(residents_number, 0),
+                                      'Средний год постройки зданий': round(avg_year, 0),
+                                      'Процент домов,находящихся вне установленной зоны пешей доступности от школ': round(without_schools, 0),
+                                      'Процент домов,находящихся вне установленной зоны пешей доступности от детских садов': round(without_kindergartens, 0),
+                                      'Процент домов,находящихся вне установленной зоны пешей доступности от медицинских учреждений': round(without_medicine, 0),
+                                      'Количество мест в школах (на 1000 человек)': round(schools_index, 0),
                                       'Удовлетворяет ли количество мест в школах нормативам': is_schools_obespech,
-                                      'Количество мест в детских садах (на 1000 человек)': kinder_index,
+                                      'Количество мест в детских садах (на 1000 человек)': round(kinder_index, 0),
                                       'Удовлетворяет ли количество мест детских садах нормативам': is_kinder_obespech,
-                                      'Целевой показатель минимально допустимого уровня обеспеченности населения школами': min_school_obespech,
-                                      'Фактический показатель минимально допустимого уровня обеспеченности населения школами': current_school_obespech,
-                                      'Плотность жилой застройки': density}
+                                      'Целевой показатель минимально допустимого уровня обеспеченности населения школами': round(min_school_obespech, 0),
+                                      'Фактический показатель минимально допустимого уровня обеспеченности населения школами': round(current_school_obespech, 0),
+                                      'Плотность жилой застройки': round(density, 4)}
 
             if sort_type != '':
                 sorted_key = get_sorted_key(sort_type)
@@ -365,7 +369,7 @@ def stat(dist_list=[], sort_type=''):
             sorted_models[i] = models[i]
         models = sorted_models
 
-    models = json2html.convert(json=models)
+    #models = json2html.convert(json=models)
 
     return models
 
@@ -382,11 +386,6 @@ def changes():
     kinder_list_id = []
     kinder_json = []
     for i in input_json:
-    #r = requests.post("http://connector:8000/districtsfullinfo", json=input_json)
-    #datadistricts = json.loads(r.text)
-    #geojson = makegeojson(data=datadistricts)
-    #return print_hexagones(geojson, hexagone_size=input_json['hexagone_size'])
-    #return [counter]
         if i['type'] == 'Школа':
             schools_list_id.append(i['id'])
             schools_json.append(i)
@@ -400,7 +399,7 @@ def changes():
     schools_post_json = {
     "database": 0,
     "arrayID" : schools_list_id
-}
+    }
     districts_dict = {}
     #Обрабатываем все школы
     schools_object = requests.post(docker_net + "buildingID", json=schools_post_json).json()
@@ -427,7 +426,6 @@ def changes():
         districts_dict[object_dist_id]['dist'] = object_dist
         districts_dict[object_dist_id]['school_delta'] = school_total_capacity_delta
 
-
     #Обрабатываем все детские сады
     kinder_post_json = {
             "database": 3,
@@ -448,8 +446,6 @@ def changes():
         kinder_total_capacity_delta += kinder_json[i].get("Номинальная вместимость", 0)
         districts_dict[object_dist_id]['dist'] = object_dist
         districts_dict[object_dist_id]['kinder_delta'] = kinder_total_capacity_delta
-
-
 
     #Обрабатываем все жилые здания
     building_post_json = {
@@ -473,18 +469,12 @@ def changes():
         districts_dict[object_dist_id]['dist'] = object_dist
         districts_dict[object_dist_id]['residents_delta'] = residents_total_capacity_delta
 
-    #print(districts_dict)
     dist_list = change_district_statistic(districts_dict)
-    print(dist_list)
-    print('=============================================================================')
-    #stat(dist_list)
 
     dist_post_json = {
     "IDsource": selected_districts,
     }
     full_selected_districts = requests.post(docker_net+"districtsinfobyname", json=dist_post_json).json()
-    print(full_selected_districts)
-    print('==============================================================================')
 
     final_dist_list = full_selected_districts.copy()
     for i in dist_list:
@@ -493,36 +483,146 @@ def changes():
             if name == final_dist_list[j]['namedistrict']:
                 final_dist_list[j] = i
 
-    print(final_dist_list)
     models = stat(final_dist_list)
+    #return models
+    return render_template('statistics_1.html',
+                            models=models,
+                            valuesdict=valuesdict)
 
-    return render_template('stat.html', json_obj=models)
 
-'''
-[
-{
-    "adress":"Российская Федерация, город Москва, внутригородская территория муниципальный округ Зябликово, улица Мусы Джалиля, дом 29, корпус 2",
-    "spec": true,
-    "type": "Школа",
-    "Номинальная вместимость": 7696
- },
- {
-    "adress": "Российская Федерация, город Москва, внутригородская территория муниципальный округ Зябликово, улица Мусы Джалиля, дом 6, корпус 3",
-    "spec": false,
-    "type":"Школа",
-    "Количество учеников":3934},
- {
-    "adress": "Российская Федерация, город Москва, внутригородская территория муниципальный округ Орехово-Борисово Северное, Борисовский проезд, дом 13",
-    "type":"Школа",
-    "Номинальная вместимость":-1
- }
-  {
-    "adress": "Российская Федерация, город Москва, внутригородская территория муниципальный округ Орехово-Борисово Северное, Борисовский проезд, дом 13",
-    "type":"Жилое",
-    "Свободных школ в радиусе доступности":-1
- }
- ]
-'''
+def stat_county(county_list):
+    models = {}
+    if len(county_list) > 0:
+        for i in county_list:
+            territories = i['namecounty']
+            area = i['area']
+            schools_number = i['schoolnumber']
+            schools_workload = i['schoolload']
+            kindergartens_number = i['kindergartennumber']
+            medicine_number = i['medicinenumber']
+            buildings_number = i['livingnumber']
+            residents_number = i['residentsnumber']
+            avg_year = i['avgyear']
+            without_schools = i['withoutschools']
+            without_kindergartens = i['withoutkindergartens']
+            without_medicine = i['withoutmedicine']
+
+            models[territories] = {'Площадь (м2)': round(area, 0),
+                                      'Количество школ': round(schools_number, 0),
+                                      'Средняя загруженность школ(в процентах)': round(schools_workload, 0),
+                                      'Количество детских садов': round(kindergartens_number, 0),
+                                      'Количество мед учреждений': round(medicine_number, 0),
+                                      'Количество жилых домов': round(buildings_number, 0),
+                                      'Количество жителей': round(residents_number, 0),
+                                      'Средний год постройки зданий': round(avg_year, 0),
+                                      'Процент домов,находящихся вне установленной зоны пешей доступности от школ': round(without_schools, 0),
+                                      'Процент домов,находящихся вне установленной зоны пешей доступности от детских садов': round(without_kindergartens, 0),
+                                      'Процент домов,находящихся вне установленной зоны пешей доступности от медицинских учреждений': round(without_medicine, 0)}
+
+    #models = json2html.convert(json=models)
+
+    return models
+
+@app.route('/checkchanges_county', methods=['POST'])
+def changes_county():
+    input_json_all = request.get_json(force=True)
+    #input_json_all = {'data': [{'Количество учеников': 3402, 'Загруженность (в процентах от номинальной)': 1206.3829787234042, 'id': 1897, 'type': 'Школа'}, {'Количество взрослых': 1359, 'id': 24732, 'type': 'Жилое'}, {'Номинальная вместимость': 936, 'id': 2865, 'type': 'Детский сад'}],
+    #                  #'districts': ['район Богородское', 'район Вешняки', 'район Восточное Измайлово', 'район Гольяново', 'район Ивановское', 'район Измайлово', 'район Косино-Ухтомский', 'район Метрогородок', 'район Новогиреево', 'район Новокосино', 'район Перово', 'район Преображенское', 'район Северное Измайлово', 'район Соколиная Гора', 'район Сокольники']
+    #                  'districts': ['Восточный административный округ']}
+    input_json = input_json_all['data']
+    selected_districts = input_json_all['counties']
+
+    schools_list_id = []
+    schools_json = []
+    buildings_list_id = []
+    buildings_json = []
+    kinder_list_id = []
+    kinder_json = []
+    for i in input_json:
+        if i['type'] == 'Школа':
+            schools_list_id.append(i['id'])
+            schools_json.append(i)
+        if i['type'] == 'Жилое':
+            buildings_list_id.append(i['id'])
+            buildings_json.append(i)
+        if i['type'] == 'Детский сад':
+            kinder_list_id.append(i['id'])
+            kinder_json.append(i)
+    print(schools_list_id, buildings_list_id, kinder_list_id)
+    schools_post_json = {
+        "database": 0,
+        "arrayID" : schools_list_id
+    }
+    county_dict = {}
+    #Обрабатываем все школы
+    schools_object = requests.post(docker_net + "buildingID", json=schools_post_json).json()
+    for i in range(len(schools_object)):
+        object_dist_id = schools_object[i]['iddistrict']
+        county_post_json = {'districtID': object_dist_id}
+        county = requests.post(docker_net + "countybydistrict", json=county_post_json).json()[0]
+        county_name = county['namecounty']
+        if county_name in county_dict:
+            object_dist = county_dict[county_name]['dist']
+        else:
+            object_dist = county
+            county_dict[county_name] = {}
+
+        object_dist['schoolload'] = change_schools_workload(object_dist['schoolnumber'], object_dist['schoolload'],
+                                schools_object[i]['currentworkload'], schools_object[i]['calculatedworkload'],
+                                schools_json[i].get("Количество учеников", 0), schools_json[i].get("Номинальная вместимость", 0))
+
+        county_dict[county_name]['dist'] = object_dist
+
+    #Обрабатываем все жилые здания
+    building_post_json = {
+            "database": 2,
+            "arrayID": buildings_list_id
+        }
+    building_object = requests.post(docker_net + "buildingID", json=building_post_json).json()
+    for i in range(len(building_object)):
+        object_dist_id = building_object[i]['iddistrict']
+        county_post_json = {'districtID': object_dist_id}
+        county = requests.post(docker_net + "countybydistrict", json=county_post_json).json()[0]
+        county_name = county['namecounty']
+        if county_name in county_dict:
+            object_dist = county_dict[county_name]['dist']
+        else:
+            object_dist = county
+            county_dict[county_name] = {}
+
+        object_dist['residentsnumber'] += buildings_json[i].get("Количество взрослых", 0)
+        county_dict[county_name]['dist'] = object_dist
+
+    county_list = []
+    for i in county_dict:
+        county_list.append(county_dict[i]['dist'])
+
+
+    #full_selected_county = []
+    #for i in selected_districts:
+    #    county_post_json = {'districtName': i}
+    #    county = requests.post(docker_net + "countybydistrictname", json=county_post_json).json()[0]
+    #    if county not in full_selected_county:
+    #        full_selected_county.append(county)
+    #print(full_selected_county)
+
+    county_post_json = {'countynames': selected_districts}
+    full_selected_county = requests.post(docker_net + "countyinfobynames", json=county_post_json).json()
+
+
+    final_county_list = full_selected_county.copy()
+    for i in county_list:
+        name = i['namecounty']
+        for j in range(len(final_county_list)):
+            if name == final_county_list[j]['namecounty']:
+                final_county_list[j] = i
+
+    models = stat_county(final_county_list)
+
+    #return render_template('stat.html', json_obj=models)
+    return render_template('statistics_1.html',
+            models=models,
+            valuesdict=valuescounty)
 
 if __name__ == '__main__':
     app.run(debug=True,host='0.0.0.0')

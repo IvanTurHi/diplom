@@ -169,6 +169,7 @@
     top: 75px;
     font-family: 'Lato';
     font-size: 20px;
+    font-weight:bold;
     letter-spacing: 12px;
     color: #1500ff;
     left: 15%;
@@ -192,6 +193,45 @@
     display: table-cell;
     overflow-wrap: normal;
   }
+  .button {
+  display: inline-block;
+  border-radius: 4px;
+  background-color: #f4511e;
+  border: none;
+  color: #FFFFFF;
+  text-align: center;
+  font-size: 14px;
+  padding: 20px;
+  transition: all 0.5s;
+  cursor: pointer;
+  margin: 5px;
+  margin-left: 9px;
+}
+
+.button span {
+  cursor: pointer;
+  display: inline-block;
+  position: relative;
+  transition: 0.5s;
+}
+
+.button span:after {
+  content: '\00bb';
+  position: absolute;
+  opacity: 0;
+  top: 0;
+  right: -20px;
+  transition: 0.5s;
+}
+
+.button:hover span {
+  padding-right: 25px;
+}
+
+.button:hover span:after {
+  opacity: 1;
+  right: 0;
+}
 </style>
 {% endblock %}
 
@@ -200,6 +240,57 @@
   div {
     display: inline-block
   }
+</style>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@500&display=swap");
+.main1,
+.main1::before,
+.main1::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.main1 {
+  width: 200px;
+  height: 60px;
+  font-weight: bold;
+  font-size: 16px;
+  font-family: "Josefin Sans", sans-serif;
+  background-color: rgba(224,180,14,1);
+  cursor: pointer;
+  box-shadow: 5px 5px 0 0;
+  transition: 0.3s;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 20px;
+  margin-left: 20px;
+  margin-top: 10px;
+}
+.apply {
+  position: absolute;
+  text-decoration: none;
+  color: #000;
+  z-index: 1000;
+}
+.main1::after {
+  content: "";
+  top: 0;
+  left: 0;
+  width: 200px;
+  height: 60px;
+  background: linear-gradient(to right, #ff7675, #e84393);
+  opacity: 0;
+  transition: 0.3s;
+}
+.main1:hover {
+  box-shadow: -5px -5px 0 0;
+  transform: scale(0.9);
+}
+.main1:hover::after {
+  opacity: 1;
+}
+</style>
 </style>
 <div id="loadingImg" class="wrapper" style="display: none;">
   <div class="circle"></div>
@@ -216,7 +307,7 @@
     <ul id="listofdistricts">
       {% for countyValue, districtarray in datadistricts.items() %}
       <li>
-        <input type="checkbox">
+        <input type="checkbox" class="outer" id="{{countyValue}}1">
         <label class="custom-unchecked">{{countyValue}} (можно развернуть)</label>
         <ul id="{{countyValue}}" hidden="hidden">
           {% for district in districtarray %}
@@ -255,19 +346,28 @@
         <label for="contactChoice2">1400 м</label>
       </div>
     </fieldset>
-    <button onclick="getstatistics();" name="button" id="newButton">Анализ по районам</button>
-    <button onclick="gethexagones();" name="button" id="newButton1">Гексагональный анализ</button>
-    <button onclick="getbuildings();" name="button" id="newButton2">Вывести только объекты</button>
-    <button onclick="getanalysis();" name="button" id="newButton2">Статистика по районам</button>
+    <div>
+      <button onclick="getanalysis();" name="button" class="button" id="newButton" style="width: 150px;"><span>Анализ по районам</span></button>
+      <button onclick="gethexagones();" name="button" class="button" id="newButton1" style="width: 150px;"><span>Гексагональный анализ</span></button>
+      <button onclick="getbuildings();" name="button" class="button" id="newButton2" style="width: 150px;"><span>Вывести объекты</span></button>
+    </div>
+    <br>
+    <div>
+      <button onclick="getstatisticsdistricts();" name="button" class="button" id="newButton3" style="width: 235px;"><span>Статистика по районам</span></button>
+      <button onclick="getstatisticscounties();" name="button" class="button" id="newButton4" style="width: 235px;"><span>Статистика по округам</span></button>
+    </div>
   </div>
   <div class="child max">
     <div id="map"></div>
   </div>
 </fieldset>
-<p>Измененные элементы будут отображаться здесь, но не будут видны на карте пока их не сохранить</p>
+<div onclick="applychanges();" class="main1"><a class="apply" href="#">Применить изменения</a></div>
+<div onclick="clearAll();" class="main1"><a class="apply" href="#">Очистить все</a></div>
+<font color="white">
+<p>Измененные элементы будут отображаться здесь, но не будут видны на карте пока их не применить</p>
 <ul id="listOfChanges"></ul>
-<button onclick="applychanges();" name="button">Применить изменения</button>
-<button onclick="clearLayer(this);">Я все сломал, очистить карту</button>
+</font>
+<div>
 
 {% endblock %}
 

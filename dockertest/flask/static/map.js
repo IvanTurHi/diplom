@@ -34,7 +34,7 @@ function getbuildings() {
         document.getElementById('loadingImg').style.display = '';
     }
     let xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("POST", 'http://127.0.0.1:80/buildingfullinfo', true); // false for synchronous request
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/buildingfullinfo', true); // false for synchronous request
     body = JSON.stringify({
         "IDsource": districtsArray,
         "isCounty": false,
@@ -69,7 +69,7 @@ function gethexagones() {
         document.getElementById('loadingImg').style.display = '';
     }
     let xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("POST", 'http://127.0.0.1:80/buildingfullinfo', true); // false for synchronous request
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/buildingfullinfo', true); // false for synchronous request
     body = JSON.stringify({
         "IDsource": districtsArray,
         "isCounty": false,
@@ -99,7 +99,7 @@ function gethexagones() {
                     });
                 }
                 let xmlHttp1 = new XMLHttpRequest();
-                xmlHttp1.open("POST", 'http://127.0.0.1:80/hexForDistricts', false); // false for synchronous request
+                xmlHttp1.open("POST", 'http://social-infrastructure.ru:80/hexForDistricts', false); // false for synchronous request
                 body = JSON.stringify({
                     "IDsource": districtsArray,
                     "hexagone_size": parseInt(hexsizevalue)
@@ -115,8 +115,7 @@ function gethexagones() {
     };
     xmlHttp.send(body);
 };
-function getstatistics() {
-    var startTime = performance.now()
+function getanalysis() {
     let data = readData();
     if (data == 1) {
         return
@@ -124,7 +123,7 @@ function getstatistics() {
     const { districtsArray, builddatabase } = data;
     clearlayer();
     let xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("POST", 'http://127.0.0.1:80/districtsfullinfo', false); // false for synchronous request
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/districtsfullinfo', false); // false for synchronous request
     let body = JSON.stringify({
         "IDsource": districtsArray
     });
@@ -137,7 +136,7 @@ function getstatistics() {
         document.getElementById('loadingImg').style.display = '';
     }
 
-    xmlHttp.open("POST", 'http://127.0.0.1:80/buildingfullinfo', true); // false for synchronous request
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/buildingfullinfo', true); // false for synchronous request
     body = JSON.stringify({
         "IDsource": districtsArray,
         "isCounty": false,
@@ -156,8 +155,6 @@ function getstatistics() {
     };
     xmlHttp.send(body);
 
-
-
 };
 function drawHexagones(res, builddatabase, pointsArrayWithValue) {
 
@@ -169,6 +166,12 @@ function drawHexagones(res, builddatabase, pointsArrayWithValue) {
         for (var i = 0; i < h3Bounds.length; i++) {
             h3Bounds[i] = [h3Bounds[i][1], h3Bounds[i][0]];
         }
+
+        var polygon = L.polygon(h3Bounds, { color: 'black', fillOpacity: 0.0, weight: 1, });
+        polygon.myTag = "myGeoJSON"
+        polygon.addTo(map_init);
+        layerGroupBounds.addLayer(polygon);
+
         counter = 0;
         var polygon = L.polygon(h3Bounds, { color: 'blue', fillOpacity: 0.0, weight: 1, });
 
@@ -181,20 +184,24 @@ function drawHexagones(res, builddatabase, pointsArrayWithValue) {
         let dictGrades = {
             0: [1, 2, 3],
             1: [1, 2, 3],
-            2: [1000, 2000, 3000],
+            2: [1, 1500, 3000],
             3: [1, 2, 3],
         };
+
+
         gradesHex = dictGrades[builddatabase];
         polygon.setStyle(getStyleForHexagone(gradesHex, counter));
-        polygon.bindTooltip(counter)
+        let dictTooltip = {
+            0: "Количество школ: ",
+            1: "Количество мед учреждений: ",
+            2: "Количество жителей: ",
+            3: "Количество детских садов: ",
+        };
+        if (counter != 0) {
+            polygon.bindTooltip(dictTooltip[builddatabase] + counter)
+        }
         polygon.addTo(map_init);
         layerGroupHexs.addLayer(polygon);
-
-
-        var polygon = L.polygon(h3Bounds, { color: 'black', fillOpacity: 0.0, weight: 1, });
-        polygon.myTag = "myGeoJSON"
-        polygon.addTo(map_init);
-        layerGroupBounds.addLayer(polygon);
 
     });
 
@@ -220,7 +227,7 @@ function drawHexagones(res, builddatabase, pointsArrayWithValue) {
 };
 function drawdisricts(textJSON, builddatabase) {
     addBordersToMap(textJSON);
-    controlsLayer.addOverlay(GeoJson, "Границы районов");
+    controlsLayer.addOverlay(GeoJson, "Обеспеченность районов");
     map_init.addLayer(GeoJson);
     overLayers.push(GeoJson);
     addDistrictsToMap(textJSON, builddatabase);
@@ -237,7 +244,7 @@ function getStyleForHexagone(grades, d) {
 function getAttrBase(number) {
     innerDict = {
         0: ['Школы', 'Название', 'Количество школ'],
-        1: ['Медицина', '', 'Количество мед. учреждений'],
+        1: ['Мед. учреждения', '', 'Количество мед. учреждений'],
         2: ['Жилые здания', 'Адрес', 'Количество жильцов'],
         3: ['Детские сады', 'Название', 'Количество дс']
     }
@@ -346,7 +353,7 @@ function drawLiving(res, builddatabase) {
     main_feature = features[1];
     let newlon = 0.0
     let newlat = 0.0
-    dictType = {0:"Школа",1:"Мед",2:"Жилое",3:"Детский сад"}
+    dictType = { 0: "Школа", 1: "Мед", 2: "Жилое", 3: "Детский сад" }
 
     var GeoJson = L.geoJson(res, {
         onEachFeature: function (feature, layer) {
@@ -367,12 +374,14 @@ function drawLiving(res, builddatabase) {
                             layer.objectid = feature.properties[key];
                             break;
                         case ('ГеоИдентификатор'): break;
+                        case ('Сайт'): stringTable += '<tr><td>' + key + '</td><td><a href=http://' + feature.properties[key] + '>' + feature.properties[key] + '</a> </td></tr>'; break;
                         default: stringTable += '<tr><td>' + key + '</td><td>' + feature.properties[key] + '</td></tr>'
                     }
                 }
             }
             layer.bindTooltip(main_value);
-            popupText = '<h2>' + main_value + "</h2><table border='1' style='width:400px;'>" + stringTable + "</table>"
+            style = '<style> tbody tr:nth-child(odd) {background-color: rgba(224,180,14,1);} tbody tr:nth-child(even) {background-color: #eae6ca;}</style>'
+            popupText = style + '<h2>' + main_value + "</h2><table border='1' style='width:400px;'>" + stringTable + "</table>"
             if (builddatabase != 2) {
                 popupText += addInfoAvailRinCard(newlon, newlat)
             }
@@ -426,10 +435,10 @@ function getColorForSchool(currentworkload, calculatedworkload) {
 };
 function getnewradius(lon, lat) {
     var field = document.getElementsByClassName('leaflet-popup-content')[0];
-    table = field.childNodes[1];
+    table = field.childNodes[2];
     type = parseInt(table.rows[1].cells[1].innerText)
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("POST", 'http://127.0.0.1:80/nearcoordinates', false); // false for synchronous request
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/nearcoordinates', false); // false for synchronous request
     let body = JSON.stringify({
         "lat": lat,
         "lon": lon,
@@ -470,24 +479,26 @@ let availRfromCard = button => {
 };
 let EditInfo = button => {
     var field = document.getElementsByClassName('leaflet-popup-content')[0];
-    table = field.childNodes[1];
+    table = field.childNodes[2];
     type = table.rows[1].cells[1].innerText
     switch (parseInt(type)) {
-        case (0): field.innerHTML = editPopupForSchool(table.rows[0].cells[1].innerText, table.rows[2].cells[1].innerText, table.rows[4].cells[1].innerText, table.rows[5].cells[1].innerText); break;
+        case (0): field.innerHTML = editPopupForSchool(table.rows[0].cells[1].innerText, table.rows[2].cells[1].innerText, table.rows[4].cells[1].innerText, table.rows[5].cells[1].innerText, table.rows[7].cells[1].innerText); break;
         case (2): field.innerHTML = editPopupForLiving(table.rows[0].cells[1].innerText, field.childNodes[0].innerText, table.rows[6].cells[1].innerText); break;
         case (3): field.innerHTML = editPopupForKindergarten(table.rows[0].cells[1].innerText, table.rows[2].cells[1].innerText, table.rows[3].cells[1].innerText); break;
         default: alert(type);
     }
 };
 
-function editPopupForSchool(objectid, adress, number, load) {
+function editPopupForSchool(objectid, adress, number, load, rating) {
     html = '<p hidden>Идентификатор<input type="text" value="' + objectid + '"></p>'
     html += '<p hidden>Тип здания<input type="text" value="Школа"></p>'
     html += '<p hidden>Адрес<input type="text" value="' + adress + '"></p>'
     html += '<p hidden class="oldInfo">Количество учеников<input type="text" value=' + number + '></p>'
-    html += '<p>Количество учеников<input type="text" value=' + number + '></p>'
+    html += '<p>Количество учеников<input type="number" min="0" step="1" value=' + number + '></p>'
     html += '<p hidden class="oldInfo">Номинальная вместимость<input type="text" value=' + load + '></p>'
-    html += '<p>Номинальная вместимость<input type="text" value=' + load + '></p>'
+    html += '<p>Номинальная вместимость<input type="number" min="0" step="1" value=' + load + '></p>'
+    html += '<p hidden class="oldInfo">Рейтинг<input type="text" value=' + rating + '></p>'
+    html += '<p>Рейтинг<input type="number" value=' + rating + '></p>'
     html += '<button onclick="savechanges(this);"name="button" id="newButton2" >Сохранить изменения</button>'
     return html
 };
@@ -496,7 +507,7 @@ function editPopupForLiving(objectid, adress, numberResidents) {
     html += '<p hidden>Тип здания<input type="text" value="Жилое"></p>'
     html += '<p hidden>Адрес<input type="text" value="' + adress + '"></p>'
     html += '<p hidden class="oldInfo">Количество взрослых<input type="text" value=' + numberResidents + '></p>'
-    html += '<p>Количество взрослых<input type="text" value=' + numberResidents + '></p>'
+    html += '<p>Количество взрослых<input type="number" min="0" step="1" value=' + numberResidents + '></p>'
     html += '<button onclick="savechanges(this);"name="button" id="newButton2" >Сохранить изменения</button>'
     return html
 };
@@ -505,7 +516,7 @@ function editPopupForKindergarten(objectid, adress, load) {
     html += '<p hidden>Тип здания<input type="text" value="Детский сад"></p>'
     html += '<p hidden>Адрес<input type="text" value="' + adress + '"></p>'
     html += '<p hidden class="oldInfo">Номинальная вместимость<input type="text" value=' + load + '></p>'
-    html += '<p>Номинальная вместимость<input type="text" value=' + load + '></p>'
+    html += '<p>Номинальная вместимость<input type="number" min="0" step="1" value=' + load + '></p>'
     html += '<button onclick="savechanges(this);"name="button" id="newButton2" >Сохранить изменения</button>'
     return html
 };
@@ -516,10 +527,7 @@ let savechanges = button => {
 
     for (var i = 0; i < field.childNodes.length - 1; i++) {
         var tableChild = field.childNodes[i];
-        if (tableChild.childNodes[1].value == 0) {
-            alert("Хорошая попытка проверки крайнего случая, но... нет");
-            return;
-        }
+
     }
     var ulInner = document.createElement("ul");
     flagOFchanged = false;
@@ -527,8 +535,13 @@ let savechanges = button => {
         var tableChild = field.childNodes[i];
         var li = document.createElement("li");
         if (tableChild.className == "oldInfo") {
-            li.appendChild(document.createTextNode(`${tableChild.innerText}:${tableChild.childNodes[1].value}->${field.childNodes[i + 1].childNodes[1].value}`));
+            let value1 = field.childNodes[i + 1].childNodes[1].value;
+            li.appendChild(document.createTextNode(`${tableChild.innerText}:${tableChild.childNodes[1].value}->${value1}`));
             i++;
+            if (value1 == 0) {
+                alert("Новые значения не могут быть нулевыми");
+                return
+            }
         } else {
             li.appendChild(document.createTextNode(`${tableChild.innerText}:${tableChild.childNodes[1].value}`));
         };
@@ -542,18 +555,18 @@ let savechanges = button => {
         let adress = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[2].innerText;
         let clearAdress = adress.substring(6, adress.length);
         if (clearAdress == field.childNodes[2].childNodes[1].value) {
-            alert("Было");
             for (var j = 0; j < ul.childNodes[i].childNodes[1].childNodes[0].children.length; j++) {
                 let oldAndNewValue = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText.split(':')[1];
                 if (~oldAndNewValue.indexOf("->")) {
                     oldValue = oldAndNewValue.split('->')[0];
                     newValue = ulInner.childNodes[j].innerText.split('->')[1]
-                    olddata = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText.split('->')[0] 
+                    olddata = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText.split('->')[0]
                     ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText = olddata + '->' + newValue;
                 }
             }
             //ul.childNodes[i] = ulInner;
             ul.childNodes[0].childNodes[0].textContent = "Измененный элемент";
+            field.innerHTML = '<p>Изменения сохранены</p>';
             return
         }
     }
@@ -579,7 +592,7 @@ let savechanges = button => {
     li.appendChild(divList);
     li.appendChild(divButton);
     ul.appendChild(li);
-    //field.innerHTML = '<h1>' + type + '</hi>'
+    field.innerHTML = '<p>Изменения сохранены</p>';
 };
 
 let delElem = button => {
@@ -589,7 +602,7 @@ let delElem = button => {
 function applychanges() {
     var ul = document.getElementById("listOfChanges");
     for (var i = 0; i < ul.childNodes.length; i++) {
-        let dictElem = { data: {}, service: {} , olddata: {}}
+        let dictElem = { data: {}, service: {}, olddata: {} }
         let listOfCharacteristics = ul.childNodes[i].childNodes[1].childNodes[0]
         ul.childNodes[i].childNodes[0].textContent = "Изменения применены"
         let oldCurrentWorkload;
@@ -653,9 +666,9 @@ function getchangesForSchool(dictElem) {
             };
         };
     });
-    if (Object.keys(changesArray).length == 0) {return};
+    if (Object.keys(changedSchool).length == 0) { return };
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("POST", 'http://127.0.0.1:80/checkforschool', false); // false for synchronous request
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/checkforschool', false); // false for synchronous request
     let body = JSON.stringify(changedSchool);
     xmlHttp.send(body);
     resp = xmlHttp.responseText;
@@ -714,12 +727,19 @@ function implementChangesOnMap() {
         });
     });
 };
-function getanalysis(){
-    let data = readData();
-    if (data == 1) {
-        return
+function getstatisticsdistricts() {
+    let cusid_ele = document.getElementsByClassName('inner');
+    let districtsArray = [];
+    for (var i = 0; i < cusid_ele.length; ++i) {
+        var item = cusid_ele[i];
+        if (item.checked) {
+            districtsArray.push(item.id);
+        }
+    }
+    if (districtsArray.length == 0) {
+        alert('Районы не выбраны');
+        return 1;
     };
-    const {districtsArray, builddatabase } = data;
     let araraywithData = []
     changesArray.forEach(function (elem) {
         dictwithdata = elem.data;
@@ -728,14 +748,58 @@ function getanalysis(){
         araraywithData.push(dictwithdata);
     });
     var xmlHttp = new XMLHttpRequest();
-    xmlHttp.open("POST", 'http://127.0.0.1:80/checkchanges', false); // false for synchronous request
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/checkchanges', false); // false for synchronous request
     let body = JSON.stringify({
         data: araraywithData,
         districts: districtsArray
     });
     xmlHttp.send(body);
     resp = xmlHttp.responseText;
-    var tab = window.open('about:blank', '_blank');
-    tab.document.write(resp); // where 'html' is a variable containing your HTML
+    var tab = window.open('Статистика по выбранным районам', '_blank');
+    tab.document.write(resp);
     tab.document.close();
+}
+
+function getstatisticscounties() {
+    let cusid_ele = document.getElementsByClassName('outer');
+    let countiesArray = [];
+    for (var i = 0; i < cusid_ele.length; ++i) {
+        var item = cusid_ele[i];
+        if (item.checked) {
+            countiesArray.push(item.id.slice(0, -1));
+        }
+    }
+    if (countiesArray.length == 0) {
+        alert('Округа не выбраны');
+        return 1;
+    };
+    let araraywithData = []
+    changesArray.forEach(function (elem) {
+        dictwithdata = elem.data;
+        dictwithdata.id = parseInt(elem.service.objectid);
+        dictwithdata.type = elem.service.type;
+        araraywithData.push(dictwithdata);
+    });
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open("POST", 'http://social-infrastructure.ru:80/checkchanges_county', false); // false for synchronous request
+    let body = JSON.stringify({
+        data: araraywithData,
+        counties: countiesArray
+    });
+    xmlHttp.send(body);
+    resp = xmlHttp.responseText;
+    var tab = window.open('Статистика по выбранным районам', '_blank');
+    tab.document.write(resp);
+    tab.document.close();
+}
+
+function clearAll() {
+    changesArray = [];
+    clearlayer();
+    ul = document.getElementById("listOfChanges");
+    if (ul) {
+        while (ul.firstChild) {
+            ul.removeChild(ul.firstChild);
+        }
+    }
 }
