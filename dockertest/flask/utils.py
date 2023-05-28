@@ -2,7 +2,7 @@
 dictfromdatabase = {'adress': 'Адрес',
     'adults': 'Количество взрослых',
     'area': 'Площадь (м2)',
-    'availablekindergartens': 'Кол-во дс в радиусе R-доступности',
+    'availablekindergartens': 'Кол-во дет. садов в R-доступности',
     'availablemedicine': 'Кол-во мед. учреждений в R-доступности',
     'availableschools': 'Кол-во школ в R-доступности',
     'avgyear': 'Средний год постройки',

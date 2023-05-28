@@ -187,7 +187,7 @@ function drawHexagones(res, builddatabase, pointsArrayWithValue) {
             2: [1, 1500, 3000],
             3: [1, 2, 3],
         };
-        
+
 
         gradesHex = dictGrades[builddatabase];
         polygon.setStyle(getStyleForHexagone(gradesHex, counter));
@@ -197,7 +197,7 @@ function drawHexagones(res, builddatabase, pointsArrayWithValue) {
             2: "Количество жителей: ",
             3: "Количество детских садов: ",
         };
-        if (counter != 0){
+        if (counter != 0) {
             polygon.bindTooltip(dictTooltip[builddatabase] + counter)
         }
         polygon.addTo(map_init);
@@ -227,7 +227,7 @@ function drawHexagones(res, builddatabase, pointsArrayWithValue) {
 };
 function drawdisricts(textJSON, builddatabase) {
     addBordersToMap(textJSON);
-    controlsLayer.addOverlay(GeoJson, "Границы районов");
+    controlsLayer.addOverlay(GeoJson, "Обеспеченность районов");
     map_init.addLayer(GeoJson);
     overLayers.push(GeoJson);
     addDistrictsToMap(textJSON, builddatabase);
@@ -244,7 +244,7 @@ function getStyleForHexagone(grades, d) {
 function getAttrBase(number) {
     innerDict = {
         0: ['Школы', 'Название', 'Количество школ'],
-        1: ['Медицина', '', 'Количество мед. учреждений'],
+        1: ['Мед. учреждения', '', 'Количество мед. учреждений'],
         2: ['Жилые здания', 'Адрес', 'Количество жильцов'],
         3: ['Детские сады', 'Название', 'Количество дс']
     }
@@ -353,7 +353,7 @@ function drawLiving(res, builddatabase) {
     main_feature = features[1];
     let newlon = 0.0
     let newlat = 0.0
-    dictType = {0:"Школа",1:"Мед",2:"Жилое",3:"Детский сад"}
+    dictType = { 0: "Школа", 1: "Мед", 2: "Жилое", 3: "Детский сад" }
 
     var GeoJson = L.geoJson(res, {
         onEachFeature: function (feature, layer) {
@@ -435,7 +435,7 @@ function getColorForSchool(currentworkload, calculatedworkload) {
 };
 function getnewradius(lon, lat) {
     var field = document.getElementsByClassName('leaflet-popup-content')[0];
-    table = field.childNodes[1];
+    table = field.childNodes[2];
     type = parseInt(table.rows[1].cells[1].innerText)
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.open("POST", 'http://social-infrastructure.ru:80/nearcoordinates', false); // false for synchronous request
@@ -527,7 +527,7 @@ let savechanges = button => {
 
     for (var i = 0; i < field.childNodes.length - 1; i++) {
         var tableChild = field.childNodes[i];
-        
+
     }
     var ulInner = document.createElement("ul");
     flagOFchanged = false;
@@ -535,8 +535,13 @@ let savechanges = button => {
         var tableChild = field.childNodes[i];
         var li = document.createElement("li");
         if (tableChild.className == "oldInfo") {
-            li.appendChild(document.createTextNode(`${tableChild.innerText}:${tableChild.childNodes[1].value}->${field.childNodes[i + 1].childNodes[1].value}`));
+            let value1 = field.childNodes[i + 1].childNodes[1].value;
+            li.appendChild(document.createTextNode(`${tableChild.innerText}:${tableChild.childNodes[1].value}->${value1}`));
             i++;
+            if (value1 == 0) {
+                alert("Новые значения не могут быть нулевыми");
+                return
+            }
         } else {
             li.appendChild(document.createTextNode(`${tableChild.innerText}:${tableChild.childNodes[1].value}`));
         };
@@ -555,16 +560,13 @@ let savechanges = button => {
                 if (~oldAndNewValue.indexOf("->")) {
                     oldValue = oldAndNewValue.split('->')[0];
                     newValue = ulInner.childNodes[j].innerText.split('->')[1]
-                    if (parseInt(newValue) == 0) {
-                        alert("Новые значения не могут быть нулевыми");
-                        return;
-                    }
-                    olddata = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText.split('->')[0] 
+                    olddata = ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText.split('->')[0]
                     ul.childNodes[i].childNodes[1].childNodes[0].childNodes[j].innerText = olddata + '->' + newValue;
                 }
             }
             //ul.childNodes[i] = ulInner;
             ul.childNodes[0].childNodes[0].textContent = "Измененный элемент";
+            field.innerHTML = '<p>Изменения сохранены</p>';
             return
         }
     }
@@ -590,7 +592,7 @@ let savechanges = button => {
     li.appendChild(divList);
     li.appendChild(divButton);
     ul.appendChild(li);
-    //field.innerHTML = '<h1>' + type + '</hi>'
+    field.innerHTML = '<p>Изменения сохранены</p>';
 };
 
 let delElem = button => {
@@ -600,7 +602,7 @@ let delElem = button => {
 function applychanges() {
     var ul = document.getElementById("listOfChanges");
     for (var i = 0; i < ul.childNodes.length; i++) {
-        let dictElem = { data: {}, service: {} , olddata: {}}
+        let dictElem = { data: {}, service: {}, olddata: {} }
         let listOfCharacteristics = ul.childNodes[i].childNodes[1].childNodes[0]
         ul.childNodes[i].childNodes[0].textContent = "Изменения применены"
         let oldCurrentWorkload;
@@ -664,7 +666,7 @@ function getchangesForSchool(dictElem) {
             };
         };
     });
-    if (Object.keys(changedSchool).length == 0) {return};
+    if (Object.keys(changedSchool).length == 0) { return };
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.open("POST", 'http://social-infrastructure.ru:80/checkforschool', false); // false for synchronous request
     let body = JSON.stringify(changedSchool);
@@ -725,7 +727,7 @@ function implementChangesOnMap() {
         });
     });
 };
-function getstatisticsdistricts(){
+function getstatisticsdistricts() {
     let cusid_ele = document.getElementsByClassName('inner');
     let districtsArray = [];
     for (var i = 0; i < cusid_ele.length; ++i) {
@@ -758,7 +760,7 @@ function getstatisticsdistricts(){
     tab.document.close();
 }
 
-function getstatisticscounties(){
+function getstatisticscounties() {
     let cusid_ele = document.getElementsByClassName('outer');
     let countiesArray = [];
     for (var i = 0; i < cusid_ele.length; ++i) {
@@ -791,13 +793,13 @@ function getstatisticscounties(){
     tab.document.close();
 }
 
-function clearAll(){
+function clearAll() {
     changesArray = [];
     clearlayer();
     ul = document.getElementById("listOfChanges");
     if (ul) {
         while (ul.firstChild) {
-          ul.removeChild(ul.firstChild);
+            ul.removeChild(ul.firstChild);
         }
-      }
+    }
 }
