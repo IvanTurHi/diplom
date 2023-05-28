@@ -11,7 +11,7 @@ dictfromdatabase = {'adress': 'Адрес',
     'calculatedworkload': 'Номинальная вместимость',
     'children': 'Количество детей',
     'currentworkload':'Количество учеников',
-    'freeschools': 'Количество свободных школ',
+    'freeschools': 'Количество свободных школ в R-доступности',
     'fullname': 'Название',
     'idSpatial': 'ГеоИдентификатор',
     'kinder': 'Количество детских садов',
@@ -52,7 +52,8 @@ notUsedTypes = [
     'idspatial', 
     'eoid',
     'storey',
-    'totalarea']
+    'totalarea'
+    'website']
 
 centralDistricts = [
     105,
