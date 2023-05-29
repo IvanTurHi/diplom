@@ -227,11 +227,11 @@ function drawHexagones(res, builddatabase, pointsArrayWithValue) {
 };
 function drawdisricts(textJSON, builddatabase) {
     addBordersToMap(textJSON);
-    controlsLayer.addOverlay(GeoJson, "Обеспеченность районов");
+    controlsLayer.addOverlay(GeoJson, "Границы районов");
     map_init.addLayer(GeoJson);
     overLayers.push(GeoJson);
     addDistrictsToMap(textJSON, builddatabase);
-    controlsLayer.addOverlay(GeoJson, "Районы").expand();
+    controlsLayer.addOverlay(GeoJson, "Обеспеченность районов").expand();
     map_init.addLayer(GeoJson);
     overLayers.push(GeoJson);
 };
@@ -264,7 +264,7 @@ function addDistrictsToMap(text, builddatabase) {
     const res = JSON.parse(text);
     field = getAttrBase(builddatabase)[2]
     maxvalue = 0
-    minvalue = 100000
+    minvalue = 1000000
     L.geoJson(res, {
         onEachFeature: function (feature, layer) {
             if (feature.properties[field] > maxvalue) {
@@ -277,9 +277,9 @@ function addDistrictsToMap(text, builddatabase) {
         }
     });
 
-    if (minvalue == 100000) {
-        maxvalue = 40;
-        minvalue = 10;
+    if (minvalue == 1000000) {
+        maxvalue = maxvalue * 2;
+        minvalue = maxvalue / 4;
     }
     grades = [minvalue, minvalue + 0.1 * (maxvalue - minvalue), minvalue + 0.25 * (maxvalue - minvalue), minvalue + 0.4 * (maxvalue - minvalue), minvalue + 0.6 * (maxvalue - minvalue), minvalue + 0.8 * (maxvalue - minvalue), maxvalue];
     GeoJson = L.geoJson(res, {
@@ -374,7 +374,7 @@ function drawLiving(res, builddatabase) {
                             layer.objectid = feature.properties[key];
                             break;
                         case ('ГеоИдентификатор'): break;
-                        case ('Сайт'): stringTable += '<tr><td>' + key + '</td><td><a href=http://' + feature.properties[key] + '>' + feature.properties[key] + '</a> </td></tr>'; break;
+                        case ('Сайт'): stringTable += '<tr><td>' + key + '</td><td><a target="_blank" href=http://' + feature.properties[key] + '>' + feature.properties[key] + '</a> </td></tr>'; break;
                         default: stringTable += '<tr><td>' + key + '</td><td>' + feature.properties[key] + '</td></tr>'
                     }
                 }
@@ -483,7 +483,7 @@ let EditInfo = button => {
     type = table.rows[1].cells[1].innerText
     switch (parseInt(type)) {
         case (0): field.innerHTML = editPopupForSchool(table.rows[0].cells[1].innerText, table.rows[2].cells[1].innerText, table.rows[4].cells[1].innerText, table.rows[5].cells[1].innerText, table.rows[7].cells[1].innerText); break;
-        case (2): field.innerHTML = editPopupForLiving(table.rows[0].cells[1].innerText, field.childNodes[0].innerText, table.rows[6].cells[1].innerText); break;
+        case (2): field.innerHTML = editPopupForLiving(table.rows[0].cells[1].innerText, field.childNodes[1].innerText, table.rows[6].cells[1].innerText); break;
         case (3): field.innerHTML = editPopupForKindergarten(table.rows[0].cells[1].innerText, table.rows[2].cells[1].innerText, table.rows[3].cells[1].innerText); break;
         default: alert(type);
     }
@@ -535,12 +535,22 @@ let savechanges = button => {
         var tableChild = field.childNodes[i];
         var li = document.createElement("li");
         if (tableChild.className == "oldInfo") {
-            let value1 = field.childNodes[i + 1].childNodes[1].value;
-            li.appendChild(document.createTextNode(`${tableChild.innerText}:${tableChild.childNodes[1].value}->${value1}`));
+            let oldValue = tableChild.childNodes[1].value;
+            let newValue = field.childNodes[i + 1].childNodes[1].value;
+            li.appendChild(document.createTextNode(`${tableChild.innerText}:${oldValue}->${newValue}`));
             i++;
-            if (value1 == 0) {
+            if (newValue == 0) {
                 alert("Новые значения не могут быть нулевыми");
                 return
+            }
+            if (tableChild.innerText == 'Количество взрослых'){
+                ulInner.appendChild(li);
+                li = document.createElement("li");
+                li.appendChild(document.createTextNode(`Количество школьников:${parseInt(0.16*oldValue)}->${parseInt(0.16*newValue)}`));
+                ulInner.appendChild(li);
+                li = document.createElement("li");
+                li.appendChild(document.createTextNode(`Количество детей:${parseInt(0.06*oldValue)}->${parseInt(0.06*newValue)}`));
+                
             }
         } else {
             li.appendChild(document.createTextNode(`${tableChild.innerText}:${tableChild.childNodes[1].value}`));

@@ -87,6 +87,9 @@ def buildingfullinfo():
     elif database == 3:
         throwList = ['eoid', 'geometry', 'idspatial', 'shortname', 'totalarea', 'nametype', 'storey', 'currentworkload']
         return makegeojson(data=datadistricts, listThrow=throwList)
+    elif database == 1:
+        throwList = notUsedTypes.append('area')
+        return makegeojson(data=datadistricts, listThrow=throwList)
     else:
         return makegeojson(data=datadistricts)
 
